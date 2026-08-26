@@ -3,6 +3,12 @@
 Personal professional site. One page, no build step, no dependencies. Open `index.html` in a
 browser to preview.
 
+The page leads with wealth management and accounting: hero, then **Experience** (Bessemer Trust,
+Morgan Stanley), then **Education, skills & leadership**, then **Coursework** — the Sysco and
+Netflix models, framed as samples of the technical groundwork rather than the main event — then
+contact. Sysco stays a full worked example because the sensitivity grid is the one thing a
+recruiter cannot get from a resume; Netflix is a compact entry.
+
 ```
 index.html                 the entire site (HTML + CSS + JS)
 assets/
@@ -95,9 +101,9 @@ Mono for data and labels — mono because that's the native register of a tearsh
 the numbers from reading as decoration.
 
 The hero is built as a security tearsheet: name as the instrument, key facts in a right-hand data
-rail. The signature element is the live WACC sensitivity grid in the Sysco case study — real
-numbers from your model, coloured against the $73.24 market price, hoverable for the implied
-upside at every cell. It is the one piece of the page that a recruiter cannot get from a resume.
+rail, and a focus strip naming the four things you actually work on. The signature element is the
+live WACC sensitivity grid in the Sysco case study — real numbers from your model, coloured
+against the $73.24 market price, hoverable for the implied upside at every cell.
 
 Every figure on the page is generated from `Sysco-Model.xlsx` rather than typed in by hand, and
 cross-checked against the write-up.
@@ -113,6 +119,7 @@ inside its own container.
 
 Open this folder with `claude` and try:
 
-* "Add a fourth case study for [course project]. Match the structure of the Sysco `.case` block exactly."
+* "Add another coursework entry. Match the compact `.case-compact` block used for Netflix."
+* "Expand the Bessemer Trust role into its own case study with a client-scenario walkthrough."
 * "Add Open Graph and Twitter card images so the link preview looks right when someone shares it."
 * "Run Lighthouse against index.html and fix whatever scores below 95."

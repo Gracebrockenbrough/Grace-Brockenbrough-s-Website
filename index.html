@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grace Brockenbrough — Accounting &amp; Finance, Washington and Lee</title>
-<meta name="description" content="Grace Brockenbrough — Accounting and Finance at Washington and Lee University. Equity valuation and financial modelling work, including a discounted FCFF valuation of Sysco Corporation.">
+<title>Grace Brockenbrough — Wealth Management &amp; Accounting</title>
+<meta name="description" content="Grace Brockenbrough — accounting and finance at Washington and Lee University, focused on private client wealth management. Client advisory experience at Bessemer Trust and Morgan Stanley.">
 <meta name="author" content="Grace Brockenbrough">
 <link rel="canonical" href="https://gracebrockenbrough.com/">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://gracebrockenbrough.com/">
-<meta property="og:title" content="Grace Brockenbrough — Accounting &amp; Finance">
-<meta property="og:description" content="Equity valuation and financial modelling work, including a discounted FCFF valuation of Sysco Corporation.">
+<meta property="og:title" content="Grace Brockenbrough — Wealth Management &amp; Accounting">
+<meta property="og:description" content="Grace Brockenbrough — accounting and finance at Washington and Lee University, focused on private client wealth management. Client advisory experience at Bessemer Trust and Morgan Stanley.">
 <meta property="og:image" content="https://gracebrockenbrough.com/assets/headshot.jpg">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Grace Brockenbrough — Accounting &amp; Finance">
-<meta name="twitter:description" content="Equity valuation and financial modelling work, including a discounted FCFF valuation of Sysco Corporation.">
+<meta name="twitter:title" content="Grace Brockenbrough — Wealth Management &amp; Accounting">
+<meta name="twitter:description" content="Grace Brockenbrough — accounting and finance at Washington and Lee University, focused on private client wealth management. Client advisory experience at Bessemer Trust and Morgan Stanley.">
 <meta name="twitter:image" content="https://gracebrockenbrough.com/assets/headshot.jpg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -124,6 +124,22 @@ a{color:inherit}
   font-size:1.06rem;
 }
 
+/* focus strip */
+.focus{
+  list-style:none;margin:2.2rem 0 0;padding:1.4rem 0 0;
+  border-top:1px solid rgba(241,239,233,.22);
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.75rem 1.75rem;max-width:40rem;
+}
+.focus li{
+  font-family:var(--mono);font-size:.74rem;line-height:1.45;
+  color:rgba(241,239,233,.82);padding-left:1rem;position:relative;
+}
+.focus li::before{
+  content:"";position:absolute;left:0;top:.52em;
+  width:.38rem;height:.38rem;background:var(--brass);
+}
+
 /* data rail */
 .rail{
   border:1px solid rgba(241,239,233,.28);
@@ -157,6 +173,7 @@ a{color:inherit}
 }
 .rail dd{margin:0;font-size:.9rem;font-weight:500;color:var(--bone);overflow-wrap:anywhere}
 .rail dd .sub{display:block;font-weight:400;font-size:.8rem;color:rgba(241,239,233,.62)}
+.rail dl div.wide{grid-template-columns:minmax(0,1fr);gap:.2rem}
 .rail a{color:var(--bone);text-decoration-color:var(--brass);text-underline-offset:3px}
 .rail a:hover{color:var(--brass-lt)}
 
@@ -209,11 +226,11 @@ section + section{border-top:1px solid var(--rule)}
 .scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--rule-strong)}
 table.sens{border-collapse:collapse;width:100%;min-width:34rem;font-family:var(--mono);background:var(--bone)}
 table.sens caption{
-  caption-side:top;text-align:left;padding:.7rem .85rem;
+  caption-side:top;text-align:left;padding:.55rem .85rem;
   font-family:var(--mono);font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;
   color:var(--ink-mute);border-bottom:1px solid var(--rule-strong);
 }
-table.sens th,table.sens td{padding:.55rem .5rem;text-align:center;font-size:.84rem;border:1px solid var(--rule)}
+table.sens th,table.sens td{padding:.42rem .5rem;text-align:center;font-size:.84rem;border:1px solid var(--rule)}
 table.sens thead th{
   font-family:var(--mono);font-weight:600;font-size:.68rem;letter-spacing:.08em;
   background:var(--navy);color:var(--bone);border-color:var(--navy);
@@ -256,6 +273,18 @@ td.cell:hover::after,td.cell:focus-visible::after{opacity:1}
 .chip{width:.8rem;height:.8rem;border:1px solid var(--rule-strong);display:inline-block}
 .chip.g{background:rgba(31,95,74,.21)}
 .chip.r{background:rgba(140,58,40,.22)}
+
+/* compact case variant */
+.case-compact .compact-body{max-width:78ch;color:#22313f}
+.inline-stats{
+  display:flex;flex-wrap:wrap;gap:.5rem 2rem;
+  margin:1.15rem 0 0;padding:.8rem 0 0;
+  border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:.76rem;color:var(--ink-mute);
+}
+.inline-stats b{font-weight:600;color:var(--navy);font-size:.86rem}
+.case-compact .files{margin-top:1.35rem}
+.case-compact .files ul{border-top:none}
 
 /* ---------- downloads ---------- */
 .files{margin-top:clamp(1.75rem,3.5vw,2.5rem)}
@@ -330,6 +359,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
 }
 @media (max-width:37.5rem){
   .stats{grid-template-columns:minmax(0,1fr)}
+  .focus{grid-template-columns:minmax(0,1fr);gap:.6rem}
   .rail dl div{grid-template-columns:minmax(0,1fr);gap:.1rem;padding:.55rem 1rem}
   table.sens{min-width:30rem}
   table.sens th,table.sens td{padding:.45rem .35rem}
@@ -358,10 +388,17 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
 <header class="hero">
   <div class="wrap hero-grid">
     <div>
-      <p class="label eyebrow">Accounting &amp; Finance — Washington and Lee University</p>
+      <p class="label eyebrow">Wealth Management &amp; Accounting — Washington and Lee University</p>
       <h1><span class="given">Grace M.</span><span class="family">Brockenbrough</span></h1>
-      <p class="instrument">Equity valuation · Financial modelling · Class of 2027</p>
-      <p class="pitch">I build valuation models from primary filings and defend the assumptions behind them. The work below is the model itself, not a summary of it — every figure on this page is traceable to the workbook you can download.</p>
+      <p class="instrument">Private client advisory · Accounting · Class of 2027</p>
+      <p class="pitch">Accounting and finance at Washington and Lee, focused on private client wealth management. Two summers supporting high-net-worth families at Bessemer Trust and Morgan Stanley — asset allocation, planning, and the accounting that sits underneath the advice.</p>
+
+      <ul class="focus" aria-label="Focus areas">
+        <li>Asset allocation &amp; financial planning</li>
+        <li>Client reporting &amp; meeting preparation</li>
+        <li>Accounting &amp; financial reporting</li>
+        <li>Valuation &amp; financial modelling</li>
+      </ul>
     </div>
 
     <div class="rail">
@@ -373,14 +410,14 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
         </span>
       </div>
       <dl>
-        <div><dt>Concentration</dt><dd>Accounting &amp; Finance</dd></div>
-        <div><dt>Graduation</dt><dd>May 2027</dd></div>
-        <div><dt>GPA</dt><dd>3.90 / 4.00<span class="sub">President’s List</span></dd></div>
+        <div><dt>Focus</dt><dd>Wealth management &amp; accounting</dd></div>
         <div><dt>Summer 2026</dt><dd>Bessemer Trust<span class="sub">Client Advisory Intern</span></dd></div>
         <div><dt>Summer 2025</dt><dd>Morgan Stanley<span class="sub">Wealth Management Summer Analyst</span></dd></div>
+        <div><dt>Studying</dt><dd>Accounting &amp; Finance<span class="sub">W&amp;L · May 2027</span></dd></div>
+        <div><dt>GPA</dt><dd>3.90 / 4.00<span class="sub">President’s List</span></dd></div>
         <div><dt>Certification</dt><dd>Wall Street Prep</dd></div>
         <div><dt>Based</dt><dd>Lexington, Virginia</dd></div>
-        <div><dt>Contact</dt><dd><a href="mailto:gbrockenbrough@mail.wlu.edu">gbrockenbrough@mail.wlu.edu</a></dd></div>
+        <div class="wide"><dt>Contact</dt><dd><a href="mailto:gbrockenbrough@mail.wlu.edu">gbrockenbrough@mail.wlu.edu</a></dd></div>
       </dl>
     </div>
   </div>
@@ -388,11 +425,125 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
 
 <main id="main">
 
+<section class="wrap" aria-labelledby="exp-h">
+  <div class="sec-head">
+    <span class="label">Experience</span>
+    <h2 id="exp-h">Client advisory &amp; wealth management</h2>
+    <p>Two summers in private client work — supporting high-net-worth relationships end to end, from asset allocation and financial planning through reporting, custody and onboarding.</p>
+  </div>
+
+  <div class="roles">
+    <article class="role">
+      <p class="role-when">June – August 2026</p>
+      <div>
+        <h3>Client Advisory Intern</h3>
+        <p class="where">Bessemer Trust — New York, NY</p>
+        <ul>
+          <li>Supported high-net-worth client relationships across investment management, trust administration, private banking, philanthropy, custody, reporting and account onboarding.</li>
+          <li>Prepared client meeting books, market value updates, statements of assets and customised Excel analyses.</li>
+          <li>Helped develop and present an asset-allocation recommendation incorporating portfolio risk, spending, liquidity, taxes, charitable giving, private investments and intergenerational transfer goals.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="role">
+      <p class="role-when">June – July 2025</p>
+      <div>
+        <h3>Wealth Management Summer Analyst</h3>
+        <p class="where">Morgan Stanley Wealth Management — Houston, TX</p>
+        <ul>
+          <li>Assisted in structuring multi-million dollar trades by researching and analysing fund strategies.</li>
+          <li>Developed five comprehensive financial plans and asset allocations for high-net-worth clients.</li>
+          <li>Built an amortisation schedule for a $10M liquid access loan for strategic debt repayment planning.</li>
+          <li>Contributed to portfolio optimisation by evaluating fund managers and stock selection.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="role">
+      <p class="role-when">April 2024 – Present</p>
+      <div>
+        <h3>Academic Tutor — Finance, Accounting &amp; Economics</h3>
+        <p class="where">W&amp;L Peer Tutoring Program — Lexington, VA</p>
+        <ul>
+          <li>Provide one-to-one academic support, tailoring explanation to how each student actually learns.</li>
+          <li>Run study sessions, unpack complex concepts and build workable study strategies.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="role">
+      <p class="role-when">June – August 2024</p>
+      <div>
+        <h3>Cabin Management &amp; General Staff</h3>
+        <p class="where">Paradise Guest Ranch — Buffalo, WY</p>
+        <ul>
+          <li>Oversaw sales and inventory at the general store; supported dining operations and guest activities.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="role">
+      <p class="role-when">December 2021 – June 2022</p>
+      <div>
+        <h3>Production &amp; Sales Associate</h3>
+        <p class="where">Three Sisters Cheese Straws — Richmond, VA</p>
+        <ul>
+          <li>Secured product distribution in two additional retail locations by pitching directly to store owners.</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ============ EXPERIENCE ============ -->
+<section class="wrap" aria-labelledby="edu-h">
+  <div class="sec-head">
+    <span class="label">Background</span>
+    <h2 id="edu-h">Education, skills &amp; leadership</h2>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <h3>Washington and Lee University</h3>
+      <p class="where">Accounting &amp; Finance · Expected May 2027</p>
+      <ul>
+        <li>GPA 3.90 / 4.00 — President's List</li>
+        <li>Managerial Finance, Corporate Financial Reporting, Individual Income Taxation &amp; Financial Planning, Statistics for Economics</li>
+        <li>Peer Tutoring, Club Squash, Toastmasters, Campus Kitchen, Mock Convention, WLU Radio</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Skills</h3>
+      <p class="where">What I work on</p>
+      <ul>
+        <li>Financial planning and asset allocation for high-net-worth clients</li>
+        <li>Client reporting — meeting books, statements of assets, market value updates</li>
+        <li>Accounting and financial reporting; individual income taxation</li>
+        <li>Excel modelling — three-statement, DCF/FCFF, DDM, comparables, sensitivity</li>
+        <li>Wall Street Prep certification; Microsoft Suite; Spanish</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Leadership</h3>
+      <p class="where">Selected</p>
+      <ul>
+        <li><strong>Richmond 100-4-100</strong> — Co-Head; directed a 100+ member charity group, securing $40,000 in donations to support 350 local children</li>
+        <li><strong>Squash</strong> — Club (W&amp;L) and Varsity; MVP 2023, Most Improved 2021</li>
+        <li><strong>Peer Advisor Program</strong> — mentored incoming students through the transition to high school</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EDUCATION ============ -->
 <section class="wrap" aria-labelledby="work-h">
   <div class="sec-head">
-    <span class="label">Selected work</span>
-    <h2 id="work-h">Valuation &amp; modelling</h2>
-    <p>Two projects, each backed by the workbook that produced it. The models are downloadable so the assumptions can be checked rather than taken on faith.</p>
+    <span class="label">Coursework</span>
+    <h2 id="work-h">Valuation &amp; modelling samples</h2>
+    <p>Course projects from the accounting and finance programme — examples of the technical groundwork behind the advice. Each is backed by the workbook that produced it, so the assumptions can be checked rather than taken on faith.</p>
   </div>
 
   <!-- ============ SYSCO ============ -->
@@ -401,18 +552,16 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
       <h3 id="syy-h">Sysco Corporation</h3>
       <span class="ticker">SYY / NYSE · April 2026</span>
     </div>
-    <p class="case-role">Independent work — discounted FCFF valuation</p>
+    <p class="case-role">Course project — independent FCFF valuation</p>
 
     <div class="case-body">
       <div>
         <p>Sysco is a mature, high-volume, low-margin foodservice distributor holding roughly 17% of the U.S. market. In 2026 it agreed to acquire Jetro Restaurant Depot for $29&nbsp;billion — its largest deal ever — opening the cash-and-carry channel it had never been able to reach.</p>
-        <p>I valued the business on a discounted free cash flow to firm basis, forecasting FY2026–FY2030 from the filings and financing the acquisition the way management said it would: roughly $22&nbsp;billion of new debt. That shifts the capital structure to a near-equal debt-equity mix, so the discount rate had to be rebuilt on a post-acquisition levered beta rather than the standalone one — a <strong>6.19% WACC</strong> against a 1.8% terminal growth rate drawn from the CBO's long-run GDP projection.</p>
-        <p>The base case is deliberately conservative: organic growth at the low end of management guidance, Jetro contributing only half a year of revenue in FY2027, and synergies capped at the $250&nbsp;million the company itself guided to. Even so, both terminal-value methods put the shares well above where they trade.</p>
+        <p>I valued the business on a discounted free cash flow to firm basis, forecasting FY2026–FY2030 from the filings and financing the acquisition the way management said it would: roughly $22&nbsp;billion of new debt. That shifts the capital structure to a near-equal debt-equity mix, so the discount rate had to be rebuilt on a post-acquisition levered beta rather than the standalone one — a <strong>6.19% WACC</strong> against 1.8% terminal growth. The base case is deliberately conservative: growth at the low end of guidance, and synergies capped at the $250&nbsp;million the company itself guided to.</p>
       </div>
 
       <dl class="stats">
         <div class="stat"><dt>Market price</dt><dd>$73.24</dd></div>
-        <div class="stat"><dt>WACC</dt><dd>6.19%</dd></div>
         <div class="stat">
           <dt>Perpetuity method</dt>
           <dd>$108.72<span class="delta up-ink">+48.4% upside</span></dd>
@@ -421,7 +570,6 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
           <dt>Exit multiple method</dt>
           <dd>$96.48<span class="delta up-ink">+31.7% upside</span></dd>
         </div>
-        <div class="stat"><dt>Terminal growth</dt><dd>1.8%</dd></div>
         <div class="stat"><dt>Recommendation</dt><dd>Strong Buy</dd></div>
       </dl>
     </div>
@@ -431,7 +579,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
         <h4>WACC sensitivity</h4>
         <span class="label" style="color:var(--brass-ink)">Base case 6.19% / 1.8%</span>
       </div>
-      <p class="grid-note">The thesis does not depend on the base case being right. Across the whole plausible range of discount rates and terminal growth — 5.5% to 8.0% WACC, 1.0% to 3.0% growth — only the most punitive corner of the grid puts Sysco below its market price. Hover or focus any cell for the implied return.</p>
+      <p class="grid-note">Only the most punitive corner of the grid puts Sysco below its market price. Hover or focus any cell for the implied return.</p>
 
       <div class="scroller" tabindex="0" role="region" aria-labelledby="sens-cap">
         <table class="sens">
@@ -510,173 +658,50 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
         <li><a class="file" href="assets/Sysco-Valuation-Writeup.pdf">
           <span class="fname">Valuation write-up</span>
           <span class="fmeta">PDF · 14 pp</span>
-          <span class="fdesc">Full report: business and industry analysis, cross-sectional ratio work against USFD, PFGC and UNFI, the FCFF build, the DDM bear case, and the WACC derivation.</span>
+          <span class="fdesc">Business and industry analysis, ratio work against USFD, PFGC and UNFI, the FCFF build, the DDM bear case and the WACC derivation.</span>
         </a></li>
         <li><a class="file" href="assets/Sysco-Model.xlsx">
           <span class="fname">Valuation model</span>
           <span class="fmeta">XLSX · 14 tabs</span>
-          <span class="fdesc">The live workbook — FCFF build, WACC, DDM, comparables, ratio analysis and restated financial statements. Every figure on this page comes from here.</span>
+          <span class="fdesc">FCFF build, WACC, DDM, comparables, ratio analysis and restated statements. Every figure above comes from here.</span>
         </a></li>
         <li><a class="file" href="assets/Sysco-Stock-Pitch.pdf">
           <span class="fname">Pitch deck</span>
           <span class="fmeta">PDF · 13 pp</span>
           <span class="tag">Team project</span>
-          <span class="fdesc">Prepared with Annie Jennings and Rose Beall for the course pitch. It reflects an earlier pass at the model and carries a $85.79–$95.54 target at a 6.67% WACC; the independent write-up and workbook above supersede those figures.</span>
+          <span class="fdesc">Prepared with Annie Jennings and Rose Beall. An earlier pass — its $85.79–$95.54 target at a 6.67% WACC is superseded by the write-up and workbook above.</span>
         </a></li>
       </ul>
     </div>
   </article>
 
   <!-- ============ NETFLIX ============ -->
-  <article class="case" aria-labelledby="nflx-h">
+  <article class="case case-compact" aria-labelledby="nflx-h">
     <div class="case-head">
       <h3 id="nflx-h">Netflix, Inc.</h3>
       <span class="ticker">NFLX / NASDAQ</span>
     </div>
-    <p class="case-role">Independent work — three-statement forecast &amp; DCF</p>
+    <p class="case-role">Course project — three-statement forecast &amp; DCF</p>
 
-    <div class="case-body">
-      <div>
-        <p>A five-year integrated forecast built from the 2021–2023 filings: income statement, balance sheet and cash flow statement linked so that cash falls out as the balancing item rather than being assumed. Every driver is stated on the sheet with the basis beside it — revenue growth against management's 13–15% guidance, COGS at the historical average, content amortisation in the high single digits, and content additions held at the $17&nbsp;billion management pointed to.</p>
-        <p>The discipline the model enforces is the rollforward: content assets, PP&amp;E, debt, common stock, treasury stock and retained earnings each roll from opening to closing balance, so the balance sheet has to tie before the DCF is allowed to mean anything.</p>
-        <p>Discounted at 10% with 3% terminal growth, the model puts enterprise value about 16% above where the market had it at the valuation date — a gap driven mostly by the terminal value, which is why the sensitivity table matters more than the point estimate.</p>
-      </div>
+    <p class="compact-body">A five-year integrated forecast from the 2021–2023 filings, with income statement, balance sheet and cash flow linked so that cash falls out as the balancing item rather than being assumed. Content assets, PP&amp;E, debt and equity each roll forward, so the balance sheet has to tie before the DCF is allowed to mean anything.</p>
 
-      <dl class="stats">
-        <div class="stat"><dt>Model enterprise value</dt><dd>$253.3B</dd></div>
-        <div class="stat">
-          <dt>Market enterprise value</dt>
-          <dd>$219.0B<span class="delta up-ink">model +15.7%</span></dd>
-        </div>
-        <div class="stat"><dt>Discount rate</dt><dd>10.0%</dd></div>
-        <div class="stat"><dt>Terminal growth</dt><dd>3.0%</dd></div>
-        <div class="stat"><dt>Forecast horizon</dt><dd>2024–2028</dd></div>
-        <div class="stat"><dt>FY28 revenue</dt><dd>$63.2B</dd></div>
-      </dl>
-    </div>
+    <p class="inline-stats">
+      <span><b>$253.3B</b> model EV</span>
+      <span><b>$219.0B</b> market EV</span>
+      <span><b>10.0%</b> discount rate</span>
+      <span><b>2024–2028</b> forecast</span>
+    </p>
 
     <div class="files">
-      <h4>Supporting material</h4>
       <ul>
         <li><a class="file" href="assets/Netflix-Forecast-Model.xlsx">
           <span class="fname">Forecast model</span>
           <span class="fmeta">XLSX · 5 tabs</span>
-          <span class="fdesc">Summary, income statement, balance sheet, cash flow forecast and DCF, including the enterprise-value sensitivity across discount rate and terminal growth.</span>
+          <span class="fdesc">Summary, income statement, balance sheet, cash flow forecast and DCF, with the enterprise-value sensitivity table.</span>
         </a></li>
       </ul>
     </div>
   </article>
-</section>
-
-<!-- ============ EXPERIENCE ============ -->
-<section class="wrap" aria-labelledby="exp-h">
-  <div class="sec-head">
-    <span class="label">Experience</span>
-    <h2 id="exp-h">Where I've worked</h2>
-  </div>
-
-  <div class="roles">
-    <article class="role">
-      <p class="role-when">June – August 2026</p>
-      <div>
-        <h3>Client Advisory Intern</h3>
-        <p class="where">Bessemer Trust — New York, NY</p>
-        <ul>
-          <li>Supported high-net-worth client relationships across investment management, trust administration, private banking, philanthropy, custody, reporting and account onboarding.</li>
-          <li>Prepared client meeting books, market value updates, statements of assets and customised Excel analyses.</li>
-          <li>Helped develop and present an asset-allocation recommendation incorporating portfolio risk, spending, liquidity, taxes, charitable giving, private investments and intergenerational transfer goals.</li>
-        </ul>
-      </div>
-    </article>
-
-    <article class="role">
-      <p class="role-when">June – July 2025</p>
-      <div>
-        <h3>Wealth Management Summer Analyst</h3>
-        <p class="where">Morgan Stanley Wealth Management — Houston, TX</p>
-        <ul>
-          <li>Assisted in structuring multi-million dollar trades by researching and analysing fund strategies.</li>
-          <li>Developed five comprehensive financial plans and asset allocations for high-net-worth clients.</li>
-          <li>Built an amortisation schedule for a $10M liquid access loan for strategic debt repayment planning.</li>
-          <li>Contributed to portfolio optimisation by evaluating fund managers and stock selection.</li>
-        </ul>
-      </div>
-    </article>
-
-    <article class="role">
-      <p class="role-when">April 2024 – Present</p>
-      <div>
-        <h3>Academic Tutor — Finance, Accounting &amp; Economics</h3>
-        <p class="where">W&amp;L Peer Tutoring Program — Lexington, VA</p>
-        <ul>
-          <li>Provide one-to-one academic support, tailoring explanation to how each student actually learns.</li>
-          <li>Run study sessions, unpack complex concepts and build workable study strategies.</li>
-        </ul>
-      </div>
-    </article>
-
-    <article class="role">
-      <p class="role-when">June – August 2024</p>
-      <div>
-        <h3>Cabin Management &amp; General Staff</h3>
-        <p class="where">Paradise Guest Ranch — Buffalo, WY</p>
-        <ul>
-          <li>Oversaw sales and inventory at the general store; supported dining operations and guest activities.</li>
-        </ul>
-      </div>
-    </article>
-
-    <article class="role">
-      <p class="role-when">December 2021 – June 2022</p>
-      <div>
-        <h3>Production &amp; Sales Associate</h3>
-        <p class="where">Three Sisters Cheese Straws — Richmond, VA</p>
-        <ul>
-          <li>Secured product distribution in two additional retail locations by pitching directly to store owners.</li>
-        </ul>
-      </div>
-    </article>
-  </div>
-</section>
-
-<!-- ============ EDUCATION ============ -->
-<section class="wrap" aria-labelledby="edu-h">
-  <div class="sec-head">
-    <span class="label">Background</span>
-    <h2 id="edu-h">Education, skills &amp; leadership</h2>
-  </div>
-
-  <div class="cols">
-    <div class="card">
-      <h3>Washington and Lee University</h3>
-      <p class="where">Accounting &amp; Finance · Expected May 2027</p>
-      <ul>
-        <li>GPA 3.90 / 4.00 — President's List</li>
-        <li>Managerial Finance, Corporate Financial Reporting, Individual Income Taxation &amp; Financial Planning, Statistics for Economics</li>
-        <li>Peer Tutoring, Club Squash, Toastmasters, Campus Kitchen, Mock Convention, WLU Radio</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h3>Skills</h3>
-      <p class="where">Tools &amp; methods</p>
-      <ul>
-        <li>Excel — three-statement modelling, DCF/FCFF, DDM, comparables, sensitivity analysis</li>
-        <li>Wall Street Prep certification</li>
-        <li>Microsoft Suite; Spanish</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h3>Leadership</h3>
-      <p class="where">Selected</p>
-      <ul>
-        <li><strong>Richmond 100-4-100</strong> — Co-Head; directed a 100+ member charity group, securing $40,000 in donations to support 350 local children</li>
-        <li><strong>Squash</strong> — Club (W&amp;L) and Varsity; MVP 2023, Most Improved 2021</li>
-        <li><strong>Peer Advisor Program</strong> — mentored incoming students through the transition to high school</li>
-      </ul>
-    </div>
-  </div>
 </section>
 
 <!-- ============ CONTACT ============ -->
@@ -685,7 +710,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
     <div class="sec-head">
       <span class="label">Contact</span>
       <h2 id="contact-h">Get in touch</h2>
-      <p>I'm open to conversations about analyst roles in investment banking, equity research and wealth management.</p>
+      <p>I'm open to conversations about roles in wealth management, private client advisory and accounting.</p>
     </div>
     <div class="contact-row">
       <a class="mailto" href="mailto:gbrockenbrough@mail.wlu.edu">gbrockenbrough@mail.wlu.edu</a>
