@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Grace Brockenbrough — Wealth Management &amp; Accounting</title>
-<meta name="description" content="Grace Brockenbrough — accounting and finance at Washington and Lee University, focused on private client wealth management. Client advisory experience at Bessemer Trust and Morgan Stanley.">
+<meta name="description" content="Grace Brockenbrough — accounting and finance at Washington and Lee University, joining Bessemer Trust as a full-time Associate Client Advisor in July 2027. Private client wealth management and accounting.">
 <meta name="author" content="Grace Brockenbrough">
 <link rel="canonical" href="https://gracebrockenbrough.com/">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://gracebrockenbrough.com/">
 <meta property="og:title" content="Grace Brockenbrough — Wealth Management &amp; Accounting">
-<meta property="og:description" content="Grace Brockenbrough — accounting and finance at Washington and Lee University, focused on private client wealth management. Client advisory experience at Bessemer Trust and Morgan Stanley.">
+<meta property="og:description" content="Grace Brockenbrough — accounting and finance at Washington and Lee University, joining Bessemer Trust as a full-time Associate Client Advisor in July 2027. Private client wealth management and accounting.">
 <meta property="og:image" content="https://gracebrockenbrough.com/assets/headshot.jpg">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Grace Brockenbrough — Wealth Management &amp; Accounting">
-<meta name="twitter:description" content="Grace Brockenbrough — accounting and finance at Washington and Lee University, focused on private client wealth management. Client advisory experience at Bessemer Trust and Morgan Stanley.">
+<meta name="twitter:description" content="Grace Brockenbrough — accounting and finance at Washington and Lee University, joining Bessemer Trust as a full-time Associate Client Advisor in July 2027. Private client wealth management and accounting.">
 <meta name="twitter:image" content="https://gracebrockenbrough.com/assets/headshot.jpg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -185,6 +185,45 @@ section + section{border-top:1px solid var(--rule)}
 .sec-head h2{font-size:clamp(1.6rem,1.25rem + 1.5vw,2.35rem)}
 .sec-head p{margin-top:.9rem;max-width:var(--measure);color:var(--ink-mute)}
 
+/* ---------- curriculum ---------- */
+.curric{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:clamp(1.75rem,3vw,2.4rem) clamp(1.5rem,3vw,3rem);
+  margin-bottom:clamp(2.75rem,5vw,3.75rem);
+  align-items:start;
+}
+/* Accounting carries far more rows than the rest, so give it its own column
+   and stack the three shorter groups beside it instead of leaving dead space. */
+@media (min-width:52rem){
+  .curric{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cgroup:nth-child(1){grid-column:1;grid-row:1}
+  .cgroup:nth-child(2){grid-column:2;grid-row:1 / span 3}
+  .cgroup:nth-child(3){grid-column:1;grid-row:2}
+  .cgroup:nth-child(4){grid-column:1;grid-row:3}
+}
+.cgroup h3{
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--navy);
+  padding-bottom:.5rem;border-bottom:1px solid var(--navy);
+}
+.cgroup ul{list-style:none;margin:0;padding:0}
+.cgroup li{
+  display:grid;
+  grid-template-columns:5.4rem minmax(0,1fr);
+  gap:.15rem .8rem;
+  padding:.6rem 0;
+  border-bottom:1px solid var(--rule);
+}
+.cc{font-family:var(--mono);font-size:.74rem;font-weight:600;color:var(--brass-ink);padding-top:.1rem}
+.ct{font-size:.92rem;line-height:1.4}
+.cy{
+  grid-column:2;font-family:var(--mono);font-size:.66rem;
+  letter-spacing:.06em;color:var(--ink-mute);
+}
+.cy em{font-style:normal;color:var(--brass-ink)}
+.proj-heading{margin-bottom:1.2rem}
+
 /* ---------- case study ---------- */
 .case{border-top:2px solid var(--navy);padding-top:1.6rem}
 .case + .case{margin-top:clamp(3rem,6vw,4.5rem)}
@@ -305,6 +344,66 @@ td.cell:hover::after,td.cell:focus-visible::after{opacity:1}
   padding:.1rem .4rem;white-space:nowrap;
 }
 
+/* ---------- featured role ---------- */
+.feature{
+  border:1px solid var(--rule-strong);
+  border-top:3px solid var(--brass);
+  background:rgba(255,255,255,.42);
+  padding:clamp(1.5rem,3.5vw,2.5rem);
+  margin-bottom:clamp(2.5rem,5vw,3.5rem);
+}
+.feature-head{
+  display:flex;flex-wrap:wrap;justify-content:space-between;
+  align-items:baseline;gap:.5rem 2rem;
+}
+.feature-tag{color:var(--brass-ink);display:block;margin:0 0 .55rem}
+.feature-head h3{font-size:clamp(1.35rem,1.1rem + 1.1vw,1.9rem)}
+.feature-where{
+  font-family:var(--mono);font-size:.82rem;letter-spacing:.05em;
+  color:var(--brass-ink);margin:.4rem 0 0;
+}
+.feature-when{
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-mute);margin:0;white-space:nowrap;
+}
+.feature-offer{
+  margin:1.35rem 0 0;padding:.85rem 1.1rem;
+  border-left:3px solid var(--brass);
+  background:rgba(156,124,56,.09);
+  font-size:.98rem;color:#22313f;max-width:70ch;
+}
+.feature-offer strong{font-weight:600;color:var(--navy)}
+.feature-lead{
+  margin:1.35rem 0 0;max-width:78ch;color:#22313f;
+  padding-bottom:1.6rem;border-bottom:1px solid var(--rule);
+}
+.feature-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr));
+  gap:clamp(1.5rem,3vw,2.5rem);
+  margin-top:1.8rem;
+}
+.fcol h4{
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--navy);
+  padding-bottom:.55rem;margin-bottom:.8rem;
+  border-bottom:1px solid var(--rule-strong);
+}
+.fcol ul{margin:0;padding-left:1.05rem}
+.fcol li{margin-bottom:.55rem;color:#22313f;font-size:.94rem;line-height:1.55}
+.fcol li:last-child{margin-bottom:0}
+.feature-sys{
+  margin:1.9rem 0 0;padding-top:1.1rem;
+  border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:.76rem;color:var(--ink-mute);
+}
+.feature-sys .label{color:var(--brass-ink);margin-right:.7rem}
+.roles-heading{
+  font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);
+  margin-bottom:.6rem;
+}
+
 /* ---------- experience ---------- */
 .roles{display:grid;gap:0;border-top:1px solid var(--rule)}
 .role{
@@ -329,7 +428,35 @@ td.cell:hover::after,td.cell:focus-visible::after{opacity:1}
 .contact{background:var(--navy);color:var(--bone);border-top:3px solid var(--brass)}
 .contact .sec-head .label{color:var(--brass-lt)}
 .contact .sec-head p{color:rgba(241,239,233,.78)}
-.contact-row{display:flex;flex-wrap:wrap;gap:1rem 2.5rem;align-items:center}
+.contact-card{
+  display:grid;
+  grid-template-columns:clamp(9rem,17vw,13.5rem) minmax(0,1fr);
+  gap:clamp(1.5rem,4vw,3rem);
+  align-items:center;
+}
+.contact-portrait{
+  width:100%;height:auto;aspect-ratio:1;object-fit:cover;
+  border:1px solid rgba(241,239,233,.35);
+  outline:1px solid var(--brass);outline-offset:.55rem;
+}
+.contact-name{
+  font-family:var(--serif);font-size:clamp(1.4rem,1.1rem + 1.2vw,2rem);
+  font-weight:600;line-height:1.15;margin:0;color:var(--bone);
+}
+.contact-sub{
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--brass-lt);margin:.6rem 0 0;
+}
+.contact-dl{
+  margin:1.4rem 0 0;padding-top:1.2rem;
+  border-top:1px solid rgba(241,239,233,.24);
+}
+.contact-dl div{display:grid;grid-template-columns:5rem minmax(0,1fr);gap:.5rem;padding:.35rem 0;align-items:baseline}
+.contact-dl dt{font-family:var(--mono);font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;color:rgba(241,239,233,.62)}
+.contact-dl dd{margin:0;font-size:.95rem;color:var(--bone);overflow-wrap:anywhere}
+.contact-dl a{color:var(--bone);text-decoration-color:var(--brass);text-underline-offset:3px}
+.contact-dl a:hover{color:var(--brass-lt)}
+.resume-link{display:inline-flex;margin-top:1.4rem;border:1px solid rgba(241,239,233,.35);padding:.7rem 1.1rem}
 .mailto{
   font-family:var(--mono);font-size:clamp(.95rem,.85rem + .5vw,1.3rem);
   color:var(--bone);text-decoration:none;
@@ -360,6 +487,11 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
 @media (max-width:37.5rem){
   .stats{grid-template-columns:minmax(0,1fr)}
   .focus{grid-template-columns:minmax(0,1fr);gap:.6rem}
+  .contact-card{grid-template-columns:minmax(0,1fr);justify-items:start;gap:2rem}
+  .contact-portrait{max-width:11rem}
+  .contact-dl div{grid-template-columns:minmax(0,1fr);gap:.1rem}
+  .cgroup li{grid-template-columns:minmax(0,1fr)}
+  .cc{padding-top:0}
   .rail dl div{grid-template-columns:minmax(0,1fr);gap:.1rem;padding:.55rem 1rem}
   table.sens{min-width:30rem}
   table.sens th,table.sens td{padding:.45rem .35rem}
@@ -388,10 +520,10 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
 <header class="hero">
   <div class="wrap hero-grid">
     <div>
-      <p class="label eyebrow">Wealth Management &amp; Accounting — Washington and Lee University</p>
+      <p class="label eyebrow">Accounting &amp; Finance — Washington and Lee University</p>
       <h1><span class="given">Grace M.</span><span class="family">Brockenbrough</span></h1>
-      <p class="instrument">Private client advisory · Accounting · Class of 2027</p>
-      <p class="pitch">Accounting and finance at Washington and Lee, focused on private client wealth management. Two summers supporting high-net-worth families at Bessemer Trust and Morgan Stanley — asset allocation, planning, and the accounting that sits underneath the advice.</p>
+      <p class="instrument">Wealth management · Private client advisory · Class of 2027</p>
+      <p class="pitch">Accounting &amp; Finance at Washington and Lee, pursuing private client wealth management. I return to Bessemer Trust as a full-time Associate Client Advisor in July 2027, after two summers supporting high-net-worth families there and at Morgan Stanley.</p>
 
       <ul class="focus" aria-label="Focus areas">
         <li>Asset allocation &amp; financial planning</li>
@@ -410,12 +542,13 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
         </span>
       </div>
       <dl>
-        <div><dt>Focus</dt><dd>Wealth management &amp; accounting</dd></div>
+        <div><dt>Major</dt><dd>Accounting &amp; Finance</dd></div>
+        <div><dt>Focus</dt><dd>Wealth management</dd></div>
+        <div><dt>Joining</dt><dd>Bessemer Trust<span class="sub">Associate Client Advisor · July 2027</span></dd></div>
         <div><dt>Summer 2026</dt><dd>Bessemer Trust<span class="sub">Client Advisory Intern</span></dd></div>
         <div><dt>Summer 2025</dt><dd>Morgan Stanley<span class="sub">Wealth Management Summer Analyst</span></dd></div>
-        <div><dt>Studying</dt><dd>Accounting &amp; Finance<span class="sub">W&amp;L · May 2027</span></dd></div>
+        <div><dt>Graduating</dt><dd>May 2027<span class="sub">Washington and Lee</span></dd></div>
         <div><dt>GPA</dt><dd>3.90 / 4.00<span class="sub">President’s List</span></dd></div>
-        <div><dt>Certification</dt><dd>Wall Street Prep</dd></div>
         <div><dt>Based</dt><dd>Lexington, Virginia</dd></div>
         <div class="wide"><dt>Contact</dt><dd><a href="mailto:gbrockenbrough@mail.wlu.edu">gbrockenbrough@mail.wlu.edu</a></dd></div>
       </dl>
@@ -429,22 +562,87 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
   <div class="sec-head">
     <span class="label">Experience</span>
     <h2 id="exp-h">Client advisory &amp; wealth management</h2>
-    <p>Two summers in private client work — supporting high-net-worth relationships end to end, from asset allocation and financial planning through reporting, custody and onboarding.</p>
+    <p>Two summers in private client work — supporting high-net-worth relationships end to end, from asset allocation and financial planning through reporting, custody and onboarding — and a full-time offer to return.</p>
   </div>
 
-  <div class="roles">
-    <article class="role">
-      <p class="role-when">June – August 2026</p>
+  <!-- ---------- featured role ---------- -->
+  <article class="feature" aria-labelledby="bess-h">
+    <div class="feature-head">
       <div>
-        <h3>Client Advisory Intern</h3>
-        <p class="where">Bessemer Trust — New York, NY</p>
+        <p class="label feature-tag">Returning full-time</p>
+        <h3 id="bess-h">Client Advisory Intern</h3>
+        <p class="feature-where">Bessemer Trust — New York, NY</p>
+      </div>
+      <p class="feature-when">June – August 2026</p>
+    </div>
+
+    <p class="feature-offer"><strong>Joining Bessemer Trust as an Associate Client Advisor in July 2027</strong>, full-time after graduation — returning to the desk below.</p>
+
+    <p class="feature-lead">Bessemer is a private wealth firm managing money for high-net-worth families, and the Client Advisory desk is where every part of a relationship meets — investments, trusts, banking, tax, philanthropy and reporting. I worked across several advisory teams, taking assignments from associate, client and senior client advisors.</p>
+
+    <div class="feature-grid">
+      <div class="fcol">
+        <h4>Portfolio &amp; asset allocation</h4>
         <ul>
-          <li>Supported high-net-worth client relationships across investment management, trust administration, private banking, philanthropy, custody, reporting and account onboarding.</li>
-          <li>Prepared client meeting books, market value updates, statements of assets and customised Excel analyses.</li>
-          <li>Helped develop and present an asset-allocation recommendation incorporating portfolio risk, spending, liquidity, taxes, charitable giving, private investments and intergenerational transfer goals.</li>
+          <li>Helped build a customised long-term asset allocation for a prospective-client case study, weighing spending, liquidity, risk tolerance, time horizon, charitable goals and wealth-transfer objectives.</li>
+          <li>Ran Implications Models and Monte Carlo simulations to test portfolio outcomes across market conditions.</li>
+          <li>Assessed liquidity needs tied to private equity, venture capital, hedge funds and future capital calls, and the cash reserves clients with illiquid holdings need to carry.</li>
+          <li>Compared separately managed accounts against pooled funds — control over security sales and how gains and losses get realised.</li>
         </ul>
       </div>
-    </article>
+
+      <div class="fcol">
+        <h4>Tax &amp; philanthropy</h4>
+        <ul>
+          <li>Used STATS reporting to estimate tax obligations and fold them into recommendations.</li>
+          <li>Researched tax-efficient strategies — loss harvesting, donor-advised funds, charitable gifting, in-kind donation and separately managed accounts.</li>
+          <li>Prepared grant recommendation forms and ran Bessemer Giving Fund workflows, helping process charitable contributions in the millions.</li>
+          <li>Identified highly appreciated securities that could be donated in kind to improve tax efficiency.</li>
+        </ul>
+      </div>
+
+      <div class="fcol">
+        <h4>Trust &amp; estate</h4>
+        <ul>
+          <li>Completed and reviewed trust distribution requests, testing whether each one aligned with the trust's purpose and its long-term obligations.</li>
+          <li>Weighed beneficiary needs, fairness among beneficiaries and preservation of trust assets.</li>
+          <li>Sat in on next-generation meetings where advisors educate younger family members on trusts, accounts and long-term financial responsibility.</li>
+        </ul>
+      </div>
+
+      <div class="fcol">
+        <h4>Client reporting</h4>
+        <ul>
+          <li>Prepared client meeting books, quarterly and annual reports, and customised presentation materials.</li>
+          <li>Completed weekly market value updates for assets held both internally and at outside institutions.</li>
+          <li>Updated Statements of Assets to capture external brokerage accounts, private investments and other non-Bessemer holdings.</li>
+          <li>Reviewed transaction activity across subaccounts and summarised patterns, unusual activity and significant asset movements for the team.</li>
+        </ul>
+      </div>
+
+      <div class="fcol">
+        <h4>Onboarding &amp; banking</h4>
+        <ul>
+          <li>Supported onboarding of new client accounts — preparing documents, reviewing required information and coordinating across internal teams.</li>
+          <li>Assisted with private banking and checking accounts, including authorised signers, powers of attorney and signature cards.</li>
+          <li>Stood up bill-payment services from onboarding through execution, resolving missing information and rejected transactions.</li>
+        </ul>
+      </div>
+
+      <div class="fcol">
+        <h4>Research</h4>
+        <ul>
+          <li>Researched public companies after major corporate restructurings — valuation, business risk, management, capital allocation and industry trends.</li>
+          <li>Traced historical physical stock certificates through acquisitions, bankruptcies, reorganisations and transfer agents to identify successor companies and potential unclaimed proceeds.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="feature-sys"><span class="label">Systems</span> Atlas · Appway · Workflow · Salesforce · Client Presentation Package · Client Meeting Book</p>
+  </article>
+
+  <h3 class="roles-heading">Earlier roles</h3>
+  <div class="roles">
 
     <article class="role">
       <p class="role-when">June – July 2025</p>
@@ -543,8 +741,49 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
   <div class="sec-head">
     <span class="label">Coursework</span>
     <h2 id="work-h">Valuation &amp; modelling samples</h2>
-    <p>Course projects from the accounting and finance programme — examples of the technical groundwork behind the advice. Each is backed by the workbook that produced it, so the assumptions can be checked rather than taken on faith.</p>
+    <p>The accounting and finance curriculum behind the work, and two course projects that show the technical groundwork applied end to end.</p>
   </div>
+
+  <div class="curric">
+    <div class="cgroup">
+      <h3>Finance</h3>
+      <ul>
+        <li><span class="cc">FIN 359</span><span class="ct">Investments</span><span class="cy">2025–26</span></li>
+        <li><span class="cc">FIN 221</span><span class="ct">Managerial Finance</span><span class="cy">2024–25</span></li>
+      </ul>
+    </div>
+
+    <div class="cgroup">
+      <h3>Accounting</h3>
+      <ul>
+        <li><span class="cc">ACCT 3310</span><span class="ct">Strategic Cost Management &amp; Analysis</span><span class="cy">2026–27 <em>in progress</em></span></li>
+        <li><span class="cc">ACCT 358</span><span class="ct">Individual Income Taxation &amp; Financial Planning</span><span class="cy">2024–25</span></li>
+        <li><span class="cc">ACCT 333</span><span class="ct">Intermediate Financial Reporting II</span><span class="cy">2025–26</span></li>
+        <li><span class="cc">ACCT 332</span><span class="ct">Intermediate Financial Reporting I</span><span class="cy">2024–25</span></li>
+        <li><span class="cc">ACCT 297C</span><span class="ct">Data Analytics for Accountants</span><span class="cy">2025–26</span></li>
+        <li><span class="cc">ACCT 231</span><span class="ct">Corporate Financial Reporting</span><span class="cy">2024–25</span></li>
+        <li><span class="cc">ACCT 100</span><span class="ct">Introduction to Accounting</span><span class="cy">2023–24</span></li>
+      </ul>
+    </div>
+
+    <div class="cgroup">
+      <h3>Economics</h3>
+      <ul>
+        <li><span class="cc">ECON 202</span><span class="ct">Statistics for Economics</span><span class="cy">2023–24</span></li>
+        <li><span class="cc">ECON 100</span><span class="ct">Introduction to Economics</span><span class="cy">2023–24</span></li>
+      </ul>
+    </div>
+
+    <div class="cgroup">
+      <h3>Business</h3>
+      <ul>
+        <li><span class="cc">BUS 220</span><span class="ct">Foundations of Business Communication</span><span class="cy">2024–25</span></li>
+        <li><span class="cc">BUS 217</span><span class="ct">Management &amp; Organizational Behavior</span><span class="cy">2024–25</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="roles-heading proj-heading">Course projects</h3>
 
   <!-- ============ SYSCO ============ -->
   <article class="case" aria-labelledby="syy-h">
@@ -712,12 +951,20 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:.5rem 2rem;justify-content:space-be
       <h2 id="contact-h">Get in touch</h2>
       <p>I'm open to conversations about roles in wealth management, private client advisory and accounting.</p>
     </div>
-    <div class="contact-row">
-      <a class="mailto" href="mailto:gbrockenbrough@mail.wlu.edu">gbrockenbrough@mail.wlu.edu</a>
-      <a class="file" href="assets/Grace-Brockenbrough-Resume.pdf">
-        <span class="fname">Download résumé</span>
-        <span class="fmeta">PDF</span>
-      </a>
+    <div class="contact-card">
+      <img class="contact-portrait" src="assets/headshot.jpg" alt="Grace Brockenbrough" width="720" height="720" decoding="async">
+      <div class="contact-detail">
+        <p class="contact-name">Grace M. Brockenbrough</p>
+        <p class="contact-sub">Accounting &amp; Finance · Washington and Lee University · Class of 2027</p>
+        <dl class="contact-dl">
+          <div><dt>Email</dt><dd><a href="mailto:gbrockenbrough@mail.wlu.edu">gbrockenbrough@mail.wlu.edu</a></dd></div>
+          <div><dt>Based</dt><dd>Lexington, Virginia</dd></div>
+        </dl>
+        <a class="file resume-link" href="assets/Grace-Brockenbrough-Resume.pdf">
+          <span class="fname">Download résumé</span>
+          <span class="fmeta">PDF</span>
+        </a>
+      </div>
     </div>
   </div>
 </section>

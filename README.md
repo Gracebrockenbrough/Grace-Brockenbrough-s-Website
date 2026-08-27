@@ -3,11 +3,15 @@
 Personal professional site. One page, no build step, no dependencies. Open `index.html` in a
 browser to preview.
 
-The page leads with wealth management and accounting: hero, then **Experience** (Bessemer Trust,
-Morgan Stanley), then **Education, skills & leadership**, then **Coursework** — the Sysco and
-Netflix models, framed as samples of the technical groundwork rather than the main event — then
-contact. Sysco stays a full worked example because the sensitivity grid is the one thing a
-recruiter cannot get from a resume; Netflix is a compact entry.
+The page leads with wealth management and accounting: hero, then **Experience** — Bessemer Trust
+as a full-width featured block (six themed columns drawn from the bullet bank, plus the standing
+full-time offer), with earlier roles listed under it — then **Education, skills & leadership**,
+then **Coursework**: the full course list ranked finance → accounting (highest level first) →
+economics → business, followed by the Sysco and Netflix projects. Contact closes with a large
+portrait beside the details.
+
+Sysco stays a full worked example because the sensitivity grid is the one thing a recruiter
+cannot get from a resume; Netflix is a compact entry.
 
 ```
 index.html                 the entire site (HTML + CSS + JS)
@@ -60,13 +64,21 @@ PDF's text or raw bytes.
 
 ## Two things still worth your attention
 
-- **Git history.** The old résumé — home address and cell number — is still in commit `481d795`.
-  Removing the file from the current tree does not remove it from history, so if this repo is
-  made public, that PDF is retrievable. Either publish from a fresh repo with no history, or keep
-  this one private and deploy the built output separately.
+- **Git history.** Two files in commit `481d795` should never be public. The old résumé carries
+  your home address and cell number. The résumé bullet bank carries an "Emails to keep" list —
+  ten Bessemer colleagues' names and work email addresses. Removing them from the current tree
+  does not remove them from history, so if this repo is made public both are retrievable. Publish
+  from a fresh repo with no history, or keep this one private and deploy the built output
+  separately. The bullet bank's work content is used on the page; the email list is not, and
+  should not be.
 - **The résumé runs to 1.1 pages** — about 64 words spill onto page two, which reads badly in
   finance recruiting. Margins are already tight (0.35" / 0.75") and widening them doesn't recover
   it, so it needs a content trim. That's an editorial call, so it was left alone.
+
+The Bessemer section is written from the bullet bank rather than the résumé's condensed three
+lines, so it names real systems (Atlas, Appway, Workflow, Salesforce) and specific work — trust
+distribution review, Monte Carlo and Implications Models, Bessemer Giving Fund workflows, stock
+certificate research. Nothing client-identifying is included.
 
 Smaller notes: the headshot was a HEIC file named `.jpg`, which Chrome and Firefox cannot display
 — it is now a real JPEG, cropped from the better colonnade photo, with camera metadata stripped.
