@@ -3,11 +3,14 @@
 Personal professional site. Two pages, no build step, no dependencies. Open `index.html` in a
 browser to preview.
 
-The page is built for a recruiter's first 60 seconds, not as an expanded résumé. Order: hero,
-**what draws me to this work**, selected experience (Bessemer weighted heaviest, Morgan Stanley
-shorter, tutoring lightest), **selected work** as Question / Approach / Result, about, beyond
-finance, leadership, education and skills, contact. Sections get progressively lighter down
-the page.
+The page is built for a recruiter's first 30 seconds, not as an expanded résumé. Order: hero,
+**what draws me to this work**, selected experience, selected work, beyond finance, leadership,
+background, contact. Sections get progressively lighter down the page — experience is the
+heaviest block by a wide margin.
+
+The experiences are sequenced to tell one story: Morgan Stanley (labelled *Investment
+foundation*) → Bessemer (*Client advisory*) → returning as an Associate Client Advisor. Each
+one says what it changed for her rather than describing the firm.
 
 `sysco.html` holds the condensed, readable valuation so that work never depends on someone
 opening a downloaded file. Both pages share `assets/site.css`.
@@ -27,7 +30,6 @@ assets/
   Sysco-Model.xlsx
   Netflix-Forecast-Model.xlsx
   headshot.jpg
-  portrait-colonnade.jpg
 ```
 
 ## Launch checklist
