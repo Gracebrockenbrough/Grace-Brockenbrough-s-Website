@@ -224,12 +224,13 @@ img{max-width:100%;height:auto}
 
 /* ---------- selected work ---------- */
 .projects{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,25rem),1fr));
-  gap:clamp(1.25rem,2.5vw,1.75rem);align-items:start;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,21rem),1fr));
+  gap:clamp(1.25rem,2.5vw,1.75rem);align-items:stretch;
 }
 .project{
   border:1px solid var(--rule-strong);border-top:3px solid var(--brass);
   padding:clamp(1.25rem,2.5vw,1.75rem);background:var(--bone);
+  display:flex;flex-direction:column;
 }
 .sec-warm .project{background:var(--bone-warm)}
 .project-top h3{font-size:clamp(1.12rem,1rem + .5vw,1.35rem);line-height:1.25}
@@ -245,11 +246,12 @@ img{max-width:100%;height:auto}
 }
 .project-result b{font-weight:600}
 .project-tags{
-  margin-top:.9rem;font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;
+  margin-top:auto;padding-top:.9rem;
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;
   color:var(--ink-mute);line-height:1.7;
 }
 .project-link{
-  display:inline-flex;align-items:center;gap:.4rem;margin-top:1.1rem;
+  align-self:flex-start;display:inline-flex;align-items:center;gap:.4rem;margin-top:1.1rem;
   border:1px solid var(--navy);padding:.5rem .9rem;
   font-size:.88rem;font-weight:500;text-decoration:none;
 }
@@ -494,3 +496,4 @@ td.cell:hover::after,td.cell:focus-visible::after{opacity:1}
 .beyond-figure{margin:0 0 clamp(2rem,4vw,2.75rem)}
 .beyond-figure img{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--rule-strong)}
 .beyond-figure figcaption{margin-top:.65rem;font-size:.85rem;color:var(--ink-mute)}
+.project-note{margin-top:1rem;font-size:.85rem;color:var(--ink-mute)}

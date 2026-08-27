@@ -12,6 +12,12 @@ The experiences are sequenced to tell one story: Morgan Stanley (labelled *Inves
 foundation*) → Bessemer (*Client advisory*) → returning as an Associate Client Advisor. Each
 one says what it changed for her rather than describing the firm.
 
+Selected Work carries three projects — the Sysco valuation, the Investments portfolio mandate,
+and the Netflix model. The Investments project is team work with Rose Beall and Annie Jennings
+and is credited as such. Its result was a loss, and the page says so plainly: the interesting
+finding is the attribution, which showed the shortfall came from allocation rather than stock
+selection.
+
 `sysco.html` holds the condensed, readable valuation so that work never depends on someone
 opening a downloaded file. Both pages share `assets/site.css`.
 
@@ -29,6 +35,7 @@ assets/
   Sysco-Stock-Pitch.pdf
   Sysco-Model.xlsx
   Netflix-Forecast-Model.xlsx
+  Investments-Trading-Project.pdf
   headshot.jpg
 ```
 
