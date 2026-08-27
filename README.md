@@ -3,24 +3,18 @@
 Personal professional site. Two pages, no build step, no dependencies. Open `index.html` in a
 browser to preview.
 
-The page leads with wealth management and accounting: hero, then **Experience** — Bessemer Trust
-as a full-width featured block (six themed columns drawn from the bullet bank, plus the standing
-full-time offer), with earlier roles listed under it — then **Education, leadership & skills**,
-then **Coursework**: the full course list ranked finance → accounting (highest level first) →
-economics → business, followed by the Sysco and Netflix projects. Contact closes with a large
-portrait beside the details.
+The page is built for a recruiter's first 60 seconds, not as an expanded résumé. Order: hero,
+**what draws me to this work**, selected experience (Bessemer weighted heaviest, Morgan Stanley
+shorter, tutoring lightest), **selected work** as Question / Approach / Result, about, beyond
+finance, leadership, education and skills, contact. Sections get progressively lighter down
+the page.
 
-Sysco stays a full worked example because the sensitivity grid is the one thing a recruiter
-cannot get from a resume; Netflix is a compact entry.
+`sysco.html` holds the condensed, readable valuation so that work never depends on someone
+opening a downloaded file. Both pages share `assets/site.css`.
 
-**`sysco.html`** exists so the Sysco work never depends on someone opening a downloaded file. It
-is a condensed, readable version of the write-up — thesis, the Jetro deal, assumptions, the WACC
-build, results, the live sensitivity grid, the downside case and the risks — with a disclaimer at
-the top stating plainly that detail has been abbreviated, and the full write-up, workbook and deck
-linked at the foot. It is listed first under the Sysco supporting material, above the downloads.
-
-The CSS moved to `assets/site.css` so both pages share one stylesheet. Still no build step and no
-dependencies; the pages just link a file instead of carrying an inline `<style>` block.
+Monospace is deliberately restricted to section eyebrows and figures — dates, roles, locations
+and supporting text all use the sans face, which is what makes it read editorial rather than
+technical.
 
 ```
 index.html                 the main page
@@ -33,6 +27,7 @@ assets/
   Sysco-Model.xlsx
   Netflix-Forecast-Model.xlsx
   headshot.jpg
+  portrait-colonnade.jpg
 ```
 
 ## Launch checklist
@@ -73,6 +68,22 @@ existed as `.docx`, so the published PDF is built from that — Bessemer Trust, 
 3.90 GPA — with the phone number removed. Verified: no trace of the address or number in the
 PDF's text or raw bytes.
 
+## Facts checked against the résumé
+
+Three things to know, all flagged rather than silently decided:
+
+- **Dean's List was removed.** An earlier draft listed it for St. Catherine's, taken from the old
+  high-school résumé PDF. Your current résumé lists only Cum Laude Society and High Honor Roll,
+  so the page now shows those.
+- **Most Improved Player is shown as 2021.** Your current résumé says 2021; the older high-school
+  PDF said 2020. If 2020 is right, change it in `index.html`.
+- **Kappa Kappa Gamma is on the site but not on your résumé.** You asked for it, so it is in the
+  activities line — worth adding to the résumé so the two match.
+
+Everything else — dates, employers, titles, GPAs, the $40,000 / 100+ / 350 figures, the Morgan
+Stanley evidence — matches the résumé exactly. British spellings were converted throughout
+(amortization, optimization, modeling, customized).
+
 ## Two things still worth your attention
 
 - **Git history.** Two files in commit `481d795` should never be public. The old résumé carries
@@ -82,6 +93,9 @@ PDF's text or raw bytes.
   from a fresh repo with no history, or keep this one private and deploy the built output
   separately. The bullet bank's work content is used on the page; the email list is not, and
   should not be.
+- **The résumé is now behind the site.** It does not mention Kappa Kappa Gamma, the Bessemer
+  full-time offer, or the newer coursework. Worth a refresh so a recruiter reading both sees
+  one story.
 - **The résumé runs to 1.1 pages** — about 64 words spill onto page two, which reads badly in
   finance recruiting. Margins are already tight (0.35" / 0.75") and widening them doesn't recover
   it, so it needs a content trim. That's an editorial call, so it was left alone.
@@ -123,10 +137,15 @@ Navy `#0A1B33`, bone `#F1EFE9`, brass `#9C7C38`. Fraunces for display, Inter for
 Mono for data and labels — mono because that's the native register of a tearsheet, and it keeps
 the numbers from reading as decoration.
 
-The hero is built as a security tearsheet: name as the instrument, key facts in a right-hand data
-rail, and a focus strip naming the four things you actually work on. The signature element is the
-live WACC sensitivity grid in the Sysco case study — real numbers from your model, coloured
-against the $73.24 market price, hoverable for the implied upside at every cell.
+The hero is open and human rather than a data card: the name at full size, one restrained
+identifier line, a short statement of what actually interests you, a small "Next" chip for the
+Bessemer return, and a large portrait. The dense profile rail that used to sit there was removed —
+every fact in it appears elsewhere on the page, and it made the opening read like a database
+record.
+
+The signature element is the live WACC sensitivity grid inside the Sysco valuation — real numbers
+from your model, colored against the $73.24 market price, hoverable for the implied upside at
+every cell.
 
 Every figure on the page is generated from `Sysco-Model.xlsx` rather than typed in by hand, and
 cross-checked against the write-up.
