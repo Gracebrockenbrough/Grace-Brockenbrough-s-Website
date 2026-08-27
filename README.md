@@ -1,11 +1,11 @@
 # gracebrockenbrough.com
 
-Personal professional site. One page, no build step, no dependencies. Open `index.html` in a
+Personal professional site. Two pages, no build step, no dependencies. Open `index.html` in a
 browser to preview.
 
 The page leads with wealth management and accounting: hero, then **Experience** — Bessemer Trust
 as a full-width featured block (six themed columns drawn from the bullet bank, plus the standing
-full-time offer), with earlier roles listed under it — then **Education, skills & leadership**,
+full-time offer), with earlier roles listed under it — then **Education, leadership & skills**,
 then **Coursework**: the full course list ranked finance → accounting (highest level first) →
 economics → business, followed by the Sysco and Netflix projects. Contact closes with a large
 portrait beside the details.
@@ -13,9 +13,20 @@ portrait beside the details.
 Sysco stays a full worked example because the sensitivity grid is the one thing a recruiter
 cannot get from a resume; Netflix is a compact entry.
 
+**`sysco.html`** exists so the Sysco work never depends on someone opening a downloaded file. It
+is a condensed, readable version of the write-up — thesis, the Jetro deal, assumptions, the WACC
+build, results, the live sensitivity grid, the downside case and the risks — with a disclaimer at
+the top stating plainly that detail has been abbreviated, and the full write-up, workbook and deck
+linked at the foot. It is listed first under the Sysco supporting material, above the downloads.
+
+The CSS moved to `assets/site.css` so both pages share one stylesheet. Still no build step and no
+dependencies; the pages just link a file instead of carrying an inline `<style>` block.
+
 ```
-index.html                 the entire site (HTML + CSS + JS)
+index.html                 the main page
+sysco.html                 condensed, readable version of the Sysco valuation
 assets/
+  site.css                 shared stylesheet for both pages
   Grace-Brockenbrough-Resume.pdf
   Sysco-Valuation-Writeup.pdf
   Sysco-Stock-Pitch.pdf
@@ -120,7 +131,10 @@ against the $73.24 market price, hoverable for the implied upside at every cell.
 Every figure on the page is generated from `Sysco-Model.xlsx` rather than typed in by hand, and
 cross-checked against the write-up.
 
-Accessibility: audited with axe-core at 1440px and 390px — zero violations against WCAG 2.1 AA.
+Accessibility: both pages audited with axe-core at 1440px and 390px — zero violations against
+WCAG 2.1 AA. The one item axe leaves as "needs review" on `sysco.html` at 390px is a measurement
+artifact: the wide tables scroll inside their own containers, so axe cannot read the background
+through the clip. Measured directly, those cells are 15:1 and the caption 5.2:1.
 Brass is only used at small sizes in a darkened variant that clears 4.5:1; the grid tints are
 capped so the delta text stays legible. Sensitivity cells are keyboard-focusable and each carries
 a full spoken label. Keyboard focus states, reduced-motion support, print styles and mobile
