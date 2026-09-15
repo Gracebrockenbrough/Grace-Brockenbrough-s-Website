@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parametric Colonnade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#DFE1DA;
+  --panel:#F5F6F1;
+  --raised:#FCFCF8;
+  --edge:#C3C7BC;
+  --edge-soft:#D8DBD1;
+  --ink:#1E211C;
+  --ink-2:#565B51;
+  --ink-3:#868C7F;
+  --annot:#2F6E8F;
+  --accent:#0B4DA2;
+  --shadow:0 1px 2px rgba(30,33,28,.06), 0 12px 30px rgba(30,33,28,.09);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E100E;
+    --panel:#191C18;
+    --raised:#1F231E;
+    --edge:#343A31;
+    --edge-soft:#262B23;
+    --ink:#E8EAE3;
+    --ink-2:#A8AEA0;
+    --ink-3:#79806F;
+    --annot:#6FB3D2;
+    --accent:#86AEF2;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 14px 34px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E100E;
+  --panel:#191C18;
+  --raised:#1F231E;
+  --edge:#343A31;
+  --edge-soft:#262B23;
+  --ink:#E8EAE3;
+  --ink-2:#A8AEA0;
+  --ink-3:#79806F;
+  --annot:#6FB3D2;
+  --accent:#86AEF2;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 14px 34px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:Barlow,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+}
+.wrap{
+  max-width:1280px;
+  margin:0 auto;
+  padding-block:clamp(18px,3.4vw,38px);
+  padding-left:max(16px,2.6vw);
+  padding-right:max(16px,2.6vw);
+}
+.eyebrow{
+  font-family:"Barlow Condensed","Arial Narrow",sans-serif;
+  font-weight:600;font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 8px;
+}
+h1{
+  font-family:"Barlow Condensed","Arial Narrow",sans-serif;
+  font-weight:700;
+  font-size:clamp(32px,5.6vw,50px);
+  line-height:1;
+  letter-spacing:.005em;
+  text-transform:uppercase;
+  margin:0;
+  text-wrap:balance;
+}
+.lede{margin:12px 0 0;max-width:62ch;color:var(--ink-2)}
+header.top{margin-bottom:clamp(18px,2.6vw,28px)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:clamp(14px,2vw,24px);align-items:start}
+.layout>*{min-width:0}
+@media (max-width:920px){.layout{grid-template-columns:1fr}}
+
+/* ---- the sheet ---- */
+.sheetwrap{
+  background:var(--raised);
+  border:1px solid var(--edge);
+  box-shadow:var(--shadow);
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+.sheetwrap svg{display:block;width:100%;min-width:760px;height:auto}
+.sheetbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-top:10px;
+}
+.hint{font-size:12.5px;color:var(--ink-3);margin:0}
+
+/* ---- parameter column ---- */
+.rail{
+  background:var(--panel);
+  border:1px solid var(--edge);
+  box-shadow:var(--shadow);
+}
+.rail section{padding:13px 15px;border-bottom:1px solid var(--edge-soft)}
+.rail section:last-child{border-bottom:0}
+.rail h2,.notes h2{
+  font-family:"Barlow Condensed","Arial Narrow",sans-serif;
+  font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;
+  color:var(--ink-3);margin:0 0 10px;
+}
+.p{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;margin-bottom:11px}
+.p:last-child{margin-bottom:0}
+.p label{font-size:13px;color:var(--ink-2);grid-column:1}
+.p .val{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink);
+  grid-column:2;text-align:right;
+}
+.p input[type=range]{grid-column:1 / -1;width:100%;margin:2px 0 0;accent-color:var(--accent);height:18px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.row:last-child{margin-bottom:0}
+.row label{font-size:13px;color:var(--ink-2)}
+input[type=color]{
+  width:44px;height:26px;padding:0;border:1px solid var(--edge);background:var(--raised);cursor:pointer;
+}
+input[type=text]{
+  font:inherit;font-size:13px;width:150px;padding:4px 7px;
+  border:1px solid var(--edge);background:var(--raised);color:var(--ink);
+}
+select{
+  font:inherit;font-size:13px;padding:4px 7px;
+  border:1px solid var(--edge);background:var(--raised);color:var(--ink);cursor:pointer;
+}
+.toggles{display:flex;flex-wrap:wrap;gap:6px}
+.tg{
+  font-family:"Barlow Condensed","Arial Narrow",sans-serif;
+  font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;
+  padding:5px 9px;border:1px solid var(--edge);background:var(--raised);color:var(--ink-2);cursor:pointer;
+}
+.tg[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .tg[aria-pressed="true"],
+:root:not([data-theme="light"]) .tg[aria-pressed="true"]{color:#0E100E}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .tg[aria-pressed="true"]{color:#fff}}
+button.btn{
+  font:inherit;font-weight:600;font-size:13px;
+  padding:8px 13px;border:1px solid var(--edge);background:var(--raised);color:var(--ink);cursor:pointer;
+}
+button.btn:hover{border-color:var(--ink-3)}
+button.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+button.btn.primary:hover{opacity:.88}
+button.btn:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btnrow{display:flex;gap:7px;flex-wrap:wrap}
+
+/* ---- derived spec ---- */
+.spec{margin:0;display:grid;grid-template-columns:1fr auto;gap:5px 10px}
+.spec dt{font-size:12.5px;color:var(--ink-2)}
+.spec dd{
+  margin:0;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:12.5px;font-variant-numeric:tabular-nums;text-align:right;
+}
+.spec dd.hi{color:var(--annot)}
+
+/* ---- notes ---- */
+.notes{
+  margin-top:clamp(16px,2.4vw,26px);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:clamp(14px,2vw,22px);
+  border-top:1px solid var(--edge);padding-top:16px;
+}
+.notes p{margin:0 0 9px;font-size:13.5px;color:var(--ink-2);max-width:60ch}
+.notes p:last-child{margin-bottom:0}
+.notes b{color:var(--ink);font-weight:600}
+.notes a{color:var(--annot)}
+.roster{margin:0;padding:0;list-style:none}
+.roster li{
+  display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:baseline;
+  font-size:13px;padding:4px 0;border-bottom:1px dotted var(--edge-soft);
+}
+.roster li:last-child{border-bottom:0}
+.roster .no{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);
+}
+.roster .yr{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Measured drawing / parametric model</p>
+  <h1>The Colonnade</h1>
+  <p class="lede">Washington and Lee University, Lexington, Virginia. Five Greek Revival buildings behind one continuous white portico, drawn here entirely from code: every column, opening and cornice comes from the dimensions in the parameter list, in feet. Change a number and the sheet redraws.</p>
+</header>
+
+<main class="layout">
+  <div>
+    <div class="sheetwrap" id="sheetwrap"></div>
+    <div class="sheetbar">
+      <p class="hint">Drag any slider to regenerate the drawing. On a narrow screen, scroll the sheet sideways.</p>
+      <div class="btnrow">
+        <button class="btn primary" id="b_png" type="button">Save PNG</button>
+        <button class="btn" id="b_svg" type="button">Save SVG</button>
+      </div>
+    </div>
+    <p class="sr" id="announce" role="status" aria-live="polite"></p>
+<section class="notes">
+  <div>
+    <h2>What this is</h2>
+    <p>A <b>parametric model</b>: the drawing is not traced, it is computed. Column positions come from bay width and bay count, the entablature depth follows column diameter, the pediment follows a roof pitch in rise-per-twelve, and the brick course count falls out of wall height at 2 3/4 inches a course. Nothing is drawn by hand, so any dimension you change propagates through the whole sheet.</p>
+    <p>The defaults are <b>proportioned by eye</b> from the Greek Revival originals, not measured from the buildings. Treat the geometry as a study model, not survey data.</p>
+  </div>
+  <div>
+    <h2>The five halls</h2>
+    <ol class="roster" id="roster">
+      <li><span class="no">01</span><span>Newcomb Hall</span><span class="yr">1881</span></li>
+      <li><span class="no">02</span><span>Payne Hall</span><span class="yr">1831</span></li>
+      <li><span class="no">03</span><span>Washington Hall</span><span class="yr">1824</span></li>
+      <li><span class="no">04</span><span>Chavis Hall</span><span class="yr">1842</span></li>
+      <li><span class="no">05</span><span>Tucker Hall</span><span class="yr">1935</span></li>
+    </ol>
+    <p style="margin-top:10px">West to east as you face the Colonnade from the Front Lawn. Washington Hall carries the cupola and the statue of George Washington. Chavis Hall was named Robinson Hall until 2018, when the university renamed it for John Chavis. Tucker Hall was rebuilt after a fire; the row was declared a National Historic Landmark in 1972.</p>
+  </div>
+</section>
+  </div>
+
+  <aside class="rail">
+    <section>
+      <h2>Schemes</h2>
+      <div class="toggles" id="presets">
+        <button class="tg" type="button" data-preset="asbuilt">As built</button>
+        <button class="tg" type="button" data-preset="three">Three halls</button>
+        <button class="tg" type="button" data-preset="ionic">Attenuated</button>
+        <button class="tg" type="button" data-preset="doric">Greek Doric</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Plan</h2>
+      <div class="row">
+        <label for="p_wings">Halls flanking center</label>
+        <select id="p_wings"><option value="1">One a side</option><option value="2" selected>Two a side</option></select>
+      </div>
+      <div class="p">
+        <label for="p_bays">Bays per flanking hall</label><span class="val" id="v_bays">5</span>
+        <input type="range" id="p_bays" min="3" max="9" step="1" value="5">
+      </div>
+      <div class="p">
+        <label for="p_bayw">Bay width, column centers</label><span class="val" id="v_bayw">11'-0"</span>
+        <input type="range" id="p_bayw" min="8" max="16" step="0.5" value="11">
+      </div>
+      <div class="p">
+        <label for="p_cbays">Bays across Washington Hall</label><span class="val" id="v_cbays">4</span>
+        <input type="range" id="p_cbays" min="3" max="8" step="1" value="4">
+      </div>
+      <div class="p">
+        <label for="p_gap">Link between halls</label><span class="val" id="v_gap">2'-0"</span>
+        <input type="range" id="p_gap" min="0" max="10" step="0.5" value="2">
+      </div>
+    </section>
+
+    <section>
+      <h2>Elevation</h2>
+      <div class="row">
+        <label for="p_storeys">Storeys</label>
+        <select id="p_storeys"><option value="2" selected>Two</option><option value="3">Three</option></select>
+      </div>
+      <div class="p">
+        <label for="p_sh">Storey height</label><span class="val" id="v_sh">12'-0"</span>
+        <input type="range" id="p_sh" min="9" max="16" step="0.25" value="12">
+      </div>
+      <div class="p">
+        <label for="p_dia">Column diameter</label><span class="val" id="v_dia">2'-11"</span>
+        <input type="range" id="p_dia" min="1.2" max="3.6" step="0.05" value="2.9">
+      </div>
+      <div class="p">
+        <label for="p_terrace">Terrace above grade</label><span class="val" id="v_terrace">4'-0"</span>
+        <input type="range" id="p_terrace" min="0" max="9" step="0.25" value="4">
+      </div>
+      <div class="p">
+        <label for="p_lift">Center block lift</label><span class="val" id="v_lift">5'-0"</span>
+        <input type="range" id="p_lift" min="0" max="14" step="0.25" value="5">
+      </div>
+      <div class="p">
+        <label for="p_pitch">Pediment pitch, rise in 12</label><span class="val" id="v_pitch">4:12</span>
+        <input type="range" id="p_pitch" min="2" max="9" step="0.5" value="4">
+      </div>
+      <div class="p">
+        <label for="p_cupola">Cupola height</label><span class="val" id="v_cupola">26'-0"</span>
+        <input type="range" id="p_cupola" min="0" max="44" step="1" value="26">
+      </div>
+    </section>
+
+    <section>
+      <h2>Materials</h2>
+      <div class="row">
+        <label for="c_brick">Brick</label>
+        <input type="color" id="c_brick" value="#9E4B36">
+      </div>
+      <div class="row">
+        <label for="c_trim">Painted trim</label>
+        <input type="color" id="c_trim" value="#F3EFE4">
+      </div>
+      <div class="p">
+        <label for="p_sun">Sun, shadow depth</label><span class="val" id="v_sun">55</span>
+        <input type="range" id="p_sun" min="0" max="100" step="1" value="55">
+      </div>
+    </section>
+
+    <section>
+      <h2>Sheet layers</h2>
+      <div class="toggles" id="layers">
+        <button class="tg" type="button" id="t_dims" aria-pressed="true">Dimensions</button>
+        <button class="tg" type="button" id="t_labels" aria-pressed="true">Hall names</button>
+        <button class="tg" type="button" id="t_courses" aria-pressed="true">Brick courses</button>
+        <button class="tg" type="button" id="t_shadow" aria-pressed="true">Shadows</button>
+        <button class="tg" type="button" id="t_statue" aria-pressed="true">Statue</button>
+      </div>
+      <div class="row" style="margin-top:11px">
+        <label for="f_drawn">Drawn by</label>
+        <input type="text" id="f_drawn" value="G. Brockenbrough" maxlength="28">
+      </div>
+      <div class="btnrow" style="margin-top:10px">
+        <button class="btn" id="b_reset" type="button">Reset dimensions</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Derived</h2>
+      <dl class="spec">
+        <dt>Column height</dt><dd id="s_colh">24'-0"</dd>
+        <dt>Slenderness, H:D</dt><dd id="s_ratio">10.7</dd>
+        <dt>Nearest order</dt><dd class="hi" id="s_order">Ionic</dd>
+        <dt>Columns drawn</dt><dd id="s_cols">24</dd>
+        <dt>Bay string</dt><dd id="s_bay">5 @ 11'-0"</dd>
+        <dt>Facade length</dt><dd id="s_len">272'-0"</dd>
+        <dt>Cornice above grade</dt><dd id="s_ridge">31'-5"</dd>
+        <dt>Finial above grade</dt><dd id="s_top">72'-1"</dd>
+        <dt>Brick courses, wall</dt><dd id="s_courses">105</dd>
+      </dl>
+    </section>
+  </aside>
+</main>
+
+
+</div>
+
+<script>
+/* ===== MODEL ======================================================
+   Every dimension below is in FEET. The drawing is generated from
+   them; nothing is traced. PPF converts feet to drawing units.     */
+var PPF=3;
+var PAD_L=96,PAD_R=96,PAD_T=58,PAD_B=88,TITLE_H=78,SHEET_M=13;
+var BASE=0,SHEET_W=0,SHEET_H=0;
+
+var DEFAULTS={
+  wings:2,bays:5,bayw:11,cbays:4,gap:2,
+  storeys:2,sh:12,dia:2.9,terrace:4,lift:5,pitch:4,cupola:26,
+  brick:'#9E4B36',trim:'#F3EFE4',sun:55,
+  dims:true,labels:true,courses:true,shadow:true,statue:true,
+  drawn:'G. Brockenbrough'
+};
+var PRESETS={
+  asbuilt:{},
+  three:{wings:1,bays:6,bayw:11,cbays:4,lift:5,cupola:26,dia:2.25,sh:12},
+  ionic:{dia:1.9,sh:14,storeys:2,bayw:13,lift:8,cupola:34,pitch:3.5},
+  doric:{dia:3.4,sh:11,bayw:10,lift:3,cupola:14,pitch:6,terrace:6}
+};
+var HALLS={
+  5:[['Newcomb Hall','1881'],['Payne Hall','1831'],['Washington Hall','1824'],['Chavis Hall','1842'],['Tucker Hall','1935']],
+  3:[['Payne Hall','1831'],['Washington Hall','1824'],['Chavis Hall','1842']]
+};
+var P=copy(DEFAULTS);
+
+function copy(o){var k,n={};for(k in o)if(o.hasOwnProperty(k))n[k]=o[k];return n}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+/* 22.5 -> 22'-6" */
+function ftin(f){
+  var neg=f<0,ft,inch;
+  f=Math.abs(f);
+  ft=Math.floor(f+1e-9);
+  inch=Math.round((f-ft)*12);
+  if(inch===12){ft++;inch=0}
+  return (neg?'-':'')+ft+"'-"+inch+'"';
+}
+function isDark(){
+  var t=document.documentElement.getAttribute('data-theme');
+  if(t==='dark')return true;
+  if(t==='light')return false;
+  return !!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+function palette(){
+  return isDark()?{
+    paper:'#1A1D19',border:'#454C41',ink:'#E8EAE3',ink2:'#99A091',ink3:'#767D6C',
+    annot:'#6FB3D2',slate:'#464D55',glass:'#10161A',grade:'#6B7264',hatch:'#3A4037',stone:'#6E7468'
+  }:{
+    paper:'#FCFCF8',border:'#9AA092',ink:'#1E211C',ink2:'#5C6257',ink3:'#8A9080',
+    annot:'#2F6E8F',slate:'#5C646C',glass:'#3B454C',grade:'#7C8373',hatch:'#C6CABD',stone:'#D9D7CB'
+  };
+}
+
+/* Derived geometry: what the driving dimensions imply. */
+function geom(p){
+  var g={};
+  g.colH=p.storeys*p.sh;                 /* columns run the full height */
+  g.ent=Math.max(1.5,p.dia*1.5);         /* entablature follows the order */
+  g.wingW=p.bays*p.bayw;
+  g.centerW=p.cbays*p.bayw;
+  g.count=2*p.wings+1;
+  g.total=2*p.wings*(g.wingW+p.gap)+g.centerW;
+  g.corniceTop=p.terrace+g.colH+g.ent;
+  g.centerCornice=g.corniceTop+p.lift;
+  g.pedRise=(g.centerW/2)*(p.pitch/12);
+  g.ridge=g.centerCornice+g.pedRise;
+  g.cupTop=p.cupola>0?g.ridge+p.cupola:g.ridge;
+  g.top=g.cupTop+((p.statue&&p.cupola>0)?7:0);
+  g.ratio=g.colH/p.dia;
+  g.order=g.ratio<6.2?'Greek Doric':g.ratio<7.4?'Tuscan':g.ratio<8.6?'Roman Doric':g.ratio<10.2?'Ionic':'Corinthian';
+  g.cols=2*p.wings*p.bays+p.cbays;
+  g.courses=Math.round((g.colH*12)/2.75);
+  return g;
+}
+function buildings(p,g){
+  var list=[],x=0,i;
+  for(i=0;i<p.wings;i++){list.push({x:x,w:g.wingW,bays:p.bays,center:false});x+=g.wingW+p.gap}
+  list.push({x:x,w:g.centerW,bays:p.cbays,center:true});
+  x+=g.centerW;
+  for(i=0;i<p.wings;i++){x+=p.gap;list.push({x:x,w:g.wingW,bays:p.bays,center:false});x+=g.wingW}
+  return list;
+}
+
+/* ===== DRAWING PRIMITIVES ======================================== */
+function X(f){return (PAD_L+f*PPF).toFixed(1)}
+function Y(f){return (BASE-f*PPF).toFixed(1)}
+function D(f){return (f*PPF).toFixed(1)}
+function rect(x,yTop,w,h,cls,extra){
+  if(w<=0||h<=0)return '';
+  return '<rect class="'+cls+'" x="'+X(x)+'" y="'+Y(yTop)+'" width="'+D(w)+'" height="'+D(h)+'"'+(extra||'')+'/>';
+}
+function line(x1,y1,x2,y2,cls){
+  return '<line class="'+cls+'" x1="'+X(x1)+'" y1="'+Y(y1)+'" x2="'+X(x2)+'" y2="'+Y(y2)+'"/>';
+}
+
+function column(cx,base,h,dia,o){
+  var r=dia/2,top=base+h,
+      capH=dia*0.4,capW=dia*1.36,baseH=dia*0.3,baseW=dia*1.22,
+      shaftBot=base+baseH,shaftTop=top-capH,taper=dia*0.87,sh=shaftTop-shaftBot;
+  o.push('<path class="trim" d="M'+X(cx-r)+' '+Y(shaftBot)+' L'+X(cx-taper/2)+' '+Y(shaftTop)+
+         ' L'+X(cx+taper/2)+' '+Y(shaftTop)+' L'+X(cx+r)+' '+Y(shaftBot)+' Z"/>');
+  o.push(rect(cx-r*0.86,shaftTop,dia*0.26,sh,'hl',' opacity="0.45"'));
+  o.push(rect(cx+r*0.1,shaftTop,dia*0.44,sh,'sh',' opacity="0.18"'));
+  o.push(rect(cx-baseW/2,shaftBot,baseW,baseH,'trim'));
+  o.push(rect(cx-r*1.1,top-capH*0.52,dia*1.1,capH*0.52,'trim'));
+  o.push(rect(cx-capW/2,top,capW,capH*0.5,'trim'));
+}
+
+function opening(cx,sill,w,h,o,door){
+  var i,top=sill+h;
+  o.push(rect(cx-w/2-0.4,top+0.4,w+0.8,h+(door?0.4:0.8),'trim'));
+  o.push(rect(cx-w/2,top,w,h,'glass'));
+  for(i=1;i<3;i++)o.push(line(cx-w/2+w*i/3,sill,cx-w/2+w*i/3,top,'tr'));
+  if(!door){
+    o.push(line(cx-w/2,sill+h/2,cx+w/2,sill+h/2,'tr'));
+    o.push(line(cx-w/2,sill+h*0.25,cx+w/2,sill+h*0.25,'tr'));
+    o.push(line(cx-w/2,sill+h*0.75,cx+w/2,sill+h*0.75,'tr'));
+  }else{
+    o.push(line(cx,sill,cx,top,'tr'));
+  }
+}
+
+function cupolaAt(cx,base,h,p,o){
+  var dw=Math.max(5,h*0.42),
+      plH=h*0.10,drumH=h*0.44,cornH=h*0.07,domeH=h*0.24,spire=h*0.15,i,ox;
+  o.push(rect(cx-dw*0.72,base,dw*1.44,plH,'trim'));
+  o.push(rect(cx-dw/2,base+plH+drumH,dw,drumH,'trim'));
+  for(i=0;i<3;i++){
+    ox=cx-dw*0.28+i*dw*0.28;
+    o.push(rect(ox-dw*0.07,base+plH+drumH*0.86,dw*0.14,drumH*0.62,'glass'));
+  }
+  o.push(rect(cx-dw*0.62,base+plH+drumH+cornH,dw*1.24,cornH,'trim'));
+  var dy=base+plH+drumH+cornH;
+  o.push('<path class="slate" d="M'+X(cx-dw*0.54)+' '+Y(dy)+' Q'+X(cx)+' '+Y(dy+domeH*1.9)+' '+
+         X(cx+dw*0.54)+' '+Y(dy)+' Z"/>');
+  o.push('<line class="rod" x1="'+X(cx)+'" y1="'+Y(dy+domeH)+'" x2="'+X(cx)+'" y2="'+Y(dy+domeH+spire)+'"/>');
+  if(p.statue){
+    var sy=dy+domeH+spire,sc=7;
+    o.push(rect(cx-sc*0.26,sy+sc*0.1,sc*0.52,sc*0.1,'fig'));
+    o.push('<path class="fig" d="M'+X(cx-sc*0.19)+' '+Y(sy+sc*0.1)+' L'+X(cx-sc*0.1)+' '+Y(sy+sc*0.74)+
+           ' L'+X(cx+sc*0.1)+' '+Y(sy+sc*0.74)+' L'+X(cx+sc*0.19)+' '+Y(sy+sc*0.1)+' Z"/>');
+    o.push('<circle class="fig" cx="'+X(cx)+'" cy="'+Y(sy+sc*0.87)+'" r="'+D(sc*0.12)+'"/>');
+  }else{
+    o.push('<circle class="fig" cx="'+X(cx)+'" cy="'+Y(dy+domeH+spire)+'" r="'+D(0.7)+'"/>');
+  }
+}
+
+function drawBuilding(b,p,g,o){
+  var top=b.center?g.centerCornice:g.corniceTop,
+      colTop=top-g.ent,wallH=colTop-p.terrace,
+      i,s,cx,sill,ow,oh,dx;
+  o.push(rect(b.x,colTop,b.w,wallH,'brick'));
+  if(p.courses)o.push(rect(b.x,colTop,b.w,wallH,'courses'));
+  /* openings sit in the bays between columns */
+  ow=p.bayw*0.4;oh=p.sh*0.5;
+  for(s=0;s<p.storeys;s++){
+    sill=p.terrace+s*p.sh+p.sh*0.24;
+    if(sill+oh>colTop-0.6)continue;
+    for(i=1;i<b.bays;i++){
+      cx=b.x+p.bayw*i;
+      if(s===0&&b.center&&i===Math.round(b.bays/2))
+        opening(cx,p.terrace,ow*1.1,p.sh*0.74,o,true);
+      else opening(cx,sill,ow,oh,o,false);
+    }
+  }
+  if(p.shadow){
+    var op=(0.05+(p.sun/100)*0.15).toFixed(3);
+    o.push(rect(b.x,colTop,b.w,Math.min(1.6,wallH),'sh',' opacity="'+op+'"'));
+    dx=p.dia*0.55+p.dia*(p.sun/100)*1.3;
+    for(i=0;i<b.bays;i++){
+      cx=b.x+p.bayw*(i+0.5);
+      o.push(rect(Math.max(b.x,cx+p.dia*0.45),colTop,
+                  Math.min(dx,b.x+b.w-cx-p.dia*0.45),wallH,'sh',' opacity="'+op+'"'));
+    }
+  }
+  for(i=0;i<b.bays;i++)column(b.x+p.bayw*(i+0.5),p.terrace,g.colH,p.dia,o);
+  /* entablature and cornice */
+  o.push(rect(b.x-0.5,top-g.ent*0.62,b.w+1,g.ent*0.38,'trim'));
+  o.push(rect(b.x-0.9,top,b.w+1.8,g.ent*0.62,'trim'));
+  o.push(rect(b.x-0.9,top,b.w+1.8,g.ent*0.12,'sh',' opacity="0.12"'));
+  if(!b.center){
+    o.push(rect(b.x+0.6,top+1.7,b.w-1.2,1.7,'slate'));
+  }else{
+    var cx0=b.x+b.w/2,half=b.w/2+0.9;
+    o.push('<path class="trim" d="M'+X(b.x-0.9)+' '+Y(top)+' L'+X(cx0)+' '+Y(top+g.pedRise)+
+           ' L'+X(b.x+b.w+0.9)+' '+Y(top)+' Z"/>');
+    o.push('<path class="pedline" d="M'+X(b.x-0.9)+' '+Y(top)+' L'+X(cx0)+' '+Y(top+g.pedRise)+
+           ' L'+X(b.x+b.w+0.9)+' '+Y(top)+'"/>');
+    if(p.cupola>0)cupolaAt(cx0,top+g.pedRise,p.cupola,p,o);
+  }
+}
+
+/* ===== SHEET ASSEMBLY ============================================= */
+function tick(x,y,o){o.push('<path class="dim" d="M'+(x-3.4).toFixed(1)+' '+(y+3.4).toFixed(1)+
+                            ' L'+(x+3.4).toFixed(1)+' '+(y-3.4).toFixed(1)+'"/>')}
+function dimH(x1,x2,y,txt,o,marks){
+  var i;
+  o.push('<line class="dim" x1="'+x1.toFixed(1)+'" y1="'+y+'" x2="'+x2.toFixed(1)+'" y2="'+y+'"/>');
+  tick(x1,y,o);tick(x2,y,o);
+  if(marks)for(i=0;i<marks.length;i++)tick(marks[i],y,o);
+  o.push('<text class="dimt" x="'+((x1+x2)/2).toFixed(1)+'" y="'+(y-6)+'" text-anchor="middle">'+txt+'</text>');
+}
+function dimV(x,y1,y2,txt,o){
+  var my=((y1+y2)/2).toFixed(1);
+  o.push('<line class="dim" x1="'+x+'" y1="'+y1.toFixed(1)+'" x2="'+x+'" y2="'+y2.toFixed(1)+'"/>');
+  tick(x,y1,o);tick(x,y2,o);
+  o.push('<text class="dimt" transform="translate('+(x-5)+','+my+') rotate(-90)" text-anchor="middle">'+txt+'</text>');
+}
+function ext(x1,y1,x2,y2,o){
+  o.push('<line class="ext" x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'"/>');
+}
+function txt(x,y,s,cls,anchor){
+  return '<text class="'+cls+'" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'"'+
+         (anchor?' text-anchor="'+anchor+'"':'')+'>'+esc(s)+'</text>';
+}
+
+function titleBlock(p,g,o,pal){
+  var x0=SHEET_M,x1=SHEET_W-SHEET_M,y0=SHEET_H-SHEET_M-TITLE_H,y1=SHEET_H-SHEET_M,
+      w=x1-x0,fr=[0.30,0.21,0.19,0.20,0.10],cx=x0,i,cw,d=new Date(),
+      mon=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],
+      date=d.getDate()+' '+mon[d.getMonth()]+' '+d.getFullYear(),
+      cells=[];
+  o.push('<rect class="bd" x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+TITLE_H+'"/>');
+  for(i=0;i<fr.length;i++){cw=w*fr[i];cells.push([cx,cw]);cx+=cw;
+    if(i)o.push('<line class="bd" x1="'+cells[i][0].toFixed(1)+'" y1="'+y0+'" x2="'+cells[i][0].toFixed(1)+'" y2="'+y1+'"/>');
+  }
+  function cell(i,key,val,sub){
+    var cx0=cells[i][0]+11,ty=y0+18;
+    o.push(txt(cx0,ty,key,'tbk'));
+    if(val)o.push(txt(cx0,ty+22,val,'tbv'));
+    if(sub)o.push(txt(cx0,ty+39,sub,'tbs'));
+  }
+  cell(0,'PROJECT','THE COLONNADE','Washington and Lee Univ., Lexington VA');
+  cell(1,'DRAWING','FRONT ELEVATION','Parametric study model');
+  cell(3,'DRAWN BY',(p.drawn||'').toUpperCase(),date);
+  cell(4,'SHEET','A-101',g.count+' halls');
+  /* graphic scale, drawn at the same feet-to-unit ratio as the model */
+  var sx=cells[2][0]+11,sy=y0+34,seg=10*PPF;
+  o.push(txt(sx,y0+18,'SCALE','tbk'));
+  for(i=0;i<4;i++)
+    o.push('<rect x="'+(sx+i*seg).toFixed(1)+'" y="'+sy+'" width="'+seg.toFixed(1)+'" height="7" fill="'+
+           (i%2?pal.paper:pal.ink)+'" stroke="'+pal.ink+'" stroke-width="0.6"/>');
+  o.push(txt(sx,sy+21,'0','tbs'));
+  o.push(txt(sx+seg*2,sy+21,'20','tbs','middle'));
+  o.push(txt(sx+seg*4+2,sy+21,'40 FEET','tbs','end'));
+}
+
+function sheetSVG(p){
+  var g=geom(p),pal=palette(),o=[],i,b,bs,drawW,drawH,extra,names,cxs,note;
+  PAD_L=96;PAD_R=96;
+  drawW=g.total*PPF;
+  extra=Math.max(0,(940-(PAD_L+drawW+PAD_R))/2);
+  PAD_L+=extra;PAD_R+=extra;
+  drawH=g.top*PPF+18;
+  SHEET_W=PAD_L+drawW+PAD_R;
+  SHEET_H=PAD_T+drawH+PAD_B+TITLE_H;
+  BASE=PAD_T+drawH;
+  bs=buildings(p,g);
+
+  var courseSpace=Math.max(4.2,(2.75/12)*4*PPF);
+  o.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+SHEET_W.toFixed(0)+' '+SHEET_H.toFixed(0)+
+         '" role="img" aria-label="Front elevation of the Colonnade: '+g.count+' halls, '+g.cols+
+         ' columns '+ftin(g.colH)+' tall, facade '+ftin(g.total)+' long.">');
+  o.push('<defs><pattern id="crs" width="8" height="'+courseSpace.toFixed(2)+
+         '" patternUnits="userSpaceOnUse"><line x1="0" y1="0.4" x2="8" y2="0.4" stroke="#000" stroke-width="0.5" opacity="0.13"/></pattern></defs>');
+  o.push('<style>'+
+    '.paper{fill:'+pal.paper+'}.bd{fill:none;stroke:'+pal.border+';stroke-width:1}'+
+    '.brick{fill:'+p.brick+'}.courses{fill:url(#crs)}.trim{fill:'+p.trim+'}'+
+    '.tr{stroke:'+p.trim+';stroke-width:.55;fill:none;opacity:.85}'+
+    '.glass{fill:'+pal.glass+'}.slate{fill:'+pal.slate+'}.stone{fill:'+pal.stone+'}'+
+    '.sh{fill:#000}.hl{fill:#fff}.fig{fill:'+pal.ink+'}'+
+    '.rod{stroke:'+pal.ink+';stroke-width:1.1}'+
+    '.pedline{fill:none;stroke:'+pal.ink2+';stroke-width:.5;opacity:.45}'+
+    '.grade{stroke:'+pal.grade+';stroke-width:1.3;fill:none}.hatch{stroke:'+pal.hatch+';stroke-width:.7}'+
+    '.dim{stroke:'+pal.annot+';stroke-width:.7;fill:none}.ext{stroke:'+pal.annot+';stroke-width:.5;fill:none;opacity:.55}'+
+    '.dimt{fill:'+pal.annot+';font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px}'+
+    '.nm{fill:'+pal.ink+';font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:11.5px;letter-spacing:.14em;font-weight:600}'+
+    '.yr{fill:'+pal.ink3+';font-family:"IBM Plex Mono",monospace;font-size:9px}'+
+    '.lead{stroke:'+pal.ink3+';stroke-width:.6;fill:none;stroke-dasharray:3 2}'+
+    '.tbk{fill:'+pal.ink3+';font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:8px;letter-spacing:.2em;font-weight:600}'+
+    '.tbv{fill:'+pal.ink+';font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:13px;letter-spacing:.08em;font-weight:600}'+
+    '.tbs{fill:'+pal.ink2+';font-family:"IBM Plex Mono",monospace;font-size:8.5px}'+
+  '</style>');
+  o.push('<rect class="paper" x="0" y="0" width="'+SHEET_W.toFixed(0)+'" height="'+SHEET_H.toFixed(0)+'"/>');
+  o.push('<rect class="bd" x="'+SHEET_M+'" y="'+SHEET_M+'" width="'+(SHEET_W-2*SHEET_M).toFixed(0)+
+         '" height="'+(SHEET_H-2*SHEET_M).toFixed(0)+'"/>');
+
+  /* terrace, steps, buildings */
+  o.push(rect(-1.5,p.terrace,g.total+3,p.terrace+0.01,'stone'));
+  o.push(rect(-1.5,p.terrace,g.total+3,0.5,'sh',' opacity="0.10"'));
+  for(i=0;i<bs.length;i++)drawBuilding(bs[i],p,g,o);
+  var ctr=bs[p.wings],steps=Math.max(0,Math.round(p.terrace/0.62));
+  for(i=0;i<steps;i++){
+    var sw=ctr.w*0.4+i*1.4,sy=p.terrace-i*0.62;
+    o.push(rect(ctr.x+ctr.w/2-sw/2,sy,sw,0.62,'stone'));
+    o.push(line(ctr.x+ctr.w/2-sw/2,sy,ctr.x+ctr.w/2+sw/2,sy,'pedline'));
+  }
+  /* grade */
+  o.push('<line class="grade" x1="'+(SHEET_M+16)+'" y1="'+BASE+'" x2="'+(SHEET_W-SHEET_M-16)+'" y2="'+BASE+'"/>');
+  for(i=SHEET_M+16;i<SHEET_W-SHEET_M-16;i+=11)
+    o.push('<line class="hatch" x1="'+i+'" y1="'+(BASE+7)+'" x2="'+(i+6)+'" y2="'+BASE+'"/>');
+
+  /* ---- annotation layer ---- */
+  if(p.labels){
+    names=HALLS[g.count]||null;
+    for(i=0;i<bs.length;i++){
+      b=bs[i];
+      o.push(txt(parseFloat(X(b.x+b.w/2)),BASE+22,
+                 names?names[i][0].toUpperCase():(b.center?'CENTER HALL':'FLANKING HALL'),'nm','middle'));
+      if(names)o.push(txt(parseFloat(X(b.x+b.w/2)),BASE+34,names[i][1],'yr','middle'));
+    }
+    if(p.cupola>0){
+      var cupX=parseFloat(X(ctr.x+ctr.w/2)),cupY=parseFloat(Y(g.cupTop+(p.statue?5:0))),
+          endX=parseFloat(X(Math.min(g.total+8,ctr.x+ctr.w/2+g.centerW*0.9)));
+      o.push('<path class="lead" d="M'+(cupX+7)+' '+(cupY+6)+' L'+endX+' '+(cupY-4)+'"/>');
+      o.push(txt(endX+5,cupY-6,p.statue?'CUPOLA AND STATUE OF WASHINGTON':'CUPOLA','nm'));
+    }
+  }
+  if(p.dims){
+    var yDim=BASE+(p.labels?56:34);
+    ext(parseFloat(X(0)),BASE+4,parseFloat(X(0)),yDim+7,o);
+    ext(parseFloat(X(g.total)),BASE+4,parseFloat(X(g.total)),yDim+7,o);
+    dimH(parseFloat(X(0)),parseFloat(X(g.total)),yDim,ftin(g.total)+' FACADE',o,null);
+
+    var xL=PAD_L-38,yT=parseFloat(Y(p.terrace)),yC=parseFloat(Y(p.terrace+g.colH));
+    ext(xL-6,yT,parseFloat(X(0)),yT,o);
+    ext(xL-6,yC,parseFloat(X(0)),yC,o);
+    dimV(xL,yT,yC,ftin(g.colH),o);
+
+    var xR=PAD_L+drawW+40;
+    ext(parseFloat(X(g.total)),BASE,xR+6,BASE,o);
+    ext(parseFloat(X(g.total)),parseFloat(Y(g.top)),xR+6,parseFloat(Y(g.top)),o);
+    dimV(xR,BASE,parseFloat(Y(g.top)),ftin(g.top),o);
+
+    b=bs[0];
+    cxs=[];
+    for(i=0;i<b.bays;i++)cxs.push(parseFloat(X(b.x+p.bayw*(i+0.5))));
+    var yBay=parseFloat(Y(g.corniceTop))-26;
+    dimH(parseFloat(X(b.x)),parseFloat(X(b.x+b.w)),yBay,
+         b.bays+' @ '+ftin(p.bayw)+' = '+ftin(b.w),o,cxs);
+  }
+
+  titleBlock(p,g,o,pal);
+  o.push('</svg>');
+  return {svg:o.join(''),g:g};
+}
+
+/* ===== INTERFACE ================================================== */
+function $(id){return document.getElementById(id)}
+function fmtInt(n){return String(n)}
+function fmtPitch(n){return n+':12'}
+var RANGES=[
+  ['p_bays','bays','v_bays',fmtInt],['p_bayw','bayw','v_bayw',ftin],
+  ['p_cbays','cbays','v_cbays',fmtInt],['p_gap','gap','v_gap',ftin],
+  ['p_sh','sh','v_sh',ftin],['p_dia','dia','v_dia',ftin],
+  ['p_terrace','terrace','v_terrace',ftin],['p_lift','lift','v_lift',ftin],
+  ['p_pitch','pitch','v_pitch',fmtPitch],['p_cupola','cupola','v_cupola',ftin],
+  ['p_sun','sun','v_sun',fmtInt]
+];
+var TOGGLES=[['t_dims','dims'],['t_labels','labels'],['t_courses','courses'],
+             ['t_shadow','shadow'],['t_statue','statue']];
+var wrapEl=$('sheetwrap'),hintEl=document.querySelector('.hint'),
+    hintText=hintEl?hintEl.textContent:'',announceEl=$('announce'),
+    pending=false,hintTimer=null;
+
+function render(){
+  var out=sheetSVG(P),g=out.g;
+  wrapEl.innerHTML=out.svg;
+  $('s_colh').textContent=ftin(g.colH);
+  $('s_ratio').textContent=g.ratio.toFixed(1);
+  $('s_order').textContent=g.order;
+  $('s_cols').textContent=g.cols;
+  $('s_bay').textContent=P.bays+' @ '+ftin(P.bayw);
+  $('s_len').textContent=ftin(g.total);
+  $('s_ridge').textContent=ftin(g.corniceTop);
+  $('s_top').textContent=ftin(g.top);
+  $('s_courses').textContent=g.courses;
+}
+function draw(){
+  if(pending)return;
+  pending=true;
+  requestAnimationFrame(function(){pending=false;render()});
+}
+function status(msg){
+  if(announceEl)announceEl.textContent=msg;
+  if(!hintEl)return;
+  hintEl.textContent=msg;
+  if(hintTimer)clearTimeout(hintTimer);
+  hintTimer=setTimeout(function(){hintEl.textContent=hintText},4500);
+}
+function syncControls(){
+  var i,r,el;
+  for(i=0;i<RANGES.length;i++){
+    r=RANGES[i];el=$(r[0]);
+    el.value=P[r[1]];
+    $(r[2]).textContent=r[3](P[r[1]]);
+  }
+  $('p_wings').value=String(P.wings);
+  $('p_storeys').value=String(P.storeys);
+  $('c_brick').value=P.brick;
+  $('c_trim').value=P.trim;
+  $('f_drawn').value=P.drawn;
+  for(i=0;i<TOGGLES.length;i++)
+    $(TOGGLES[i][0]).setAttribute('aria-pressed',P[TOGGLES[i][1]]?'true':'false');
+}
+function markPreset(k){
+  var btns=$('presets').getElementsByTagName('button'),i;
+  for(i=0;i<btns.length;i++)
+    btns[i].setAttribute('aria-pressed',btns[i].getAttribute('data-preset')===k?'true':'false');
+}
+function applyPreset(k){
+  var base=copy(DEFAULTS),src=PRESETS[k]||{},key;
+  for(key in src)if(src.hasOwnProperty(key))base[key]=src[key];
+  base.brick=P.brick;base.trim=P.trim;base.sun=P.sun;base.drawn=P.drawn;
+  base.dims=P.dims;base.labels=P.labels;base.courses=P.courses;
+  base.shadow=P.shadow;base.statue=P.statue;
+  P=base;
+  syncControls();draw();persist();markPreset(k);
+}
+
+/* ---- wiring ---- */
+(function wire(){
+  var i,r;
+  for(i=0;i<RANGES.length;i++){
+    (function(r){
+      $(r[0]).addEventListener('input',function(){
+        P[r[1]]=parseFloat(this.value);
+        $(r[2]).textContent=r[3](P[r[1]]);
+        markPreset(null);draw();persist();
+      });
+    })(RANGES[i]);
+  }
+  $('p_wings').addEventListener('change',function(){P.wings=parseInt(this.value,10);markPreset(null);draw();persist()});
+  $('p_storeys').addEventListener('change',function(){P.storeys=parseInt(this.value,10);markPreset(null);draw();persist()});
+  $('c_brick').addEventListener('input',function(){P.brick=this.value;draw();persist()});
+  $('c_trim').addEventListener('input',function(){P.trim=this.value;draw();persist()});
+  $('f_drawn').addEventListener('input',function(){P.drawn=this.value;draw();persist()});
+  for(i=0;i<TOGGLES.length;i++){
+    (function(t){
+      $(t[0]).addEventListener('click',function(){
+        P[t[1]]=!P[t[1]];
+        this.setAttribute('aria-pressed',P[t[1]]?'true':'false');
+        draw();persist();
+      });
+    })(TOGGLES[i]);
+  }
+  $('presets').addEventListener('click',function(e){
+    var b=e.target&&e.target.closest?e.target.closest('button[data-preset]'):null;
+    if(b)applyPreset(b.getAttribute('data-preset'));
+  });
+  $('b_reset').addEventListener('click',function(){applyPreset('asbuilt');status('Dimensions reset to the as-built scheme.')});
+})();
+
+/* ---- saving the drawing ---- */
+var inViewer=!!(window.claude&&window.claude.use),
+    dlPromise=inViewer?window.claude.use('downloads'):Promise.resolve(null);
+dlPromise.then(function(d){
+  if(inViewer&&!d){$('b_png').hidden=true;$('b_svg').hidden=true}
+},function(){});
+
+function svgSource(){return '<?xml version="1.0" encoding="UTF-8"?>\n'+wrapEl.innerHTML}
+function toPNG(cb){
+  var src=svgSource(),img=new Image(),
+      w=Math.round(SHEET_W*2),h=Math.round(SHEET_H*2);
+  img.onload=function(){
+    var c=document.createElement('canvas'),x;
+    c.width=w;c.height=h;
+    x=c.getContext('2d');
+    x.drawImage(img,0,0,w,h);
+    if(c.toBlob)c.toBlob(function(b){cb(b)},'image/png');
+    else cb(null);
+  };
+  img.onerror=function(){cb(null)};
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(src);
+}
+function offer(filename,data){
+  dlPromise.then(function(d){
+    if(d){
+      d.save({filename:filename,data:data}).then(function(){status('Saved '+filename+'.')},
+        function(err){
+          var c=err&&err.code;
+          status(c==='declined'?'Save cancelled.':
+                 c==='rate_limited'?'A save prompt is already open.':
+                 'Could not save the file here ('+(c||'unavailable')+').');
+        });
+      return;
+    }
+    if(!inViewer){
+      var url=URL.createObjectURL(typeof data==='string'?new Blob([data],{type:'image/svg+xml'}):data),
+          a=document.createElement('a');
+      a.href=url;a.download=filename;document.body.appendChild(a);a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){URL.revokeObjectURL(url)},4000);
+      status('Saved '+filename+'.');
+      return;
+    }
+    status('Saving is not available in this view.');
+  },function(){status('Saving is not available in this view.')});
+}
+$('b_png').addEventListener('click',function(){
+  status('Rendering the sheet...');
+  toPNG(function(blob){
+    if(!blob){status('The drawing could not be rendered to PNG here.');return}
+    offer('colonnade-elevation.png',blob);
+  });
+});
+$('b_svg').addEventListener('click',function(){offer('colonnade-elevation.svg',svgSource())});
+
+/* ---- persistence, theme, boot ---- */
+var KEY='colonnade.v1';
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}}
+function clampLoaded(){
+  var i,r,el,v;
+  for(i=0;i<RANGES.length;i++){
+    r=RANGES[i];el=$(r[0]);
+    v=parseFloat(P[r[1]]);
+    if(!isFinite(v))v=DEFAULTS[r[1]];
+    P[r[1]]=Math.min(parseFloat(el.max),Math.max(parseFloat(el.min),v));
+  }
+  P.wings=(P.wings===1||P.wings===2)?P.wings:2;
+  P.storeys=(P.storeys===2||P.storeys===3)?P.storeys:2;
+  if(!/^#[0-9a-fA-F]{6}$/.test(P.brick||''))P.brick=DEFAULTS.brick;
+  if(!/^#[0-9a-fA-F]{6}$/.test(P.trim||''))P.trim=DEFAULTS.trim;
+  P.drawn=String(P.drawn==null?DEFAULTS.drawn:P.drawn).slice(0,28);
+  for(i=0;i<TOGGLES.length;i++)P[TOGGLES[i][1]]=!!P[TOGGLES[i][1]];
+}
+function load(){
+  try{
+    var d=JSON.parse(localStorage.getItem(KEY)||'null'),k;
+    if(!d)return;
+    for(k in DEFAULTS)if(DEFAULTS.hasOwnProperty(k)&&d.hasOwnProperty(k))P[k]=d[k];
+  }catch(e){}
+}
+if(window.matchMedia){
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  if(mq.addEventListener)mq.addEventListener('change',draw);
+  else if(mq.addListener)mq.addListener(draw);
+}
+if(window.MutationObserver){
+  new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+}
+function start(data){
+  if(data&&data.P&&typeof data.P==='object'){
+    var k;
+    for(k in DEFAULTS)if(DEFAULTS.hasOwnProperty(k)&&data.P.hasOwnProperty(k))P[k]=data.P[k];
+  }else load();
+  clampLoaded();
+  syncControls();
+  markPreset('asbuilt');
+  render();
+}
+if(window.claude&&window.claude.hot&&window.claude.hot.snapshot){
+  window.claude.hot.snapshot(function(){return {P:P}});
+}
+if(window.claude&&window.claude.hot&&window.claude.hot.ready){
+  window.claude.hot.ready(function(d){start(d||{})});
+}else{
+  start((window.claude&&window.claude.hot&&window.claude.hot.data)||{});
+}
+</script>
+</body>
+</html>
