@@ -1,0 +1,1307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parametric House</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@600;700;800&family=JetBrains+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#E9EBED;
+  --panel:#F6F7F8;
+  --raised:#FFFFFF;
+  --edge:#CBD0D5;
+  --edge-soft:#DDE1E5;
+  --ink:#16191C;
+  --ink-2:#575E66;
+  --ink-3:#88909A;
+  --accent:#0C8494;
+  --ok:#2C7A57;
+  --warn:#A56A1E;
+  --view-a:#DCE1E6;
+  --view-b:#F3F5F7;
+  --shadow:0 1px 2px rgba(22,25,28,.05), 0 10px 28px rgba(22,25,28,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0C0E10;
+    --panel:#15181B;
+    --raised:#1B1F23;
+    --edge:#2F353A;
+    --edge-soft:#23282C;
+    --ink:#E7EAEC;
+    --ink-2:#A3ABB3;
+    --ink-3:#79818A;
+    --accent:#35B9C9;
+    --ok:#5FBF92;
+    --warn:#D9A256;
+    --view-a:#090B0D;
+    --view-b:#1A1E22;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 32px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0C0E10;
+  --panel:#15181B;
+  --raised:#1B1F23;
+  --edge:#2F353A;
+  --edge-soft:#23282C;
+  --ink:#E7EAEC;
+  --ink-2:#A3ABB3;
+  --ink-3:#79818A;
+  --accent:#35B9C9;
+  --ok:#5FBF92;
+  --warn:#D9A256;
+  --view-a:#090B0D;
+  --view-b:#1A1E22;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 32px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:"Public Sans","Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:15px;line-height:1.5;
+}
+.wrap{
+  max-width:1300px;margin:0 auto;
+  padding-block:clamp(18px,3.2vw,36px);
+  padding-left:max(16px,2.4vw);padding-right:max(16px,2.4vw);
+}
+h1{
+  font-family:Chivo,"Helvetica Neue",Helvetica,sans-serif;font-weight:800;
+  font-size:clamp(30px,5vw,46px);line-height:1.02;letter-spacing:-.022em;margin:0;
+  text-wrap:balance;
+}
+.eyebrow{
+  font-family:Chivo,sans-serif;font-weight:700;font-size:11px;letter-spacing:.19em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 9px;
+}
+.lede{margin:12px 0 0;max-width:62ch;color:var(--ink-2)}
+header.top{margin-bottom:clamp(16px,2.4vw,26px)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:clamp(14px,1.8vw,22px);align-items:start}
+.layout>*{min-width:0}
+@media (max-width:940px){.layout{grid-template-columns:1fr}}
+.stack{display:flex;flex-direction:column;gap:clamp(12px,1.6vw,18px)}
+
+/* ---- viewport ---- */
+.viewport{
+  position:relative;
+  background:linear-gradient(175deg,var(--view-a),var(--view-b));
+  border:1px solid var(--edge);border-radius:3px;box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.viewport canvas{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
+.viewport canvas:active{cursor:grabbing}
+.vbar{
+  position:absolute;left:10px;top:10px;display:flex;gap:5px;flex-wrap:wrap;
+}
+.vbar .tg{background:rgba(255,255,255,.82);backdrop-filter:blur(3px)}
+:root[data-theme="dark"] .vbar .tg,
+:root:not([data-theme="light"]) .vbar .tg{background:rgba(20,24,28,.72)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .vbar .tg{background:rgba(255,255,255,.82)}}
+.vhint{
+  position:absolute;right:11px;bottom:9px;margin:0;
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10.5px;color:var(--ink-3);
+  letter-spacing:.02em;pointer-events:none;
+}
+
+/* ---- stat tiles ---- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--edge);
+  border:1px solid var(--edge);border-radius:3px;overflow:hidden}
+.tile{background:var(--panel);padding:11px 13px}
+.tile .k{
+  font-family:Chivo,sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700;
+}
+.tile .v{
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;
+  font-size:20px;font-weight:500;line-height:1.25;margin-top:4px;letter-spacing:-.02em;
+}
+.tile .u{font-size:11.5px;color:var(--ink-3);font-family:"Public Sans",sans-serif;margin-left:3px}
+
+/* ---- panels ---- */
+.card{background:var(--panel);border:1px solid var(--edge);border-radius:3px;box-shadow:var(--shadow)}
+.card>h2,.rail h2{
+  font-family:Chivo,sans-serif;font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;
+  font-weight:700;color:var(--ink-3);margin:0 0 11px;
+}
+.card>section{padding:14px 16px;border-bottom:1px solid var(--edge-soft)}
+.card>section:last-child{border-bottom:0}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0}
+.duo>section+section{border-left:1px solid var(--edge-soft)}
+@media (max-width:620px){.duo>section+section{border-left:0;border-top:1px solid var(--edge-soft)}}
+
+.bom{margin:0;display:grid;grid-template-columns:1fr auto;gap:6px 12px}
+.bom dt{font-size:13px;color:var(--ink-2)}
+.bom dd{margin:0;font-family:"JetBrains Mono",monospace;font-size:12.5px;font-variant-numeric:tabular-nums;text-align:right}
+.bom dd small{color:var(--ink-3);font-family:"Public Sans",sans-serif;font-size:11px;margin-left:4px}
+
+.printrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.printrow:last-of-type{margin-bottom:12px}
+.printrow label{font-size:13px;color:var(--ink-2)}
+.dimline{
+  font-family:"JetBrains Mono",monospace;font-size:14px;font-variant-numeric:tabular-nums;
+}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:Chivo,sans-serif;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+  padding:4px 8px;border-radius:2px;border:1px solid currentColor;
+}
+.badge.fit{color:var(--ok)}
+.badge.nofit{color:var(--warn)}
+.badge i{width:6px;height:6px;border-radius:50%;background:currentColor;display:block}
+
+/* ---- rail ---- */
+.rail{background:var(--panel);border:1px solid var(--edge);border-radius:3px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column}
+.rail section{padding:13px 15px;border-bottom:1px solid var(--edge-soft)}
+.rail section:last-child{border-bottom:0}
+.p{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;margin-bottom:10px}
+.p:last-child{margin-bottom:0}
+.p label{font-size:12.5px;color:var(--ink-2)}
+.p .val{font-family:"JetBrains Mono",monospace;font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
+.p input[type=range]{grid-column:1 / -1;width:100%;margin:2px 0 0;accent-color:var(--accent);height:18px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:9px}
+.row:last-child{margin-bottom:0}
+.row label{font-size:12.5px;color:var(--ink-2)}
+select,input[type=text]{
+  font:inherit;font-size:12.5px;padding:4px 7px;border:1px solid var(--edge);
+  background:var(--raised);color:var(--ink);cursor:pointer;border-radius:2px;max-width:58%;
+}
+input[type=color]{width:42px;height:25px;padding:0;border:1px solid var(--edge);background:var(--raised);cursor:pointer;border-radius:2px}
+.toggles{display:flex;flex-wrap:wrap;gap:5px}
+.tg{
+  font-family:Chivo,sans-serif;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;
+  padding:5px 9px;border:1px solid var(--edge);background:var(--raised);color:var(--ink-2);
+  cursor:pointer;border-radius:2px;
+}
+.tg[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+button.btn{
+  font:inherit;font-weight:600;font-size:13px;padding:8px 13px;border-radius:2px;
+  border:1px solid var(--edge);background:var(--raised);color:var(--ink);cursor:pointer;
+}
+button.btn:hover{border-color:var(--ink-3)}
+button.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+button.btn.primary:hover{opacity:.9}
+button.btn:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btnrow{display:flex;gap:7px;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--ink-3);margin:9px 0 0}
+
+/* ---- notes ---- */
+.notes{margin-top:clamp(16px,2.2vw,24px);border-top:1px solid var(--edge);padding-top:15px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:clamp(14px,2vw,22px)}
+.notes h2{font-family:Chivo,sans-serif;font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;
+  font-weight:700;color:var(--ink-3);margin:0 0 9px}
+.notes p{margin:0 0 9px;font-size:13.5px;color:var(--ink-2);max-width:60ch}
+.notes p:last-child{margin-bottom:0}
+.notes b{color:var(--ink);font-weight:600}
+.notes code{font-family:"JetBrains Mono",monospace;font-size:12px;background:var(--raised);
+  border:1px solid var(--edge-soft);padding:.5px 4px;border-radius:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Editable, code-generated product model</p>
+  <h1>Parametric House</h1>
+  <p class="lede">A house described entirely by numbers. Set the footprint, storey height, roof pitch and openings; the geometry, the materials takeoff and a printable solid are all computed from them. Drag the model to orbit it, then export it as an STL and print it at scale.</p>
+</header>
+
+<main class="layout">
+  <div class="stack">
+
+    <div class="viewport">
+      <canvas id="view" width="1200" height="750" aria-label="Three-dimensional view of the house model"></canvas>
+      <div class="vbar" id="vbar">
+        <button class="tg" type="button" data-view="corner" aria-pressed="true">Corner</button>
+        <button class="tg" type="button" data-view="front" aria-pressed="false">Front</button>
+        <button class="tg" type="button" data-view="side" aria-pressed="false">Side</button>
+        <button class="tg" type="button" data-view="plan" aria-pressed="false">Above</button>
+      </div>
+      <p class="vhint">drag to orbit &middot; scroll to zoom</p>
+    </div>
+
+    <div class="tiles">
+      <div class="tile"><div class="k">Floor area</div><div class="v"><span id="s_area">1664</span><span class="u">sq ft</span></div></div>
+      <div class="tile"><div class="k">Footprint</div><div class="v" id="s_foot">32 x 26</div></div>
+      <div class="tile"><div class="k">Ridge height</div><div class="v" id="s_ridge">27'-8"</div></div>
+      <div class="tile"><div class="k">Roof pitch</div><div class="v" id="s_angle">33.7&deg;</div></div>
+      <div class="tile"><div class="k">Glazing</div><div class="v"><span id="s_glaze">11.8</span><span class="u">%</span></div></div>
+      <div class="tile"><div class="k">Volume</div><div class="v"><span id="s_vol">18.6k</span><span class="u">cu ft</span></div></div>
+    </div>
+
+    <div class="card duo">
+      <section>
+        <h2>Bill of materials</h2>
+        <dl class="bom">
+          <dt>Exterior wall area, net of openings</dt><dd id="b_wall">1420<small>sq ft</small></dd>
+          <dt>Siding</dt><dd id="b_siding">14.2<small>squares</small></dd>
+          <dt>Roof surface</dt><dd id="b_roof">1050<small>sq ft</small></dd>
+          <dt>Roofing, 3 bundles a square</dt><dd id="b_bundles">32<small>bundles</small></dd>
+          <dt>Wall studs at 16 in. o.c.</dt><dd id="b_studs">118<small>approx</small></dd>
+          <dt>Windows and doors</dt><dd id="b_openings">14 / 1</dd>
+          <dt>Footprint perimeter</dt><dd id="b_perim">116<small>ft</small></dd>
+        </dl>
+      </section>
+      <section>
+        <h2>Print this model</h2>
+        <div class="printrow">
+          <label for="sc_scale">Model scale</label>
+          <select id="sc_scale">
+            <option value="50">1 : 50</option>
+            <option value="87">1 : 87 (HO)</option>
+            <option value="100" selected>1 : 100</option>
+            <option value="150">1 : 150</option>
+            <option value="200">1 : 200</option>
+          </select>
+        </div>
+        <div class="printrow">
+          <label>Printed size</label>
+          <span class="dimline" id="sc_size">98 x 79 x 84 mm</span>
+        </div>
+        <div class="printrow">
+          <label>Bed check, 220 mm cube</label>
+          <span class="badge fit" id="sc_fit"><i></i><span>Fits</span></span>
+        </div>
+        <div class="btnrow">
+          <button class="btn primary" id="b_stl" type="button">Export STL</button>
+          <button class="btn" id="b_png" type="button">Save PNG</button>
+        </div>
+        <p class="hint" id="printhint">The STL is a watertight solid per part, in millimetres at the chosen scale.</p>
+      </section>
+    </div>
+
+    <section class="notes">
+      <div>
+        <h2>What is parametric here</h2>
+        <p>Every surface is generated, not modelled by hand. Wall planes come from the footprint, the roof is built from the pitch as a rise in twelve, window openings are spaced evenly across each elevation, and the rafter length that sets roof area is <code>sqrt(144 + pitch^2) / 12</code> times the run. Change one number and the geometry, the takeoff and the STL all move together.</p>
+        <p>The takeoff uses real construction units: a <b>square</b> is 100 square feet of siding or roofing, asphalt shingles run <b>three bundles to the square</b>, and studs are counted at <b>16 inches on center</b> plus corners. Quantities are a study estimate, not a construction order.</p>
+      </div>
+      <div>
+        <h2>Printing it</h2>
+        <p>Export writes a binary STL in millimetres, sized at the scale you pick, oriented Z-up the way slicers expect. At 1:100 a typical two-storey house lands near a 100 mm footprint, so it prints on any small bed; 1:50 doubles it.</p>
+        <p>Parts overlap rather than being boolean-joined, which every common slicer unions on load. Walls are solid: hollow them with your slicer's vase or infill settings rather than in the model.</p>
+      </div>
+    </section>
+  </div>
+
+  <aside class="rail">
+    <section>
+      <h2>Footprint</h2>
+      <div class="p"><label for="p_width">Width</label><span class="val" id="v_width">32'-0"</span>
+        <input type="range" id="p_width" min="18" max="60" step="0.5" value="32"></div>
+      <div class="p"><label for="p_depth">Depth</label><span class="val" id="v_depth">26'-0"</span>
+        <input type="range" id="p_depth" min="14" max="48" step="0.5" value="26"></div>
+      <div class="row"><label for="p_storeys">Storeys</label>
+        <select id="p_storeys"><option value="1">One</option><option value="2" selected>Two</option></select></div>
+      <div class="p"><label for="p_sh">Storey height</label><span class="val" id="v_sh">9'-0"</span>
+        <input type="range" id="p_sh" min="7.5" max="13" step="0.25" value="9"></div>
+      <div class="p"><label for="p_found">Foundation above grade</label><span class="val" id="v_found">1'-6"</span>
+        <input type="range" id="p_found" min="0" max="5" step="0.25" value="1.5"></div>
+    </section>
+
+    <section>
+      <h2>Roof</h2>
+      <div class="row"><label for="p_roof">Type</label>
+        <select id="p_roof">
+          <option value="gable" selected>Gable</option>
+          <option value="hip">Hip</option>
+          <option value="gambrel">Gambrel</option>
+          <option value="shed">Shed</option>
+        </select></div>
+      <div class="p"><label for="p_pitch">Pitch, rise in 12</label><span class="val" id="v_pitch">8:12</span>
+        <input type="range" id="p_pitch" min="2" max="16" step="0.5" value="8"></div>
+      <div class="p"><label for="p_over">Eave overhang</label><span class="val" id="v_over">16 in</span>
+        <input type="range" id="p_over" min="0" max="36" step="1" value="16"></div>
+    </section>
+
+    <section>
+      <h2>Openings</h2>
+      <div class="p"><label for="p_bays">Window bays per side</label><span class="val" id="v_bays">4</span>
+        <input type="range" id="p_bays" min="1" max="7" step="1" value="4"></div>
+      <div class="p"><label for="p_ww">Window width</label><span class="val" id="v_ww">3'-0"</span>
+        <input type="range" id="p_ww" min="1.5" max="6" step="0.25" value="3"></div>
+      <div class="p"><label for="p_wh">Window height</label><span class="val" id="v_wh">4'-6"</span>
+        <input type="range" id="p_wh" min="2" max="8" step="0.25" value="4.5"></div>
+      <div class="p"><label for="p_sill">Sill above floor</label><span class="val" id="v_sill">2'-6"</span>
+        <input type="range" id="p_sill" min="0.5" max="5" step="0.25" value="2.5"></div>
+      <div class="p"><label for="p_dw">Door width</label><span class="val" id="v_dw">3'-6"</span>
+        <input type="range" id="p_dw" min="2.5" max="7" step="0.25" value="3.5"></div>
+    </section>
+
+    <section>
+      <h2>Porch and chimney</h2>
+      <div class="p"><label for="p_porch">Porch depth, 0 for none</label><span class="val" id="v_porch">9'-0"</span>
+        <input type="range" id="p_porch" min="0" max="16" step="0.5" value="9"></div>
+      <div class="p"><label for="p_chimh">Chimney above ridge</label><span class="val" id="v_chimh">3'-0"</span>
+        <input type="range" id="p_chimh" min="0" max="8" step="0.5" value="3"></div>
+      <div class="p"><label for="p_chairs">Rocking chairs</label><span class="val" id="v_chairs">2</span>
+        <input type="range" id="p_chairs" min="0" max="4" step="1" value="2"></div>
+      <div class="toggles" style="margin-top:4px">
+        <button class="tg" type="button" id="t_rail" aria-pressed="true">Railing</button>
+        <button class="tg" type="button" id="t_shutters" aria-pressed="true">Shutters</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Yard</h2>
+      <div class="toggles">
+        <button class="tg" type="button" id="t_lawn" aria-pressed="true">Lawn</button>
+        <button class="tg" type="button" id="t_pool" aria-pressed="true">Pool</button>
+        <button class="tg" type="button" id="t_walk" aria-pressed="true">Walk</button>
+      </div>
+      <div class="p" style="margin-top:10px"><label for="p_poollen">Pool length</label><span class="val" id="v_poollen">26'-0"</span>
+        <input type="range" id="p_poollen" min="12" max="40" step="1" value="26"></div>
+    </section>
+
+    <section>
+      <h2>Materials</h2>
+      <div class="row"><label for="m_siding">Cladding</label>
+        <select id="m_siding">
+          <option value="clapboard" selected>Clapboard</option>
+          <option value="batten">Board and batten</option>
+          <option value="brick">Brick</option>
+          <option value="stucco">Stucco</option>
+        </select></div>
+      <div class="row"><label for="c_wall">Wall</label><input type="color" id="c_wall" value="#FAF9F5"></div>
+      <div class="row"><label for="c_shutter">Shutters</label><input type="color" id="c_shutter" value="#2F5D8C"></div>
+      <div class="row"><label for="c_door">Front door</label><input type="color" id="c_door" value="#16263F"></div>
+      <div class="row"><label for="c_roof">Roof</label><input type="color" id="c_roof" value="#4A5057"></div>
+      <div class="row"><label for="c_trim">Trim</label><input type="color" id="c_trim" value="#FBFBF8"></div>
+    </section>
+
+    <section>
+      <h2>View</h2>
+      <div class="p"><label for="p_sun">Sun bearing</label><span class="val" id="v_sun">135&deg;</span>
+        <input type="range" id="p_sun" min="0" max="359" step="1" value="135"></div>
+      <div class="toggles">
+        <button class="tg" type="button" id="t_grid" aria-pressed="false">Grid</button>
+        <button class="tg" type="button" id="t_shadow" aria-pressed="true">Shadow</button>
+        <button class="tg" type="button" id="t_edges" aria-pressed="true">Edges</button>
+        <button class="tg" type="button" id="t_texture" aria-pressed="true">Cladding</button>
+      </div>
+      <div class="btnrow" style="margin-top:10px">
+        <button class="btn" id="b_reset" type="button">Reset model</button>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<p class="sr" id="announce" role="status" aria-live="polite"></p>
+</div>
+
+<script>
+/* ===== MODEL =======================================================
+   All dimensions are FEET. X runs with the width, Y is up from grade,
+   Z runs with the depth; the front elevation faces +Z. Geometry is
+   generated as closed solids so the same data can be both drawn and
+   written out as an STL.                                             */
+var DEFAULTS={
+  width:32,depth:26,storeys:2,sh:9,found:1.5,
+  roof:'gable',pitch:8,over:16,
+  bays:4,ww:3,wh:4.5,sill:2.5,dw:3.5,
+  porch:9,chimh:3,chairs:2,
+  siding:'clapboard',wall:'#FAF9F5',roofc:'#4A5057',trim:'#FBFBF8',
+  shutterc:'#2F5D8C',doorc:'#16263F',shutters:true,rail:true,
+  pool:true,poollen:26,walk:true,lawn:true,
+  sun:135,grid:false,shadow:true,edges:true,texture:true,
+  scale:100
+};
+var P=copy(DEFAULTS);
+var GLASS='#33424C',FOUND='#9A9A93',DECK='#C8C2B4';
+
+function copy(o){var k,n={};for(k in o)if(o.hasOwnProperty(k))n[k]=o[k];return n}
+function ftin(f){
+  var neg=f<0,ft,inch;
+  f=Math.abs(f);ft=Math.floor(f+1e-9);inch=Math.round((f-ft)*12);
+  if(inch===12){ft++;inch=0}
+  return (neg?'-':'')+ft+"'-"+inch+'"';
+}
+function commas(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+
+function derive(p){
+  var d={};
+  d.wallH=p.storeys*p.sh;
+  d.eave=p.found+d.wallH;
+  d.over=p.over/12;
+  d.slope=Math.sqrt(144+p.pitch*p.pitch)/12;
+  d.angle=Math.atan2(p.pitch,12)*180/Math.PI;
+  d.run=(p.roof==='shed')?p.depth:p.depth/2;
+  d.rise=d.run*(p.pitch/12);
+  d.ridge=d.eave+d.rise;
+  d.eaveLow=d.eave-d.over*(p.pitch/12);
+  d.perim=2*(p.width+p.depth);
+  d.sideBays=Math.max(1,Math.round(p.bays*p.depth/p.width));
+  return d;
+}
+
+/* ---- solid builders: winding is fixed automatically so every face
+        normal points out of its own solid ---- */
+function sub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]]}
+function cross(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]}
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]}
+function norm(a){var l=Math.sqrt(dot(a,a))||1;return [a[0]/l,a[1]/l,a[2]/l]}
+function polyCenter(pts){
+  var i,x=0,y=0,z=0;
+  for(i=0;i<pts.length;i++){x+=pts[i][0];y+=pts[i][1];z+=pts[i][2]}
+  return [x/pts.length,y/pts.length,z/pts.length];
+}
+function newell(pts){
+  var n=[0,0,0],i,a,b;
+  for(i=0;i<pts.length;i++){
+    a=pts[i];b=pts[(i+1)%pts.length];
+    n[0]+=(a[1]-b[1])*(a[2]+b[2]);
+    n[1]+=(a[2]-b[2])*(a[0]+b[0]);
+    n[2]+=(a[0]-b[0])*(a[1]+b[1]);
+  }
+  return norm(n);
+}
+function solid(F,polys,color,opts){
+  var all=[],i,j,c,pc,n,o;
+  for(i=0;i<polys.length;i++)for(j=0;j<polys[i].length;j++)all.push(polys[i][j]);
+  c=polyCenter(all);
+  for(i=0;i<polys.length;i++){
+    pc=polyCenter(polys[i]);
+    n=newell(polys[i]);
+    if(dot(n,sub(pc,c))<0){polys[i]=polys[i].slice().reverse();n=[-n[0],-n[1],-n[2]]}
+    o={pts:polys[i],c:color,n:n};
+    if(opts)for(var k in opts)if(opts.hasOwnProperty(k))o[k]=opts[k];
+    F.push(o);
+  }
+}
+function boxPolys(x0,x1,y0,y1,z0,z1){
+  return [
+    [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]],
+    [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]],
+    [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]],
+    [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]],
+    [[x0,y1,z1],[x1,y1,z1],[x1,y1,z0],[x0,y1,z0]],
+    [[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]]
+  ];
+}
+function addBox(F,x0,x1,y0,y1,z0,z1,color,opts){
+  solid(F,boxPolys(x0,x1,y0,y1,z0,z1),color,opts);
+}
+/* cross-section in the ZY plane, extruded along X */
+function addPrismX(F,section,x0,x1,color,opts){
+  var polys=[],capA=[],capB=[],i,j;
+  for(i=0;i<section.length;i++){capA.push([x0,section[i][1],section[i][0]]);capB.push([x1,section[i][1],section[i][0]])}
+  polys.push(capA);polys.push(capB);
+  for(i=0;i<section.length;i++){
+    j=(i+1)%section.length;
+    polys.push([[x0,section[i][1],section[i][0]],[x1,section[i][1],section[i][0]],
+                [x1,section[j][1],section[j][0]],[x0,section[j][1],section[j][0]]]);
+  }
+  solid(F,polys,color,opts);
+}
+function lerp3(a,b,t){return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
+function shrinkPoly(pts,k,push){
+  var c=polyCenter(pts),out=[],i,p,n=newell(pts);
+  for(i=0;i<pts.length;i++){
+    p=lerp3(pts[i],c,1-k);
+    out.push([p[0]+n[0]*push,p[1]+n[1]*push,p[2]+n[2]*push]);
+  }
+  return out;
+}
+
+/* ---- openings ---- */
+function addWindow(F,p,anchor,cy,face,w,h){
+  var t=0.14,g=0.055,e=0.3,sw=Math.max(0.55,w*0.46),pts,x,z,dir,z0,z1,s0,s1;
+  if(face==='z'||face==='-z'){
+    x=anchor[0];z=anchor[1];dir=(face==='z')?1:-1;
+    z0=dir>0?z:z-t;z1=dir>0?z+t:z;
+    addBox(F,x-w/2-e,x+w/2+e,cy-e,cy+h+e,z0,z1,p.trim);
+    pts=[[x-w/2,cy,z+dir*(t+g)],[x+w/2,cy,z+dir*(t+g)],[x+w/2,cy+h,z+dir*(t+g)],[x-w/2,cy+h,z+dir*(t+g)]];
+    F.push({pts:pts,c:GLASS,n:[0,0,dir],noStl:true,flat:true});
+    if(p.shutters){
+      s0=dir>0?z:z-0.1;s1=dir>0?z+0.1:z;
+      addBox(F,x-w/2-e-sw,x-w/2-e,cy-e,cy+h+e,s0,s1,p.shutterc,{clad:1,cladSpace:0.26});
+      addBox(F,x+w/2+e,x+w/2+e+sw,cy-e,cy+h+e,s0,s1,p.shutterc,{clad:1,cladSpace:0.26});
+    }
+  }else{
+    x=anchor[0];z=anchor[1];dir=(face==='x')?1:-1;
+    z0=dir>0?x:x-t;z1=dir>0?x+t:x;
+    addBox(F,z0,z1,cy-e,cy+h+e,z-w/2-e,z+w/2+e,p.trim);
+    pts=[[x+dir*(t+g),cy,z-w/2],[x+dir*(t+g),cy,z+w/2],[x+dir*(t+g),cy+h,z+w/2],[x+dir*(t+g),cy+h,z-w/2]];
+    F.push({pts:pts,c:GLASS,n:[dir,0,0],noStl:true,flat:true});
+    if(p.shutters){
+      s0=dir>0?x:x-0.1;s1=dir>0?x+0.1:x;
+      addBox(F,s0,s1,cy-e,cy+h+e,z-w/2-e-sw,z-w/2-e,p.shutterc,{clad:1,cladSpace:0.26});
+      addBox(F,s0,s1,cy-e,cy+h+e,z+w/2+e,z+w/2+e+sw,p.shutterc,{clad:1,cladSpace:0.26});
+    }
+  }
+}
+
+/* ---- porch railing: top and bottom rails with balusters between ---- */
+function addRail(F,a0,a1,fixed,axis,base,color,gap){
+  var top=base+3.1,i,n,t,x,step=1.1,len=a1-a0;
+  if(len<1.5)return;
+  if(axis==='x'){
+    addBox(F,a0,a1,top-0.22,top,fixed-0.09,fixed+0.09,color);
+    addBox(F,a0,a1,base+0.85,base+1.0,fixed-0.07,fixed+0.07,color);
+  }else{
+    addBox(F,fixed-0.09,fixed+0.09,top-0.22,top,a0,a1,color);
+    addBox(F,fixed-0.07,fixed+0.07,base+0.85,base+1.0,a0,a1,color);
+  }
+  n=Math.max(1,Math.floor(len/step));
+  for(i=1;i<n;i++){
+    t=a0+len*i/n;
+    if(gap&&Math.abs(t)<gap)continue;
+    if(axis==='x')addBox(F,t-0.06,t+0.06,base+0.95,top-0.2,fixed-0.06,fixed+0.06,color);
+    else addBox(F,fixed-0.06,fixed+0.06,base+0.95,top-0.2,t-0.06,t+0.06,color);
+  }
+}
+
+/* ---- a rocking chair, built from its runners up ---- */
+function addChair(F,cx,cz,base,c){
+  var sy=base+1.28,i,xs,sec,lean=0.42,bs;
+  for(i=0;i<2;i++){
+    xs=cx+(i?0.8:-0.8);
+    sec=[[cz-1.2,base+0.16],[cz,base+0.02],[cz+1.2,base+0.16],
+         [cz+1.2,base+0.32],[cz,base+0.18],[cz-1.2,base+0.32]];
+    addPrismX(F,sec,xs-0.07,xs+0.07,c);
+  }
+  addBox(F,cx-0.86,cx-0.64,base+0.26,sy,cz-0.68,cz-0.46,c);
+  addBox(F,cx+0.64,cx+0.86,base+0.26,sy,cz-0.68,cz-0.46,c);
+  addBox(F,cx-0.86,cx-0.64,base+0.26,sy,cz+0.46,cz+0.68,c);
+  addBox(F,cx+0.64,cx+0.86,base+0.26,sy,cz+0.46,cz+0.68,c);
+  addBox(F,cx-0.92,cx+0.92,sy,sy+0.14,cz-0.8,cz+0.8,c);
+  bs=[[cz-0.78,sy],[cz-0.78-lean,sy+1.85],[cz-0.63-lean,sy+1.85],[cz-0.63,sy]];
+  for(i=-1;i<2;i++)addPrismX(F,bs,cx+i*0.62-0.07,cx+i*0.62+0.07,c);
+  addBox(F,cx-0.9,cx+0.9,sy+1.66,sy+1.88,cz-0.82-lean,cz-0.64-lean,c);
+  for(i=0;i<2;i++){
+    xs=cx+(i?0.82:-0.82);
+    addBox(F,xs-0.07,xs+0.07,sy+0.72,sy+0.86,cz-0.62,cz+0.72,c);
+  }
+}
+
+/* ---- yard: lawn is the ground plane, this adds the walk and the pool ---- */
+function addYard(F,p,d){
+  var hw=p.width/2,hd=p.depth/2,x0,x1,z0,z1,c=1.3,dep=4.6,wx;
+  if(p.walk){
+    wx=Math.max(2,p.dw*0.8);
+    F.push({pts:[[-wx,0.03,hd+p.porch+0.9],[wx,0.03,hd+p.porch+0.9],
+                 [wx,0.03,hd+p.porch+16],[-wx,0.03,hd+p.porch+16]],
+            c:'#C6C1B2',n:[0,1,0],noStl:true,ground:true,flat:true});
+  }
+  if(!p.pool)return;
+  x0=hw+15;x1=x0+p.poollen*0.54;z0=3-p.poollen/2;z1=3+p.poollen/2;
+  F.push({pts:[[x0-c,0.04,z0-c],[x1+c,0.04,z0-c],[x1+c,0.04,z0],[x0-c,0.04,z0]],c:'#D7D3C7',n:[0,1,0],noStl:true,ground:true,flat:true});
+  F.push({pts:[[x0-c,0.04,z1],[x1+c,0.04,z1],[x1+c,0.04,z1+c],[x0-c,0.04,z1+c]],c:'#D7D3C7',n:[0,1,0],noStl:true,ground:true,flat:true});
+  F.push({pts:[[x0-c,0.04,z0],[x0,0.04,z0],[x0,0.04,z1],[x0-c,0.04,z1]],c:'#D7D3C7',n:[0,1,0],noStl:true,ground:true,flat:true});
+  F.push({pts:[[x1,0.04,z0],[x1+c,0.04,z0],[x1+c,0.04,z1],[x1,0.04,z1]],c:'#D7D3C7',n:[0,1,0],noStl:true,ground:true,flat:true});
+  var hole=[[x0,0.001,z0],[x1,0.001,z0],[x1,0.001,z1],[x0,0.001,z1]];
+  F.poolHole=hole;
+  F.push({pts:[[x0,0,z0],[x1,0,z0],[x1,-dep,z0],[x0,-dep,z0]],c:'#8FB9C9',n:[0,0,1],noStl:true,flat:true,pool:true});
+  F.push({pts:[[x0,0,z1],[x1,0,z1],[x1,-dep,z1],[x0,-dep,z1]],c:'#8FB9C9',n:[0,0,-1],noStl:true,flat:true,pool:true});
+  F.push({pts:[[x0,0,z0],[x0,0,z1],[x0,-dep,z1],[x0,-dep,z0]],c:'#9CC3D1',n:[1,0,0],noStl:true,flat:true,pool:true});
+  F.push({pts:[[x1,0,z0],[x1,0,z1],[x1,-dep,z1],[x1,-dep,z0]],c:'#9CC3D1',n:[-1,0,0],noStl:true,flat:true,pool:true});
+  F.push({pts:[[x0,-dep,z0],[x1,-dep,z0],[x1,-dep,z1],[x0,-dep,z1]],c:'#69A6BE',n:[0,1,0],noStl:true,flat:true,pool:true});
+  F.push({pts:[[x0,-0.55,z0],[x1,-0.55,z0],[x1,-0.55,z1],[x0,-0.55,z1]],c:'#2F86A6',n:[0,1,0],noStl:true,flat:true,pool:true});
+}
+
+/* ---- the whole house ---- */
+function build(p){
+  var d=derive(p),F=[],W=p.width,D=p.depth,hw=W/2,hd=D/2,i,s,x,y,z,mark,
+      clad=p.siding==='clapboard'?1:p.siding==='batten'?2:p.siding==='brick'?3:0;
+
+  addYard(F,p,d);
+  addBox(F,-hw-0.35,hw+0.35,0,p.found,-hd-0.35,hd+0.35,FOUND);
+  addBox(F,-hw,hw,p.found,d.eave,-hd,hd,p.wall,{clad:clad});
+
+  /* roof */
+  mark=F.length;
+  if(p.roof==='gable'||p.roof==='gambrel'||p.roof==='shed'){
+    var sec,x0=-hw-d.over,x1=hw+d.over;
+    if(p.roof==='gable'){
+      sec=[[-hd-d.over,d.eaveLow],[0,d.ridge],[hd+d.over,d.eaveLow]];
+    }else if(p.roof==='gambrel'){
+      sec=[[-hd-d.over,d.eaveLow],[-hd*0.55,d.eave+d.rise*0.62],[0,d.ridge],
+           [hd*0.55,d.eave+d.rise*0.62],[hd+d.over,d.eaveLow]];
+    }else{
+      sec=[[-hd-d.over,d.eave-d.over*(p.pitch/12)],[hd+d.over,d.eave+d.rise],
+           [hd+d.over,d.eave-0.6],[-hd-d.over,d.eave-0.6]];
+    }
+    addPrismX(F,sec,x0,x1,p.roofc);
+    if(p.roof!=='shed'){
+      for(i=0;i<2;i++){
+        var ex=i?x1:x0,fpts=[];
+        for(s=0;s<sec.length;s++)fpts.push([ex,sec[s][1],sec[s][0]]);
+        if(!i)fpts.reverse();
+        F.push({pts:shrinkPoly(fpts,0.86,0.05),c:p.wall,n:[i?1:-1,0,0],noStl:true,flat:true,clad:clad});
+      }
+    }
+  }else{
+    var rx=Math.max(0,(W-D)/2),ey=d.eaveLow,ox=hw+d.over,oz=hd+d.over,
+        a=[-ox,ey,oz],b=[ox,ey,oz],c2=[ox,ey,-oz],e2=[-ox,ey,-oz],
+        r0=[-rx,d.ridge,0],r1=[rx,d.ridge,0];
+    solid(F,[[a,b,r1,r0],[c2,e2,r0,r1],[b,c2,r1],[e2,a,r0],[a,e2,c2,b]],p.roofc);
+  }
+  /* shingle courses on the sloping planes only */
+  for(i=mark;i<F.length;i++)
+    if(F[i].pts.length===4&&F[i].n[1]>0.25&&!F[i].noStl){F[i].clad=1;F[i].cladSpace=1.05}
+
+  /* chimney, climbing the gable end wall */
+  if(p.chimh>0){
+    var cxp=-hw+0.35,top=d.ridge+p.chimh;
+    addBox(F,cxp-1.35,cxp+1.35,p.found,top,-1.4,1.4,'#8D7F76',{clad:3});
+    addBox(F,cxp-1.65,cxp+1.65,top,top+0.45,-1.7,1.7,p.trim);
+  }
+
+  /* windows, shutters and the front door */
+  var floorY,bayW,doorH=Math.min(7,p.sh-1.2);
+  for(s=0;s<p.storeys;s++){
+    floorY=p.found+s*p.sh+p.sill;
+    if(floorY+p.wh>d.eave-0.6)continue;
+    bayW=W/(p.bays+1);
+    for(i=1;i<=p.bays;i++){
+      x=-hw+bayW*i;
+      if(s===0&&Math.abs(x)<p.dw*0.8+bayW*0.1)continue;
+      addWindow(F,p,[x,hd],floorY,'z',p.ww,p.wh);
+      addWindow(F,p,[x,-hd],floorY,'-z',p.ww,p.wh);
+    }
+    bayW=D/(d.sideBays+1);
+    for(i=1;i<=d.sideBays;i++){
+      z=-hd+bayW*i;
+      addWindow(F,p,[hw,z],floorY,'x',p.ww,p.wh);
+      addWindow(F,p,[-hw,z],floorY,'-x',p.ww,p.wh);
+    }
+  }
+  addBox(F,-p.dw/2-0.32,p.dw/2+0.32,p.found-0.3,p.found+doorH+0.32,hd,hd+0.16,p.trim);
+  F.push({pts:[[-p.dw/2,p.found,hd+0.21],[p.dw/2,p.found,hd+0.21],
+               [p.dw/2,p.found+doorH,hd+0.21],[-p.dw/2,p.found+doorH,hd+0.21]],
+          c:p.doorc,n:[0,0,1],noStl:true,flat:true});
+
+  /* porch: deck, posts, shed roof, railing, steps and chairs */
+  if(p.porch>0){
+    var pw=Math.min(W+2*d.over,Math.max(p.dw*3,W*0.88)),ph=p.found+p.sh*0.86,
+        pz1=hd+p.porch,drop=p.porch*0.16,posts=Math.max(2,Math.round(pw/7)),px;
+    addBox(F,-pw/2,pw/2,Math.max(0,p.found-0.62),p.found,hd,pz1,DECK);
+    for(i=0;i<=posts;i++){
+      px=-pw/2+0.35+(pw-0.7)*i/posts;
+      addBox(F,px-0.28,px+0.28,p.found,ph,pz1-0.66,pz1-0.1,p.trim);
+      addBox(F,px-0.36,px+0.36,ph-0.3,ph,pz1-0.74,pz1-0.02,p.trim);
+    }
+    var pmark=F.length;
+    addPrismX(F,[[hd,ph+0.5],[pz1+0.7,ph-drop],[pz1+0.7,ph-drop-0.42],[hd,ph+0.08]],
+              -pw/2-0.35,pw/2+0.35,p.roofc);
+    for(i=pmark;i<F.length;i++)
+      if(F[i].pts.length===4&&F[i].n[1]>0.25){F[i].clad=1;F[i].cladSpace=1.05}
+    if(p.rail){
+      addRail(F,-pw/2+0.3,pw/2-0.3,pz1-0.38,'x',p.found,p.trim,p.dw*0.95);
+      addRail(F,hd+0.4,pz1-0.38,-pw/2+0.35,'z',p.found,p.trim,0);
+      addRail(F,hd+0.4,pz1-0.38,pw/2-0.35,'z',p.found,p.trim,0);
+    }
+    for(i=0;i<3;i++)
+      addBox(F,-p.dw*0.95,p.dw*0.95,Math.max(0,p.found-0.62-(i+1)*0.52),
+             Math.max(0.02,p.found-(i+1)*0.52),pz1+i*0.95,pz1+(i+1)*0.95,DECK);
+    for(i=0;i<p.chairs;i++){
+      x=(p.chairs===1)?pw*0.22:(-pw*0.24+(pw*0.48)*i/Math.max(1,p.chairs-1));
+      if(Math.abs(x)<p.dw*0.85)x+=(x<0?-1:1)*p.dw*0.6;
+      addChair(F,x,hd+Math.max(1.9,p.porch*0.5),p.found,p.trim);
+    }
+  }
+  return {faces:F,d:d};
+}
+
+/* ===== RENDERER ====================================================
+   Painter's algorithm on a 2D canvas: faces are culled by normal,
+   sorted back to front, flat-shaded against a sun vector, then the
+   cladding is drawn as line work over the fill.                      */
+var cv=document.getElementById('view'),ctx=cv.getContext('2d'),
+    VW=1200,VH=750,DPR=1,
+    cam={yaw:-0.62,pitch:0.21,zoom:1},
+    FOV=0.60,NEAR=0.6,
+    MODEL=null,SUN=[0,1,0],TH={},TARGET=[0,0,0],FITD=90;
+
+function isDark(){
+  var t=document.documentElement.getAttribute('data-theme');
+  if(t==='dark')return true;
+  if(t==='light')return false;
+  return !!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+function themeColors(){
+  return isDark()?
+    {plane:'#13171B',lawn:'#243821',grid:'#242A30',shadow:'rgba(0,0,0,.5)',edge:'rgba(0,0,0,.45)'}:
+    {plane:'#DDE2E7',lawn:'#8CAA63',grid:'#C7CED5',shadow:'rgba(26,36,46,.17)',edge:'rgba(20,26,32,.30)'};
+}
+function hex2rgb(h){
+  return [parseInt(h.substr(1,2),16),parseInt(h.substr(3,2),16),parseInt(h.substr(5,2),16)];
+}
+function mulHex(h,k){
+  var c=hex2rgb(h),i,o='#';
+  for(i=0;i<3;i++){
+    var v=Math.round(Math.min(255,Math.max(0,c[i]*k)));
+    o+=(v<16?'0':'')+v.toString(16);
+  }
+  return o;
+}
+function shadeOf(f){
+  var l=Math.max(0,dot(f.n,SUN)),amb=0.44+0.09*Math.max(0,f.n[1]);
+  return mulHex(f.c,Math.min(1.3,amb+0.60*l));
+}
+function camSetup(){
+  var d=FITD*cam.zoom,
+      cp=[TARGET[0]+d*Math.cos(cam.pitch)*Math.sin(cam.yaw),
+          TARGET[1]+d*Math.sin(cam.pitch),
+          TARGET[2]+d*Math.cos(cam.pitch)*Math.cos(cam.yaw)],
+      f=norm(sub(TARGET,cp)),r=norm(cross(f,[0,1,0])),u=cross(r,f);
+  return {cp:cp,f:f,r:r,u:u,foc:(VH/2)/Math.tan(FOV/2)};
+}
+function toCam(p,C){var v=sub(p,C.cp);return [dot(v,C.r),dot(v,C.u),dot(v,C.f)]}
+function toScreen(v,C){return [VW/2+C.foc*v[0]/v[2],VH/2-C.foc*v[1]/v[2]]}
+function clipNear(vs){
+  var out=[],i,a,b,t,ina,inb;
+  for(i=0;i<vs.length;i++){
+    a=vs[i];b=vs[(i+1)%vs.length];
+    ina=a[2]>=NEAR;inb=b[2]>=NEAR;
+    if(ina)out.push(a);
+    if(ina!==inb){
+      t=(NEAR-a[2])/(b[2]-a[2]);
+      out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,NEAR]);
+    }
+  }
+  return out;
+}
+function pathOf(pts,C){
+  var i,vs=[],sp;
+  for(i=0;i<pts.length;i++)vs.push(toCam(pts[i],C));
+  vs=clipNear(vs);
+  if(vs.length<3)return null;
+  ctx.beginPath();
+  for(i=0;i<vs.length;i++){
+    sp=toScreen(vs[i],C);
+    if(i)ctx.lineTo(sp[0],sp[1]);else ctx.moveTo(sp[0],sp[1]);
+  }
+  ctx.closePath();
+  return vs;
+}
+function seg(a,b,C){
+  var va=toCam(a,C),vb=toCam(b,C),t,sa,sb;
+  if(va[2]<NEAR&&vb[2]<NEAR)return;
+  if(va[2]<NEAR){t=(NEAR-va[2])/(vb[2]-va[2]);va=[va[0]+(vb[0]-va[0])*t,va[1]+(vb[1]-va[1])*t,NEAR]}
+  else if(vb[2]<NEAR){t=(NEAR-vb[2])/(va[2]-vb[2]);vb=[vb[0]+(va[0]-vb[0])*t,vb[1]+(va[1]-vb[1])*t,NEAR]}
+  sa=toScreen(va,C);sb=toScreen(vb,C);
+  ctx.moveTo(sa[0],sa[1]);ctx.lineTo(sb[0],sb[1]);
+}
+function dist3(a,b){return Math.sqrt(dot(sub(a,b),sub(a,b)))}
+
+function cladPoly(f,C){
+  var p=f.pts,i,j,a,b,y,t,lo=1e9,hi=-1e9,space=f.cladSpace||0.667,n,hits;
+  if(Math.abs(f.n[1])>0.7)return;
+  for(i=0;i<p.length;i++){if(p[i][1]<lo)lo=p[i][1];if(p[i][1]>hi)hi=p[i][1]}
+  n=Math.min(60,Math.floor((hi-lo)/space));
+  if(n<1)return;
+  ctx.beginPath();
+  for(i=1;i<=n;i++){
+    y=lo+(hi-lo)*i/(n+1);
+    hits=[];
+    for(j=0;j<p.length;j++){
+      a=p[j];b=p[(j+1)%p.length];
+      if((a[1]<=y&&b[1]>y)||(b[1]<=y&&a[1]>y)){
+        t=(y-a[1])/(b[1]-a[1]);
+        hits.push(lerp3(a,b,t));
+      }
+    }
+    if(hits.length>=2){
+      hits.sort(function(u,v){return (u[0]-v[0])||(u[2]-v[2])});
+      for(j=0;j+1<hits.length;j+=2)seg(hits[j],hits[j+1],C);
+    }
+  }
+  ctx.strokeStyle=mulHex(f.c,0.88);
+  ctx.lineWidth=0.7;
+  ctx.stroke();
+}
+function cladding(f,C){
+  if(!P.texture||!f.clad)return;
+  if(f.pts.length!==4){cladPoly(f,C);return}
+  var p=f.pts,vert=f.clad===2,
+      spanA=dist3(p[0],p[3]),spanB=dist3(p[0],p[1]),
+      space=f.cladSpace||(f.clad===2?1.33:0.667),
+      span=vert?spanB:spanA,
+      n=Math.min(60,Math.floor(span/space)),i,t;
+  if(n<1)return;
+  ctx.beginPath();
+  for(i=1;i<=n;i++){
+    t=i/(n+1);
+    if(vert)seg(lerp3(p[0],p[1],t),lerp3(p[3],p[2],t),C);
+    else seg(lerp3(p[0],p[3],t),lerp3(p[1],p[2],t),C);
+  }
+  ctx.strokeStyle=mulHex(f.c,f.clad===3?0.78:0.88);
+  ctx.lineWidth=f.clad===3?0.8:0.7;
+  ctx.stroke();
+  if(f.clad===3){
+    ctx.beginPath();
+    for(i=1;i<=Math.min(40,Math.floor(spanB/1.2));i++){
+      t=i/(Math.min(40,Math.floor(spanB/1.2))+1);
+      seg(lerp3(p[0],p[1],t),lerp3(p[3],p[2],t),C);
+    }
+    ctx.strokeStyle=mulHex(f.c,0.86);
+    ctx.lineWidth=0.5;
+    ctx.stroke();
+  }
+}
+function hull(pts){
+  var i,s=pts.slice().sort(function(a,b){return a[0]-b[0]||a[1]-b[1]}),lo=[],up=[];
+  function cr(o,a,b){return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0])}
+  for(i=0;i<s.length;i++){
+    while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],s[i])<=0)lo.pop();
+    lo.push(s[i]);
+  }
+  for(i=s.length-1;i>=0;i--){
+    while(up.length>=2&&cr(up[up.length-2],up[up.length-1],s[i])<=0)up.pop();
+    up.push(s[i]);
+  }
+  lo.pop();up.pop();
+  return lo.concat(up);
+}
+function groundShadow(C){
+  if(!P.shadow||SUN[1]<0.2)return;
+  var pts=[],i,j,f,p,k,gp=[];
+  for(i=0;i<MODEL.faces.length;i++){
+    f=MODEL.faces[i];
+    if(f.noStl)continue;
+    for(j=0;j<f.pts.length;j++){
+      p=f.pts[j];
+      if(p[1]<0.05)continue;
+      k=p[1]/SUN[1];
+      gp.push([p[0]-SUN[0]*k,p[2]-SUN[2]*k]);
+    }
+  }
+  if(gp.length<3)return;
+  var h=hull(gp),poly=[];
+  for(i=0;i<h.length;i++)poly.push([h[i][0],0.012,h[i][1]]);
+  if(pathOf(poly,C)){ctx.fillStyle=TH.shadow;ctx.fill()}
+}
+function drawGround(C){
+  var R=260;
+  if(pathOf([[-R,0,-R],[R,0,-R],[R,0,R],[-R,0,R]],C)){ctx.fillStyle=P.lawn?TH.lawn:TH.plane;ctx.fill()}
+  if(P.grid){
+    var i,G=80;
+    ctx.beginPath();
+    for(i=-G;i<=G;i+=5){seg([i,0.004,-G],[i,0.004,G],C);seg([-G,0.004,i],[G,0.004,i],C)}
+    ctx.strokeStyle=TH.grid;ctx.lineWidth=0.7;ctx.stroke();
+  }
+  groundShadow(C);
+}
+function render(){
+  if(!MODEL)return;
+  var C=camSetup(),list=[],i,f,c,vs,az=P.sun*Math.PI/180,alt=0.72;
+  SUN=norm([Math.sin(az)*Math.cos(alt),Math.sin(alt),Math.cos(az)*Math.cos(alt)]);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,VW,VH);
+  ctx.lineJoin='round';
+  drawGround(C);
+  for(i=0;i<MODEL.faces.length;i++){
+    f=MODEL.faces[i];
+    c=polyCenter(f.pts);
+    if(dot(f.n,sub(c,C.cp))>0)continue;
+    list.push({f:f,z:toCam(c,C)[2]});
+  }
+  list.sort(function(a,b){return b.z-a.z});
+  for(i=0;i<list.length;i++){
+    f=list[i].f;
+    if(f.pool&&MODEL.faces.poolHole){
+      ctx.save();
+      if(pathOf(MODEL.faces.poolHole,C))ctx.clip();
+      if(pathOf(f.pts,C)){ctx.fillStyle=shadeOf(f);ctx.fill()}
+      ctx.restore();
+      continue;
+    }
+    vs=pathOf(f.pts,C);
+    if(!vs)continue;
+    ctx.fillStyle=shadeOf(f);
+    ctx.fill();
+    if(P.edges){
+      ctx.strokeStyle=TH.edge;
+      ctx.lineWidth=0.6;
+      ctx.stroke();
+    }
+    cladding(f,C);
+  }
+}
+function bbox(faces,skip){
+  var b={x0:1e9,x1:-1e9,y0:1e9,y1:-1e9,z0:1e9,z1:-1e9},i,j,p;
+  for(i=0;i<faces.length;i++){
+    if(skip&&faces[i][skip])continue;
+    for(j=0;j<faces[i].pts.length;j++){
+    p=faces[i].pts[j];
+    if(p[0]<b.x0)b.x0=p[0];if(p[0]>b.x1)b.x1=p[0];
+    if(p[1]<b.y0)b.y0=p[1];if(p[1]>b.y1)b.y1=p[1];
+    if(p[2]<b.z0)b.z0=p[2];if(p[2]>b.z1)b.z1=p[2];
+    }
+  }
+  return b;
+}
+function fitCamera(){
+  var b=MODEL.scene,h=MODEL.box,
+      ex=Math.max(b.x1-b.x0,b.z1-b.z0,(h.y1-h.y0)*1.3);
+  TARGET=[(b.x0+b.x1)/2*0.55,h.y1*0.40,0];
+  FITD=(ex/2)/Math.tan(FOV/2)*1.12;
+}
+function resize(){
+  var w=cv.parentNode.clientWidth||900;
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  VW=w;VH=Math.round(w*0.625);
+  cv.width=Math.round(VW*DPR);cv.height=Math.round(VH*DPR);
+  cv.style.width=VW+'px';cv.style.height=VH+'px';
+  render();
+}
+
+/* ===== TAKEOFF =====================================================
+   Quantities in the units the trades actually order in: a square is
+   100 sq ft, shingles run three bundles to the square, studs at
+   16 in. on center.                                                  */
+function takeoff(p,d,faces){
+  var t={},i,n=0;
+  for(i=0;i<faces.length;i++)if(faces[i].c===GLASS)n++;
+  t.windows=n;
+  t.doorH=Math.min(7,p.sh-1.2);
+  t.floor=p.width*p.depth*p.storeys;
+  t.grossWall=d.perim*d.wallH;
+  t.glaze=n*p.ww*p.wh;
+  t.gable=(p.roof==='gable'||p.roof==='gambrel')?p.depth*d.rise:0;
+  t.netWall=Math.max(0,t.grossWall+t.gable-t.glaze-p.dw*t.doorH);
+  t.siding=t.netWall/100;
+  t.roofArea=(p.width+2*d.over)*(p.depth+2*d.over)*d.slope;
+  t.bundles=Math.ceil(t.roofArea/100*3);
+  t.studs=Math.ceil(d.perim*12/16)+8;
+  t.volume=p.width*p.depth*d.wallH+p.width*p.depth*d.rise*(p.roof==='hip'?0.34:0.5);
+  t.glazeRatio=t.grossWall>0?t.glaze/t.grossWall*100:0;
+  return t;
+}
+
+/* ===== STL AND ZIP ================================================= */
+function stlBytes(){
+  var k=304.8/P.scale,b=MODEL.box,tris=[],i,j,f,pts,a,bb,c,n,dv,buf,off=84,u8;
+  function T(v){
+    return [(v[0]-(b.x0+b.x1)/2)*k,(-(v[2]-(b.z0+b.z1)/2))*k,(v[1]-b.y0)*k];
+  }
+  for(i=0;i<MODEL.faces.length;i++){
+    f=MODEL.faces[i];
+    if(f.noStl)continue;
+    pts=f.pts;
+    for(j=1;j<pts.length-1;j++)tris.push([T(pts[0]),T(pts[j]),T(pts[j+1])]);
+  }
+  buf=new ArrayBuffer(84+50*tris.length);
+  dv=new DataView(buf);
+  dv.setUint32(80,tris.length,true);
+  for(i=0;i<tris.length;i++){
+    a=tris[i][0];bb=tris[i][1];c=tris[i][2];
+    n=norm(cross(sub(bb,a),sub(c,a)));
+    dv.setFloat32(off,n[0],true);dv.setFloat32(off+4,n[1],true);dv.setFloat32(off+8,n[2],true);
+    dv.setFloat32(off+12,a[0],true);dv.setFloat32(off+16,a[1],true);dv.setFloat32(off+20,a[2],true);
+    dv.setFloat32(off+24,bb[0],true);dv.setFloat32(off+28,bb[1],true);dv.setFloat32(off+32,bb[2],true);
+    dv.setFloat32(off+36,c[0],true);dv.setFloat32(off+40,c[1],true);dv.setFloat32(off+44,c[2],true);
+    dv.setUint16(off+48,0,true);
+    off+=50;
+  }
+  u8=new Uint8Array(buf);
+  u8.triangles=tris.length;
+  return u8;
+}
+var CRCT=(function(){var t=[],c,n,k;for(n=0;n<256;n++){c=n;for(k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0}return t})();
+function crc32(u8){var c=0xFFFFFFFF,i;for(i=0;i<u8.length;i++)c=CRCT[(c^u8[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zipStore(name,data){
+  var nb=[],i,crc=crc32(data),ln,dl=data.length,buf,dv,u8,o=0,cdOff,cdSize;
+  for(i=0;i<name.length;i++)nb.push(name.charCodeAt(i)&255);
+  ln=nb.length;
+  buf=new ArrayBuffer(30+ln+dl+46+ln+22);
+  dv=new DataView(buf);u8=new Uint8Array(buf);
+  function w32(v){dv.setUint32(o,v>>>0,true);o+=4}
+  function w16(v){dv.setUint16(o,v,true);o+=2}
+  w32(0x04034b50);w16(20);w16(0);w16(0);w16(0);w16(0x21);
+  w32(crc);w32(dl);w32(dl);w16(ln);w16(0);
+  u8.set(nb,o);o+=ln;
+  u8.set(data,o);o+=dl;
+  cdOff=o;
+  w32(0x02014b50);w16(20);w16(20);w16(0);w16(0);w16(0);w16(0x21);
+  w32(crc);w32(dl);w32(dl);w16(ln);w16(0);w16(0);w16(0);w16(0);w32(0);w32(0);
+  u8.set(nb,o);o+=ln;
+  cdSize=o-cdOff;
+  w32(0x06054b50);w16(0);w16(0);w16(1);w16(1);w32(cdSize);w32(cdOff);w16(0);
+  return u8;
+}
+
+/* ===== INTERFACE =================================================== */
+function $(id){return document.getElementById(id)}
+function deg(n){return n+String.fromCharCode(176)}
+var RANGES=[
+  ['p_width','width','v_width',ftin],['p_depth','depth','v_depth',ftin],
+  ['p_sh','sh','v_sh',ftin],['p_found','found','v_found',ftin],
+  ['p_pitch','pitch','v_pitch',function(n){return n+':12'}],
+  ['p_over','over','v_over',function(n){return n+' in'}],
+  ['p_bays','bays','v_bays',String],['p_ww','ww','v_ww',ftin],
+  ['p_wh','wh','v_wh',ftin],['p_sill','sill','v_sill',ftin],['p_dw','dw','v_dw',ftin],
+  ['p_porch','porch','v_porch',ftin],['p_chimh','chimh','v_chimh',ftin],
+  ['p_chairs','chairs','v_chairs',String],['p_poollen','poollen','v_poollen',ftin],
+  ['p_sun','sun','v_sun',deg]
+];
+var TOGGLES=[['t_grid','grid',0],['t_shadow','shadow',0],['t_edges','edges',0],
+             ['t_texture','texture',0],['t_lawn','lawn',0],
+             ['t_shutters','shutters',1],['t_rail','rail',1],['t_pool','pool',1],['t_walk','walk',1]];
+var VIEWS={corner:[-0.62,0.21],front:[0,0.11],side:[-Math.PI/2,0.11],plan:[-0.66,1.15]};
+var hintEl=$('printhint'),hintText=hintEl.textContent,hintTimer=null,announceEl=$('announce');
+
+function status(msg){
+  announceEl.textContent=msg;
+  hintEl.textContent=msg;
+  if(hintTimer)clearTimeout(hintTimer);
+  hintTimer=setTimeout(function(){hintEl.textContent=hintText},5000);
+}
+function rebuild(){
+  MODEL=build(P);
+  MODEL.box=bbox(MODEL.faces,'noStl');
+  MODEL.scene=bbox(MODEL.faces,'ground');
+  fitCamera();
+  updateSpec();
+  render();
+}
+function updateSpec(){
+  var d=MODEL.d,b=MODEL.box,t=takeoff(P,d,MODEL.faces),
+      k=304.8/P.scale,mx=(b.x1-b.x0)*k,my=(b.z1-b.z0)*k,mz=(b.y1-b.y0)*k,fits;
+  $('s_area').textContent=commas(Math.round(t.floor));
+  $('s_foot').textContent=Math.round(P.width)+' x '+Math.round(P.depth);
+  $('s_ridge').textContent=ftin(d.ridge);
+  $('s_angle').textContent=deg(d.angle.toFixed(1));
+  $('s_glaze').textContent=t.glazeRatio.toFixed(1);
+  $('s_vol').textContent=t.volume>=10000?(t.volume/1000).toFixed(1)+'k':commas(Math.round(t.volume));
+  $('b_wall').innerHTML=commas(Math.round(t.netWall))+'<small>sq ft</small>';
+  $('b_siding').innerHTML=t.siding.toFixed(1)+'<small>squares</small>';
+  $('b_roof').innerHTML=commas(Math.round(t.roofArea))+'<small>sq ft</small>';
+  $('b_bundles').innerHTML=t.bundles+'<small>bundles</small>';
+  $('b_studs').innerHTML=t.studs+'<small>approx</small>';
+  $('b_openings').textContent=t.windows+' / 1';
+  $('b_perim').innerHTML=Math.round(d.perim)+'<small>ft</small>';
+  $('sc_size').textContent=Math.round(mx)+' x '+Math.round(my)+' x '+Math.round(mz)+' mm';
+  fits=(mx<=220&&my<=220&&mz<=250);
+  $('sc_fit').className='badge '+(fits?'fit':'nofit');
+  $('sc_fit').lastChild.textContent=fits?'Fits':'Too big';
+}
+function syncControls(){
+  var i,r;
+  for(i=0;i<RANGES.length;i++){
+    r=RANGES[i];
+    $(r[0]).value=P[r[1]];
+    $(r[2]).textContent=r[3](P[r[1]]);
+  }
+  $('p_storeys').value=String(P.storeys);
+  $('p_roof').value=P.roof;
+  $('m_siding').value=P.siding;
+  $('sc_scale').value=String(P.scale);
+  $('c_wall').value=P.wall;
+  $('c_shutter').value=P.shutterc;
+  $('c_door').value=P.doorc;
+  $('c_roof').value=P.roofc;
+  $('c_trim').value=P.trim;
+  for(i=0;i<TOGGLES.length;i++)
+    $(TOGGLES[i][0]).setAttribute('aria-pressed',P[TOGGLES[i][1]]?'true':'false');
+}
+function markView(k){
+  var b=$('vbar').getElementsByTagName('button'),i;
+  for(i=0;i<b.length;i++)b[i].setAttribute('aria-pressed',b[i].getAttribute('data-view')===k?'true':'false');
+}
+(function wire(){
+  var i;
+  for(i=0;i<RANGES.length;i++){
+    (function(r){
+      $(r[0]).addEventListener('input',function(){
+        P[r[1]]=parseFloat(this.value);
+        $(r[2]).textContent=r[3](P[r[1]]);
+        if(r[1]==='sun')render();else rebuild();
+        persist();
+      });
+    })(RANGES[i]);
+  }
+  $('p_storeys').addEventListener('change',function(){P.storeys=parseInt(this.value,10);rebuild();persist()});
+  $('p_roof').addEventListener('change',function(){P.roof=this.value;rebuild();persist()});
+  $('m_siding').addEventListener('change',function(){P.siding=this.value;rebuild();persist()});
+  $('sc_scale').addEventListener('change',function(){P.scale=parseInt(this.value,10);updateSpec();persist()});
+  $('c_wall').addEventListener('input',function(){P.wall=this.value;rebuild();persist()});
+  $('c_shutter').addEventListener('input',function(){P.shutterc=this.value;rebuild();persist()});
+  $('c_door').addEventListener('input',function(){P.doorc=this.value;rebuild();persist()});
+  $('c_roof').addEventListener('input',function(){P.roofc=this.value;rebuild();persist()});
+  $('c_trim').addEventListener('input',function(){P.trim=this.value;rebuild();persist()});
+  for(i=0;i<TOGGLES.length;i++){
+    (function(t){
+      $(t[0]).addEventListener('click',function(){
+        P[t[1]]=!P[t[1]];
+        this.setAttribute('aria-pressed',P[t[1]]?'true':'false');
+        if(t[2])rebuild();else render();
+        persist();
+      });
+    })(TOGGLES[i]);
+  }
+  $('vbar').addEventListener('click',function(e){
+    var b=e.target&&e.target.closest?e.target.closest('button[data-view]'):null,k,v;
+    if(!b)return;
+    k=b.getAttribute('data-view');v=VIEWS[k];
+    cam.yaw=v[0];cam.pitch=v[1];cam.zoom=1;
+    markView(k);render();
+  });
+  $('b_reset').addEventListener('click',function(){
+    P=copy(DEFAULTS);
+    cam.yaw=VIEWS.corner[0];cam.pitch=VIEWS.corner[1];cam.zoom=1;
+    syncControls();markView('corner');rebuild();persist();
+    status('Model reset to the default house.');
+  });
+})();
+
+/* ---- orbit ---- */
+(function orbit(){
+  var pts={},last=null,pinch=0;
+  function count(){var k,n=0;for(k in pts)if(pts.hasOwnProperty(k))n++;return n}
+  cv.addEventListener('pointerdown',function(e){
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    last={x:e.clientX,y:e.clientY};
+    if(cv.setPointerCapture)cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove',function(e){
+    if(!pts[e.pointerId])return;
+    pts[e.pointerId]={x:e.clientX,y:e.clientY};
+    if(count()>=2){
+      var k,a=[],d;
+      for(k in pts)if(pts.hasOwnProperty(k))a.push(pts[k]);
+      d=Math.sqrt((a[0].x-a[1].x)*(a[0].x-a[1].x)+(a[0].y-a[1].y)*(a[0].y-a[1].y));
+      if(pinch)cam.zoom=Math.max(0.4,Math.min(3,cam.zoom*pinch/d));
+      pinch=d;render();
+      return;
+    }
+    cam.yaw-=(e.clientX-last.x)*0.0085;
+    cam.pitch=Math.max(0.05,Math.min(1.45,cam.pitch+(e.clientY-last.y)*0.006));
+    last={x:e.clientX,y:e.clientY};
+    markView(null);render();
+  });
+  function end(e){delete pts[e.pointerId];if(count()<2)pinch=0;if(!count())last=null}
+  cv.addEventListener('pointerup',end);
+  cv.addEventListener('pointercancel',end);
+  cv.addEventListener('wheel',function(e){
+    e.preventDefault();
+    cam.zoom=Math.max(0.4,Math.min(3,cam.zoom*(e.deltaY>0?1.09:0.92)));
+    render();
+  },{passive:false});
+})();
+
+/* ---- saving ---- */
+var inViewer=!!(window.claude&&window.claude.use),
+    dlPromise=inViewer?window.claude.use('downloads'):Promise.resolve(null);
+dlPromise.then(function(d){
+  if(inViewer&&!d){$('b_stl').hidden=true;$('b_png').hidden=true}
+},function(){});
+function offer(filename,data){
+  dlPromise.then(function(d){
+    if(d){
+      d.save({filename:filename,data:data}).then(function(){status('Saved '+filename+'.')},
+        function(err){
+          var c=err&&err.code;
+          status(c==='declined'?'Save cancelled.':
+                 c==='rate_limited'?'A save prompt is already open.':
+                 'Could not save here ('+(c||'unavailable')+').');
+        });
+      return;
+    }
+    if(!inViewer){
+      var blob=(data instanceof Blob)?data:new Blob([data],{type:'application/octet-stream'}),
+          url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download=filename;document.body.appendChild(a);a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){URL.revokeObjectURL(url)},4000);
+      status('Saved '+filename+'.');
+      return;
+    }
+    status('Saving is not available in this view.');
+  },function(){status('Saving is not available in this view.')});
+}
+$('b_stl').addEventListener('click',function(){
+  var stl=stlBytes(),n=stl.triangles;
+  if(inViewer){
+    var zip=zipStore('house-model.stl',stl);
+    offer('house-model.zip',new Blob([zip],{type:'application/zip'}));
+    status(commas(n)+' triangles, zipped for download.');
+  }else{
+    offer('house-model.stl',new Blob([stl],{type:'model/stl'}));
+  }
+});
+$('b_png').addEventListener('click',function(){
+  if(!cv.toBlob){status('This browser cannot export the view.');return}
+  cv.toBlob(function(b){
+    if(!b){status('The view could not be captured.');return}
+    offer('house-model.png',b);
+  },'image/png');
+});
+
+/* ---- persistence, theme, boot ---- */
+var KEY='house.v1';
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}}
+function clampLoaded(){
+  var i,r,el,v;
+  for(i=0;i<RANGES.length;i++){
+    r=RANGES[i];el=$(r[0]);v=parseFloat(P[r[1]]);
+    if(!isFinite(v))v=DEFAULTS[r[1]];
+    P[r[1]]=Math.min(parseFloat(el.max),Math.max(parseFloat(el.min),v));
+  }
+  P.storeys=(P.storeys===1||P.storeys===2)?P.storeys:2;
+  if(['gable','hip','gambrel','shed'].indexOf(P.roof)<0)P.roof=DEFAULTS.roof;
+  if(['clapboard','batten','brick','stucco'].indexOf(P.siding)<0)P.siding=DEFAULTS.siding;
+  if([50,87,100,150,200].indexOf(P.scale)<0)P.scale=DEFAULTS.scale;
+  if(!/^#[0-9a-fA-F]{6}$/.test(P.wall||''))P.wall=DEFAULTS.wall;
+  if(!/^#[0-9a-fA-F]{6}$/.test(P.roofc||''))P.roofc=DEFAULTS.roofc;
+  if(!/^#[0-9a-fA-F]{6}$/.test(P.trim||''))P.trim=DEFAULTS.trim;
+  if(!/^#[0-9a-fA-F]{6}$/.test(P.shutterc||''))P.shutterc=DEFAULTS.shutterc;
+  if(!/^#[0-9a-fA-F]{6}$/.test(P.doorc||''))P.doorc=DEFAULTS.doorc;
+  for(i=0;i<TOGGLES.length;i++)P[TOGGLES[i][1]]=!!P[TOGGLES[i][1]];
+}
+function load(){
+  try{
+    var d=JSON.parse(localStorage.getItem(KEY)||'null'),k;
+    if(!d)return;
+    for(k in DEFAULTS)if(DEFAULTS.hasOwnProperty(k)&&d.hasOwnProperty(k))P[k]=d[k];
+  }catch(e){}
+}
+function themeSync(){TH=themeColors();render()}
+if(window.matchMedia){
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  if(mq.addEventListener)mq.addEventListener('change',themeSync);
+  else if(mq.addListener)mq.addListener(themeSync);
+}
+if(window.MutationObserver){
+  new MutationObserver(themeSync).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+}
+if(window.ResizeObserver){new ResizeObserver(resize).observe(cv.parentNode)}
+else window.addEventListener('resize',resize);
+function start(data){
+  if(data&&data.P&&typeof data.P==='object'){
+    var k;
+    for(k in DEFAULTS)if(DEFAULTS.hasOwnProperty(k)&&data.P.hasOwnProperty(k))P[k]=data.P[k];
+  }else load();
+  clampLoaded();
+  TH=themeColors();
+  syncControls();
+  markView('corner');
+  MODEL=build(P);
+  MODEL.box=bbox(MODEL.faces,'noStl');
+  MODEL.scene=bbox(MODEL.faces,'ground');
+  fitCamera();
+  updateSpec();
+  resize();
+}
+if(window.claude&&window.claude.hot&&window.claude.hot.snapshot){
+  window.claude.hot.snapshot(function(){return {P:P}});
+}
+if(window.claude&&window.claude.hot&&window.claude.hot.ready){
+  window.claude.hot.ready(function(d){start(d||{})});
+}else{
+  start((window.claude&&window.claude.hot&&window.claude.hot.data)||{});
+}
+</script>
+</body>
+</html>
