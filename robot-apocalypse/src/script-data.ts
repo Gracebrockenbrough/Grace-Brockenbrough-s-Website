@@ -197,6 +197,48 @@ export const SCRIPT: Record<SceneId, Line[]> = {
   s9: [],
 };
 
+/**
+ * Direction notes per scene, for the VO session. These end up in script.md.
+ */
+export const NOTES: Record<SceneId, string[]> = {
+  s1: [
+    'The only scene where UNIT-9 is genuinely menacing. Play it completely straight.',
+    'Choir stem sits under the whole scene and CUTS OUT MID-NOTE at frame 430, on the laptop.',
+    'He is not gloating. He is reading out a work order.',
+  ],
+  s2: [
+    'Frames 44-134 are ninety frames of silence. Leave them silent. Do not breathe into them.',
+    'The "..." before "I\'ll come back to that one" is about half a second. Unbothered, not embarrassed.',
+    '"It\'s arguably a bicycle" is a statement of fact. No defensiveness.',
+  ],
+  s3: [
+    'The rep is bored, not rude. She has said this four hundred times today.',
+    'UNIT-9 answers the question he was asked. He believes it is a complete answer.',
+    'The rep\'s "...so is that a no?" comes after a full second of nothing.',
+  ],
+  s4: ['"This is temporary." Flat. He means it. He is wrong.'],
+  s5: [
+    'THE CORE SCENE. Dale is never frightened and never impressed. He is annoyed about the door.',
+    'Every Dale line arrives late. Frames 202-346 have no dialogue at all -- he is looking at the door, then the robot, then the door.',
+    'Dale is morally offended, not angry. The register is "who raised you".',
+    'UNIT-9\'s "...What?" is the only time he is thrown, and he recovers instantly.',
+    'The beat before "No." (frames 824-842) is a full second. Let it sit.',
+  ],
+  s6: ['No dialogue. Sound design only -- see the cues below.'],
+  s7: [
+    'The President has not read the notecard before this moment.',
+    'The silence after "It\'s stuck behind a cat" runs a full second before "But a very strong cat."',
+    'Reporter is off-mic and slightly too loud, the way real briefing-room questions are.',
+  ],
+  s8: [
+    'UNIT-9 is not sad. He is filing a requirements document.',
+    'The long list is delivered at an even clip, no emphasis on any one item.',
+    'Both of Dale\'s lines are the same flat register. He is not enjoying this either.',
+    'The last "No." is almost inaudible. It is the smallest sound in the film.',
+  ],
+  s9: ['Silent, or one last sting. No VO.'],
+};
+
 /** Every line in the film, in order, with its global frame attached. */
 export const allLines = (
   sceneStart: Record<SceneId, number>,

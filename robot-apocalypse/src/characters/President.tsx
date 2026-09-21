@@ -10,7 +10,12 @@ export type PresidentPose = {
   headTilt: number;
   browRaise: number;
   mouthOpen: number;
-  /** Both arms, in degrees. He gestures with everything he has. */
+  /**
+   * Both arms, in degrees, in SCREEN space: positive swings a limb toward
+   * screen-left. So his screen-left arm goes outward on POSITIVE and his
+   * screen-right arm goes outward on NEGATIVE. He gestures with everything
+   * he has.
+   */
   lArm: {shoulder: number; elbow: number};
   rArm: {shoulder: number; elbow: number};
   /** 0..1 -- raises a notecard into his eyeline. */
@@ -23,8 +28,8 @@ const base: PresidentPose = {
   headTilt: 0,
   browRaise: 0,
   mouthOpen: 0,
-  lArm: {shoulder: -26, elbow: -54},
-  rArm: {shoulder: 26, elbow: 54},
+  lArm: {shoulder: 22, elbow: 46},
+  rArm: {shoulder: -22, elbow: -46},
   notecard: 0,
   lean: 0,
 };
@@ -36,19 +41,20 @@ export const president = (p: Partial<PresidentPose>): PresidentPose => ({
 
 export const PRES_POSE = {
   addressing: president({
-    lArm: {shoulder: -52, elbow: -68},
-    rArm: {shoulder: 52, elbow: 68},
+    lArm: {shoulder: 44, elbow: 58},
+    rArm: {shoulder: -44, elbow: -58},
     browRaise: 0.5,
   }),
   /** The pinch. Tremendous. */
   emphatic: president({
-    lArm: {shoulder: -74, elbow: -84},
-    rArm: {shoulder: 74, elbow: 84},
+    lArm: {shoulder: 62, elbow: 74},
+    rArm: {shoulder: -62, elbow: -74},
     browRaise: 1,
   }),
+  /** Notecard brought up across the chest, where he can actually read it. */
   reading: president({
-    lArm: {shoulder: -18, elbow: -42},
-    rArm: {shoulder: 64, elbow: 96},
+    lArm: {shoulder: 16, elbow: 38},
+    rArm: {shoulder: 30, elbow: 16},
     notecard: 1,
     headTilt: 6,
   }),
@@ -162,17 +168,17 @@ export const President: React.FC<{
           <g opacity={p.notecard}>
             <Hand />
             <rect
-              x={-46}
-              y={-14}
-              width={92}
-              height={58}
+              x={-58}
+              y={-18}
+              width={116}
+              height={74}
               rx={4}
               fill={C.paper}
               stroke={C.ink}
               strokeWidth={STROKE_THIN}
             />
             {[0, 1, 2].map((i) => (
-              <rect key={i} x={-36} y={0 + i * 14} width={62 - i * 16} height={5} rx={2.5} fill={C.paperLine} />
+              <rect key={i} x={-46} y={2 + i * 18} width={80 - i * 20} height={6} rx={3} fill={C.paperLine} />
             ))}
           </g>
         ) : (

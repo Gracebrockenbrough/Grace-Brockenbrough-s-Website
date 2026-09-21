@@ -101,18 +101,20 @@ export const U9 = {
   /** Scene 8: on the floor, legs out flat to screen-right. Defeated, not deformed. */
   slump: {
     ...base,
-    hipDrop: 172,
-    lean: -9,
-    headTilt: -8,
-    headDrop: 12,
-    lHip: -92,
+    hipDrop: 176,
+    lean: -13,
+    headTilt: -10,
+    headDrop: 14,
+    // near leg straight out, far leg folded -- he sat down hard and stopped
+    lHip: -96,
     lKnee: -6,
-    rHip: -88,
-    rKnee: -4,
-    lShoulder: 26,
-    lElbow: -22,
-    rShoulder: -24,
-    rElbow: 20,
+    rHip: -58,
+    rKnee: -62,
+    // one hand flat on the floor behind him, taking his weight
+    lShoulder: 46,
+    lElbow: -34,
+    rShoulder: -26,
+    rElbow: 24,
   },
 } satisfies Record<string, Unit9Pose>;
 
