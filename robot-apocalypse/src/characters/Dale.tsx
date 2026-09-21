@@ -23,7 +23,9 @@ export type DalePose = {
   eyeLid: number;
   mouth: MouthShape;
   mouthOpen: number;
+  /** NEAR arm, screen-left. The gesturing arm. Positive swings it outward. */
   lArm: DaleArm;
+  /** FAR arm, screen-right. Holds the bowl. Effectively never moves. */
   rArm: DaleArm;
   lean: number;
   bob: number;
@@ -39,8 +41,8 @@ const base: DalePose = {
   eyeLid: 0,
   mouth: 'closed',
   mouthOpen: 0,
-  lArm: {shoulder: -18, elbow: -58},
-  rArm: {shoulder: 14, elbow: 46},
+  lArm: {shoulder: 26, elbow: 74},
+  rArm: {shoulder: -22, elbow: -62},
   lean: 0,
   bob: 0,
   spoon: false,
@@ -50,31 +52,33 @@ export const dale = (p: Partial<DalePose>): DalePose => ({...base, ...p});
 
 export const DALE_POSE = {
   /** Eating. Does not look up. */
-  eating: dale({rArm: {shoulder: 26, elbow: 74}, spoon: true, mouth: 'chew'}),
+  eating: dale({lArm: {shoulder: 26, elbow: 74}, spoon: true, mouth: 'chew'}),
   /** The signature move: open palm presented at the problem. */
   palmOut: dale({
-    rArm: {shoulder: 86, elbow: -22},
-    browRaise: 0.8,
-    browAngle: 0.5,
+    lArm: {shoulder: 88, elbow: -26},
+    browRaise: 0.85,
+    browAngle: 0.6,
     mouth: 'talk',
   }),
   /** Palm out AND holding the spoon, for gesturing at a door with cutlery. */
   spoonOut: dale({
-    rArm: {shoulder: 78, elbow: -14},
+    lArm: {shoulder: 96, elbow: -34},
     spoon: true,
-    browRaise: 0.5,
-    browAngle: -0.3,
+    browRaise: 0.35,
+    browAngle: -0.6,
   }),
   /** Both hands up. Morally offended. */
   incredulous: dale({
-    rArm: {shoulder: 96, elbow: -40},
-    lArm: {shoulder: -40, elbow: -70},
+    lArm: {shoulder: 104, elbow: -46},
     browRaise: 1,
-    browAngle: 0.8,
+    browAngle: 0.85,
     mouth: 'wide',
   }),
   rest: base,
 } satisfies Record<string, DalePose>;
+
+/** Distance from the top of the viewBox to the soles of his slippers. */
+export const DALE_FOOT = 406;
 
 // ---------------------------------------------------------------- geometry
 const SHOULDER_L = {x: 104, y: 190};
@@ -218,14 +222,15 @@ const mouthPath = (shape: MouthShape, open: number) => {
         fill: C.ink,
       };
     case 'wide':
+      // corners DOWN. He is making a point, not enjoying himself.
       return {
-        d: `M -24 -2 Q 0 ${10 + o * 14} 24 -2 Q 0 ${2 + o * 3} -24 -2 Z`,
+        d: `M -22 -5 Q 0 ${3 + o * 3} 22 -5 Q 19 ${7 + o * 11} 0 ${9 + o * 13} Q -19 ${7 + o * 11} -22 -5 Z`,
         fill: C.ink,
       };
     case 'talk':
     default:
       return {
-        d: `M -15 0 Q 0 ${-3 - o * 5} 15 0 Q 0 ${6 + o * 16} -15 0 Z`,
+        d: `M -13 -2 Q 0 ${2 + o * 2} 13 -2 Q 11 ${6 + o * 10} 0 ${8 + o * 12} Q -11 ${6 + o * 10} -13 -2 Z`,
         fill: C.ink,
       };
   }
@@ -240,8 +245,8 @@ export const Dale: React.FC<{
   opacity?: number;
 }> = ({pose: p = DALE_POSE.rest, x = 0, y = 0, scale = 1, flip = false, opacity = 1}) => {
   const m = mouthPath(p.mouth, p.mouthOpen);
-  const browY = 78 - p.browRaise * 11;
-  const browRot = p.browAngle * 14;
+  const browY = 80 - p.browRaise * 17;
+  const browRot = p.browAngle * 21;
 
   return (
     <svg
@@ -260,16 +265,16 @@ export const Dale: React.FC<{
       <g transform={`translate(0 ${p.bob}) rotate(${p.lean} 170 380)`}>
         {/* legs + slippers */}
         {[
-          {lx: 132, f: false},
-          {lx: 208, f: true},
+          {lx: 136, f: false},
+          {lx: 206, f: true},
         ].map(({lx, f}, i) => (
           <g key={i}>
             <rect
-              x={lx - 16}
-              y={330}
-              width={32}
-              height={64}
-              rx={13}
+              x={lx - 19}
+              y={300}
+              width={38}
+              height={96}
+              rx={16}
               fill={C.skin}
               stroke={C.ink}
               strokeWidth={STROKE}
@@ -277,8 +282,8 @@ export const Dale: React.FC<{
             <path
               d={
                 f
-                  ? `M ${lx + 16} 388 L ${lx - 30} 388 Q ${lx - 40} 392 ${lx - 38} 404 L ${lx + 17} 404 Z`
-                  : `M ${lx - 16} 388 L ${lx + 30} 388 Q ${lx + 40} 392 ${lx + 38} 404 L ${lx - 17} 404 Z`
+                  ? `M ${lx + 19} 386 L ${lx - 32} 386 Q ${lx - 44} 390 ${lx - 42} 406 L ${lx + 20} 406 Z`
+                  : `M ${lx - 19} 386 L ${lx + 32} 386 Q ${lx + 44} 390 ${lx + 42} 406 L ${lx - 20} 406 Z`
               }
               fill={C.robeDeep}
               stroke={C.ink}
@@ -288,14 +293,19 @@ export const Dale: React.FC<{
           </g>
         ))}
 
-        {/* far arm (his left, screen-right) holds the bowl -- always */}
+        {/* far arm, screen-right: the bowl. It is always there. */}
         <Arm at={SHOULDER_R} arm={p.rArm}>
-          {p.spoon ? <Spoon /> : <DaleHand open={1} />}
+          <g transform="translate(0 6)">
+            <CerealBowl />
+            <g transform="translate(30 4)">
+              <DaleHand open={0} />
+            </g>
+          </g>
         </Arm>
 
         {/* bathrobe body */}
         <path
-          d="M 96 196 Q 100 172 126 166 L 214 166 Q 240 172 244 196 L 262 356 Q 264 372 246 374 L 94 374 Q 76 372 78 356 Z"
+          d="M 96 196 Q 100 172 126 166 L 214 166 Q 240 172 244 196 L 258 312 Q 260 328 242 330 L 98 330 Q 80 328 82 312 Z"
           fill={C.robe}
           stroke={C.ink}
           strokeWidth={STROKE}
@@ -309,11 +319,11 @@ export const Dale: React.FC<{
           strokeWidth={STROKE_THIN}
           strokeLinejoin="round"
         />
-        <path d="M 170 214 L 170 300" stroke={C.robeShade} strokeWidth={3} fill="none" />
+        <path d="M 170 214 L 170 258" stroke={C.robeShade} strokeWidth={3} fill="none" />
         {/* belt */}
-        <rect x={84} y={266} width={172} height={22} rx={8} fill={C.robeShade} stroke={C.ink} strokeWidth={STROKE_THIN} />
+        <rect x={84} y={244} width={172} height={22} rx={8} fill={C.robeShade} stroke={C.ink} strokeWidth={STROKE_THIN} />
         <path
-          d="M 170 288 q -16 22 -30 30 M 170 288 q 16 22 30 30"
+          d="M 170 266 q -16 24 -30 34 M 170 266 q 16 24 30 34"
           fill="none"
           stroke={C.robeShade}
           strokeWidth={9}
@@ -323,7 +333,7 @@ export const Dale: React.FC<{
         <path d="M 150 176 L 190 176 L 170 208 Z" fill={C.milk} stroke={C.ink} strokeWidth={2.5} />
 
         {/* head */}
-        <g transform={`translate(${p.headTurn * 16} 0) rotate(${p.headTilt} 170 150)`}>
+        <g transform={`translate(${p.headTurn * 22} 0) rotate(${p.headTilt} 170 150)`}>
           {/* ears */}
           <ellipse cx={104} cy={96} rx={11} ry={15} fill={C.skin} stroke={C.ink} strokeWidth={STROKE_THIN} />
           <ellipse cx={236} cy={96} rx={11} ry={15} fill={C.skin} stroke={C.ink} strokeWidth={STROKE_THIN} />
@@ -352,8 +362,8 @@ export const Dale: React.FC<{
           {/* eyes */}
           <ellipse cx={145} cy={96} rx={12} ry={13} fill={C.white} stroke={C.ink} strokeWidth={2.6} />
           <ellipse cx={195} cy={96} rx={12} ry={13} fill={C.white} stroke={C.ink} strokeWidth={2.6} />
-          <circle cx={145 + p.headTurn * 4} cy={96} r={5.6} fill={C.ink} />
-          <circle cx={195 + p.headTurn * 4} cy={96} r={5.6} fill={C.ink} />
+          <circle cx={145 + p.headTurn * 7.5} cy={96} r={5.8} fill={C.ink} />
+          <circle cx={195 + p.headTurn * 7.5} cy={96} r={5.8} fill={C.ink} />
           {p.eyeLid > 0.02 && (
             <>
               <rect x={132} y={83} width={26} height={26 * p.eyeLid} fill={C.skin} stroke="none" />
@@ -364,22 +374,22 @@ export const Dale: React.FC<{
           {/* THE EYEBROWS -- half his performance lives here */}
           <g>
             <rect
-              x={130}
+              x={126}
               y={browY}
-              width={32}
-              height={9}
-              rx={4.5}
+              width={40}
+              height={13}
+              rx={6.5}
               fill={C.hair}
-              transform={`rotate(${-browRot} 146 ${browY + 4})`}
+              transform={`rotate(${-browRot} 146 ${browY + 6})`}
             />
             <rect
-              x={178}
+              x={174}
               y={browY}
-              width={32}
-              height={9}
-              rx={4.5}
+              width={40}
+              height={13}
+              rx={6.5}
               fill={C.hair}
-              transform={`rotate(${browRot} 194 ${browY + 4})`}
+              transform={`rotate(${browRot} 194 ${browY + 6})`}
             />
           </g>
 
@@ -387,23 +397,21 @@ export const Dale: React.FC<{
           <path d="M 170 100 q -7 14 3 18" fill="none" stroke={C.skinShade} strokeWidth={4} strokeLinecap="round" />
           <g transform="translate(170 130)">
             <path d={m.d} fill={m.fill} stroke={C.ink} strokeWidth={4} strokeLinejoin="round" />
+            {(p.mouth === 'talk' || p.mouth === 'wide') && p.mouthOpen > 0.35 && (
+              <ellipse cx={0} cy={9 + p.mouthOpen * 7} rx={9} ry={4 + p.mouthOpen * 3} fill="#a4575f" />
+            )}
           </g>
-          {/* stubble */}
+          {/* five o'clock shadow across the jaw -- flat, so it never reads as a smile */}
           <path
-            d="M 126 118 Q 170 152 214 118 Q 208 142 170 146 Q 132 142 126 118 Z"
+            d="M 122 116 Q 170 150 218 116 L 218 132 Q 170 156 122 132 Z"
             fill={C.hair}
-            opacity={0.17}
+            opacity={0.11}
           />
         </g>
 
-        {/* near arm (his right, screen-left) -- the bowl hand */}
+        {/* near arm, screen-left: the open palm, or the spoon. The performance. */}
         <Arm at={SHOULDER_L} arm={p.lArm}>
-          <g transform="translate(0 6)">
-            <CerealBowl />
-            <g transform="translate(-30 4)">
-              <DaleHand open={0} />
-            </g>
-          </g>
+          {p.spoon ? <Spoon /> : <DaleHand open={1} />}
         </Arm>
       </g>
     </svg>

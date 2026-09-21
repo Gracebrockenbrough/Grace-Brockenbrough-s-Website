@@ -89,14 +89,14 @@ export const U9 = {
   /** Scene 5 doorway: mid-kick to screen-right, trailing leg planted. */
   kick: {
     ...base,
-    lean: 6,
-    lHip: 4,
-    lKnee: -2,
-    rHip: -64,
-    rKnee: 16,
-    lShoulder: 30,
-    rShoulder: -28,
-    rElbow: -22,
+    lean: -7,
+    lHip: 58,
+    lKnee: -16,
+    rHip: -8,
+    rKnee: 4,
+    lShoulder: -16,
+    rShoulder: -20,
+    rElbow: -12,
   },
   /** Scene 8: on the floor, legs out flat to screen-right. Defeated, not deformed. */
   slump: {
@@ -320,7 +320,7 @@ export const Unit9: React.FC<{
   const glossId = `gloss-${uid}`;
 
   const body = (
-    <>
+    <g transform={`translate(0 ${p.hipDrop})`}>
       {/* far leg + far arm behind the torso */}
       <Leg at={HIP_R} hip={p.rHip} knee={p.rKnee} />
       <Arm at={SHOULDER_R} shoulder={p.rShoulder} elbow={p.rElbow} grip={grip} />
@@ -486,7 +486,7 @@ export const Unit9: React.FC<{
       {/* near leg + near arm in front */}
       <Leg at={HIP_L} hip={p.lHip} knee={p.lKnee} flip />
       <Arm at={SHOULDER_L} shoulder={p.lShoulder} elbow={p.lElbow} grip={grip} />
-    </>
+    </g>
   );
 
   return (
