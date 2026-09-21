@@ -20,22 +20,40 @@ const VO_DIR = join(HERE, '..', 'public', 'vo');
 const SAMPLE_RATE = 44100;
 const SAMPLES_PER_FRAME = 1152;
 const BITRATE = 32000;
-/** 144 * bitrate / samplerate, truncated -- the CBR frame size in bytes. */
+/**
+ * 144 * bitrate / samplerate is 104.489 bytes at 32 kbps / 44.1 kHz, which is
+ * not a whole number. CBR handles that by making most frames 104 bytes and
+ * padding every other one or so to 105, signalled by the padding bit in the
+ * header. Emitting only 104-byte frames would make the file 0.45% shorter than
+ * the nominal bitrate says, and players compute duration from the bitrate.
+ */
 const FRAME_BYTES = Math.floor((144 * BITRATE) / SAMPLE_RATE); // 104
+const FRAME_REMAINDER = (144 * BITRATE) / SAMPLE_RATE - FRAME_BYTES;
 
 /**
  * MPEG-1 (11) Layer III (01), no CRC (1) | 32 kbps (0001), 44.1 kHz (00),
- * no padding, not private | mono (11), no mode ext, not copyright, original.
+ * padding bit set per frame, not private | mono (11), no mode extension,
+ * not copyright, original, no emphasis.
+ *
+ * The side info and main data are left as zeros, which is what decodes to
+ * digital silence.
  */
-const HEADER = Buffer.from([0xff, 0xfb, 0x10, 0xc4]);
+const header = (padded: boolean) =>
+  Buffer.from([0xff, 0xfb, padded ? 0x12 : 0x10, 0xc4]);
 
 const silentMp3 = (seconds: number): Buffer => {
   const frames = Math.ceil((seconds * SAMPLE_RATE) / SAMPLES_PER_FRAME);
-  const buf = Buffer.alloc(frames * FRAME_BYTES); // zero-filled == silence
+  const parts: Buffer[] = [];
+  let carry = 0;
   for (let i = 0; i < frames; i++) {
-    HEADER.copy(buf, i * FRAME_BYTES);
+    carry += FRAME_REMAINDER;
+    const pad = carry >= 1;
+    if (pad) carry -= 1;
+    const frame = Buffer.alloc(FRAME_BYTES + (pad ? 1 : 0)); // zeros == silence
+    header(pad).copy(frame);
+    parts.push(frame);
   }
-  return buf;
+  return Buffer.concat(parts);
 };
 
 const force = process.argv.includes('--force');
