@@ -187,13 +187,10 @@ export const Scene05Dale: React.FC = () => {
   const kickT = lin(frame, [0, KICK], [0, 1]);
   const recover = lin(frame, [KICK + 2, KICK + 16], [0, 1]);
   const step = lin(frame, [40, 62], [0, 1]);
-  const u9Pose = lerpPose(
-    lerpPose(U9.kick, U9.idle, recover),
-    U9.idle,
-    0,
-  );
-  const preKick = lerpPose(U9.idle, U9.kick, kickT);
-  const pose = frame < KICK ? preKick : u9Pose;
+  const pose =
+    frame < KICK
+      ? lerpPose(U9.idle, U9.kick, kickT)
+      : lerpPose(U9.kick, U9.idle, recover);
   const u9x = lin(step, [0, 1], [140, 690]);
   const u9Speaking = isSpeaking('s5', frame, 'UNIT-9');
 

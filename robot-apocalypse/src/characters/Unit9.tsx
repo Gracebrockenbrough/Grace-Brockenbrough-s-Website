@@ -61,20 +61,13 @@ export const U9 = {
   idle: {...base, lShoulder: 5, rShoulder: -5},
   /** Scene 1. Shoulders squared, arms held slightly off the body. */
   menace: {...base, lShoulder: 13, rShoulder: -13},
-  /** Both forearms horizontal, converging on a keyboard in front of him. */
-  typing: {
-    ...base,
-    lShoulder: -30,
-    lElbow: -60,
-    rShoulder: 30,
-    rElbow: 60,
-    headTilt: 4,
-    headDrop: 5,
-  },
   /** Right arm out, forearm horizontal to screen-right: press, click, point. */
   reachR: {...base, lShoulder: 6, rShoulder: -60, rElbow: -30},
-  /** Right forearm folded up beside the head, holding a handset. */
-  phone: {...base, lShoulder: 8, rShoulder: 10, rElbow: -180, headTilt: -2},
+  /**
+   * Right forearm folded up beside the head, holding a handset. Combine with
+   * `sit` for Scene 3; the handset prop goes at the hand these angles produce.
+   */
+  phone: {...base, lShoulder: 12, rShoulder: -22, rElbow: 197},
   /** Seated facing screen-right: thighs forward, shins down. */
   sit: {
     ...base,

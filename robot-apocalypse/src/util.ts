@@ -26,17 +26,9 @@ export const ease = (
     easing: Easing.inOut(Easing.cubic),
   });
 
-/** Hard on/off. Returns `on` at or after `at`, otherwise `off`. */
-export const at = <T,>(frame: number, when: number, off: T, on: T): T =>
-  frame >= when ? on : off;
-
 /** True inside [from, to). */
 export const between = (frame: number, from: number, to: number) =>
   frame >= from && frame < to;
-
-/** Quantise a 0..1 progress into `steps` hard stages -- for machine motion. */
-export const stepped = (t: number, steps: number) =>
-  Math.min(1, Math.floor(t * steps) / (steps - 1));
 
 /**
  * Deterministic speech level, 0..1. Same frame always gives the same value, so

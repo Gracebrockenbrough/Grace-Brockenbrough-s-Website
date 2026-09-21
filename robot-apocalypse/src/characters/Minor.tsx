@@ -1,5 +1,5 @@
 import React from 'react';
-import {C, STROKE, STROKE_THIN, FONT_SANS, FONT_MONO} from '../theme';
+import {C, STROKE, STROKE_THIN} from '../theme';
 
 /**
  * REPORTER -- seen only as a foreground silhouette from behind, arm up,
@@ -155,60 +155,4 @@ export const Handset: React.FC<{x?: number; y?: number; scale?: number; rotate?:
     />
     <rect x={68} y={62} width={9} height={94} rx={4.5} fill={C.beigeLit} opacity={0.7} />
   </svg>
-);
-
-/**
- * THE BANK REP. Never seen. This is the whole performance: a hold panel with
- * a level meter that moves when the voice on the other end is talking.
- */
-export const PhoneRepPanel: React.FC<{
-  /** 0..1 -- how loud the rep is right now. */
-  level?: number;
-  label?: string;
-  sub?: string;
-  width?: number;
-}> = ({level = 0, label = 'CARDMEMBER SERVICES', sub = 'CALL IN PROGRESS', width = 520}) => (
-  <div
-    style={{
-      width,
-      background: C.beigeLit,
-      border: `${STROKE}px solid ${C.ink}`,
-      borderRadius: 10,
-      padding: '22px 26px',
-      fontFamily: FONT_SANS,
-      boxShadow: `10px 10px 0 ${C.beigeShade}`,
-    }}
-  >
-    <div
-      style={{
-        fontSize: 26,
-        letterSpacing: 3,
-        fontWeight: 700,
-        color: C.ink,
-        marginBottom: 4,
-      }}
-    >
-      {label}
-    </div>
-    <div style={{fontFamily: FONT_MONO, fontSize: 20, color: C.beigeShade, letterSpacing: 2}}>
-      {sub}
-    </div>
-    <div style={{display: 'flex', gap: 7, alignItems: 'flex-end', height: 54, marginTop: 16}}>
-      {Array.from({length: 22}).map((_, i) => {
-        const wobble = Math.abs(Math.sin(i * 1.7) * 0.6 + Math.cos(i * 0.9) * 0.4);
-        const h = 6 + level * wobble * 48;
-        return (
-          <div
-            key={i}
-            style={{
-              width: 14,
-              height: h,
-              background: level > 0.05 ? C.govBlueDeep : C.beigeShade,
-              borderRadius: 2,
-            }}
-          />
-        );
-      })}
-    </div>
-  </div>
 );

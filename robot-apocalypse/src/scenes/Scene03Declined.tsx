@@ -26,7 +26,14 @@ const U9_X = 392;
  * Seated, handset folded up beside his head. He holds this exact pose for the
  * entire scene -- not one joint moves between the cut and the last frame.
  */
-const ON_HOLD = {...U9.sit, lShoulder: 12, lElbow: 0, rShoulder: -22, rElbow: 197};
+const ON_HOLD = {
+  ...U9.sit,
+  // take only the arm angles from `phone` -- spreading the whole preset would
+  // reset the legs that `sit` just set.
+  lShoulder: U9.phone.lShoulder,
+  rShoulder: U9.phone.rShoulder,
+  rElbow: U9.phone.rElbow,
+};
 
 /** Feet land on GROUND: the sit pose drops the hips, so the legs reach lower. */
 const U9_Y = GROUND - (U9_FOOT + ON_HOLD.hipDrop) * U9_SCALE;
