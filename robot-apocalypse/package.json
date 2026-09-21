@@ -1,0 +1,28 @@
+{
+  "name": "robot-apocalypse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "THE ROBOT APOCALYPSE (DELAYED) - an animated satirical short built in Remotion",
+  "scripts": {
+    "studio": "remotion studio",
+    "build": "remotion render RobotApocalypse out/robot-apocalypse.mp4",
+    "still": "remotion still RobotApocalypse",
+    "script": "tsx scripts/gen-script.ts",
+    "vo:placeholders": "tsx scripts/make-silent-vo.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.526",
+    "@remotion/player": "^4.0.526",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.526"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
