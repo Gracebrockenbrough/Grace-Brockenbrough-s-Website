@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/* Area themes. Each primary area sets its own tokens on [data-area]; components only use tokens.
+   Green = Profile (me), Red = Personal, Blue = Professional, neutral = Settings. */
+:root,
+[data-area='profile'] {
+  --a-bg: #eff7f2;
+  --a-surface: #ffffff;
+  --a-line: #d3e8da;
+  --a-soft: #e1f1e7;
+  --a-accent: #2c7350;
+  --a-accent-strong: #1d5439;
+  --a-heading: #163a28;
+  --a-muted: #587062;
+  --a-on-accent: #ffffff;
+}
+[data-area='personal'] {
+  --a-bg: #fcf3f1;
+  --a-surface: #ffffff;
+  --a-line: #f1d8d2;
+  --a-soft: #fae4de;
+  --a-accent: #c4412f;
+  --a-accent-strong: #9f3022;
+  --a-heading: #641d29;
+  --a-muted: #7a5854;
+  --a-on-accent: #ffffff;
+}
+[data-area='professional'] {
+  --a-bg: #f1f5fc;
+  --a-surface: #ffffff;
+  --a-line: #d8e2f2;
+  --a-soft: #e4ecfb;
+  --a-accent: #2455cc;
+  --a-accent-strong: #183d99;
+  --a-heading: #0e2248;
+  --a-muted: #536380;
+  --a-on-accent: #ffffff;
+}
+[data-area='settings'],
+[data-area='onboarding'] {
+  --a-bg: #f5f5f3;
+  --a-surface: #ffffff;
+  --a-line: #e3e3df;
+  --a-soft: #ecece8;
+  --a-accent: #2f3339;
+  --a-accent-strong: #16181c;
+  --a-heading: #1b1d21;
+  --a-muted: #676a70;
+  --a-on-accent: #ffffff;
+}
+
+@theme inline {
+  --font-sans: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-bg: var(--a-bg);
+  --color-surface: var(--a-surface);
+  --color-line: var(--a-line);
+  --color-soft: var(--a-soft);
+  --color-accent: var(--a-accent);
+  --color-accent-strong: var(--a-accent-strong);
+  --color-heading: var(--a-heading);
+  --color-muted: var(--a-muted);
+  --color-on-accent: var(--a-on-accent);
+  --color-ink: #1d2227;
+  --color-navy: #1e3a6d;
+  --color-coral: #e5604b;
+  --color-mint: #2c7350;
+}
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { @apply bg-bg font-sans text-ink; background-color: var(--a-bg); }
+  :focus-visible { outline: 2px solid var(--a-accent); outline-offset: 2px; border-radius: 6px; }
+  h1, h2, h3 { text-wrap: balance; }
+}
+
+@layer components {
+  .card { @apply rounded-2xl border border-line bg-surface shadow-[0_1px_2px_rgba(20,30,40,0.04),0_4px_16px_-8px_rgba(20,30,40,0.08)]; }
+  .lift { @apply transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(20,30,40,0.05),0_12px_28px_-12px_rgba(20,30,40,0.18)]; }
+  .input { @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.08em] text-muted; }
+}
+
+.area-transition { transition: background-color 350ms ease; }
+
+@keyframes rise { from { opacity: 0.001; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 260ms ease-out both; }
+@keyframes pop { 0% { transform: scale(0.96); } 60% { transform: scale(1.02); } 100% { transform: scale(1); } }
+.pop { animation: pop 320ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
