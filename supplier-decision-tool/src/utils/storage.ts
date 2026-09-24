@@ -1,5 +1,6 @@
 import type { AppState } from '../types';
 import { emptySupplier, initialState } from '../data/defaults';
+import { demoState } from '../data/demo';
 import type { Supplier } from '../types';
 
 /** Fills in any fields added since the data was saved. */
@@ -25,7 +26,8 @@ const KEY = 'supplier-quote-evaluator:v1';
 export const loadState = (): AppState => {
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return initialState();
+    // The hosted build opens on the demo so first-time visitors see a working analysis.
+    if (!raw) return import.meta.env.VITE_ARTIFACT === '1' ? demoState() : initialState();
     const parsed = JSON.parse(raw) as Partial<AppState>;
     const base = initialState();
     return {

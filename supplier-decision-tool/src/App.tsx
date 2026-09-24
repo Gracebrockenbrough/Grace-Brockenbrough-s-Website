@@ -18,6 +18,9 @@ import {
   type Analysis,
 } from './pages/steps';
 
+/** Hosted (artifact) builds can't open the print dialog. */
+const CAN_PRINT = import.meta.env.VITE_ARTIFACT !== '1';
+
 const STEP_INTRO = [
   'Describe the raw material, how it is used, and what a quality failure or late delivery would cost you.',
   'Tell the tool what matters most. Ratings are converted into weights automatically.',
@@ -99,19 +102,24 @@ export default function App() {
     actions.setStep(Math.min(STEPS.length - 1, step + 1));
   };
 
-  const startNew = () => {
-    if (window.confirm('Start a new analysis? This clears the current purchase, priorities and supplier quotes.')) {
-      actions.reset();
-      setShowErrors({});
-    }
-  };
+  // In-page confirmation (browser confirm() dialogs are blocked in some embedded viewers).
+  const [pending, setPending] = useState<'reset' | 'demo' | null>(null);
+
+  const startNew = () => setPending('reset');
 
   const loadDemo = () => {
     const hasData = state.purchase.name.trim() || validSuppliers(state).length > 0;
-    if (!hasData || state.isDemo || window.confirm('Load the demo? This replaces the data you have entered.')) {
+    if (!hasData || state.isDemo) {
       actions.loadDemo();
       setShowErrors({});
-    }
+    } else setPending('demo');
+  };
+
+  const confirmPending = () => {
+    if (pending === 'reset') actions.reset();
+    if (pending === 'demo') actions.loadDemo();
+    setShowErrors({});
+    setPending(null);
   };
 
   const blocker = showErrors[step] ? blockers(step) : null;
@@ -139,7 +147,7 @@ export default function App() {
             <Button size="sm" variant="ghost" onClick={startNew}>
               New analysis
             </Button>
-            {step >= 3 && (
+            {step >= 3 && CAN_PRINT && (
               <Button size="sm" onClick={() => window.print()}>
                 Print / save PDF
               </Button>
@@ -148,7 +156,27 @@ export default function App() {
         </div>
       </header>
 
-      <div className="no-print sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
+      {pending && (
+        <div className="no-print border-b border-caution/30 bg-caution-soft" role="alertdialog" aria-label="Confirm">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm sm:px-6">
+            <span className="text-ink">
+              {pending === 'reset'
+                ? 'Start a new analysis? This clears the current purchase, priorities and supplier quotes.'
+                : 'Load the demo? This replaces the data you have entered.'}
+            </span>
+            <span className="flex gap-2">
+              <Button size="sm" onClick={() => setPending(null)}>
+                Cancel
+              </Button>
+              <Button size="sm" variant="primary" onClick={confirmPending}>
+                {pending === 'reset' ? 'Clear and start over' : 'Replace with demo'}
+              </Button>
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="no-print sticky top-[env(safe-area-inset-top,0px)] z-30 border-b border-line bg-white/95 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
           <ProgressSteps current={step} onSelect={(i) => canEnter(i) && actions.setStep(i)} isEnabled={canEnter} />
         </div>
@@ -197,9 +225,13 @@ export default function App() {
             <Button variant="primary" onClick={next}>
               Continue to {STEPS[step + 1].title} {Icon.arrow()}
             </Button>
-          ) : (
+          ) : CAN_PRINT ? (
             <Button variant="primary" onClick={() => window.print()}>
               Print / save as PDF
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={() => actions.setStep(3)}>
+              Back to comparison
             </Button>
           )}
         </nav>
