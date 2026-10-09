@@ -55,13 +55,9 @@ function NoticedCard({ item }: { item: NoticedItem }) {
 
 function NoticedRow({ item }: { item: NoticedItem }) {
   const act = useNoticedAction();
-  const Icon = ICON[item.kind];
   return (
     <li>
       <button type="button" onClick={() => act(item)} className="group flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-surface">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sunken text-ink-2" aria-hidden>
-          <Icon size={16} />
-        </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15.5px] font-medium text-ink">{item.title}</span>
           {item.detail && <span className="block truncate text-[14px] text-ink-3">{item.detail}</span>}

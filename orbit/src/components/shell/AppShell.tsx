@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { Plus, Settings } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { cn } from "@/lib/cn";
@@ -79,7 +79,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <Plus size={18} aria-hidden />
           Add anything
-          <kbd className="ml-auto rounded-md bg-white/15 px-1.5 py-0.5 text-[12px] font-medium text-white/80">⌘K</kbd>
         </button>
         <nav aria-label="Main" className="flex flex-col gap-1">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
@@ -114,9 +113,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[14.5px] font-medium text-ink">{state.user.fullName}</span>
-              <span className="block text-[13px] text-ink-3">Profile &amp; connections</span>
             </span>
-            <Settings size={17} className="text-ink-3" aria-hidden />
           </Link>
         </div>
       </aside>

@@ -9,6 +9,7 @@ import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { LearningPrompt } from "@/components/ui/LearningPrompt";
 
 function Toggle({ checked, onChange, label, description }: { checked: boolean; onChange: (v: boolean) => void; label: string; description: string }) {
   return (
@@ -80,6 +81,11 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="What ORBIT has learned">
+        {derived.learned.prompts.filter((p) => p.surface === "today").map((p) => (
+          <div key={p.id} className="mb-3">
+            <LearningPrompt prompt={p} />
+          </div>
+        ))}
         {routines.length ? (
           <ul className="divide-y divide-line">
             {routines.map((r) => (

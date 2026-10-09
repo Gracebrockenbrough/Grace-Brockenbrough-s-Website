@@ -6,7 +6,7 @@ import { addDays, diffDays, parseDate, startOfMonth, startOfWeek, WEEKDAYS_SHORT
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { buildCalendarItems } from "@/services/calendar";
-import { EVENT_META, LEGEND } from "./eventStyle";
+import { EVENT_META } from "./eventStyle";
 
 const isMajor = (i: CalendarItem) => (i.major || i.kind === "exam" || i.category === "travel") && !i.title.endsWith("— done");
 
@@ -107,11 +107,6 @@ export function MonthView({ date, onPickDay }: { date: string; onPickDay: (d: st
         })}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-4 text-[13.5px] text-ink-2">
-        {LEGEND.map((l) => (
-          <span key={l.label} className="flex items-center gap-1.5"><span className={cn("h-2 w-2 rounded-full", l.dot)} aria-hidden />{l.label}</span>
-        ))}
-      </div>
 
       {/* Mobile list, since month cells are too small for labels */}
       <ul className="mt-5 divide-y divide-line rounded-2xl border border-line bg-surface md:hidden">

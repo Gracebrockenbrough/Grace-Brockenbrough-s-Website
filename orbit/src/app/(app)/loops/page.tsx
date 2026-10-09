@@ -32,8 +32,10 @@ function sortLoops(loops: RankedLoop[], sort: Sort): RankedLoop[] {
 export default function TasksPage() {
   const { derived } = useOrbit();
   const [filter, setFilter] = useState<Filter>("all");
-  const [sort, setSort] = useState<Sort>("recommended");
+  const sort: Sort = "recommended";
   const [showDone, setShowDone] = useState(false);
+  // Only what's close is open by default; Later and Waiting are one tap away.
+  const [expanded, setExpanded] = useState<LoopStatus[]>(["now", "soon"]);
 
   const matches = (l: RankedLoop) => filter === "all" || l.category === filter;
   const open = sortLoops(derived.openLoops.filter(matches), sort);
@@ -61,14 +63,6 @@ export default function TasksPage() {
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-1.5 pb-1 text-[14px] text-ink-3">
-          <span className="sr-only">Sort</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="min-h-8 rounded-lg bg-transparent text-[14px] text-ink-2 hover:text-ink">
-            <option value="recommended">Recommended</option>
-            <option value="due">By due date</option>
-            <option value="recent">Recently added</option>
-          </select>
-        </label>
       </div>
 
       {open.length === 0 ? (
@@ -80,14 +74,22 @@ export default function TasksPage() {
             if (!items.length) return null;
             return (
               <section key={g.status} aria-labelledby={`group-${g.status}`}>
-                <h2 id={`group-${g.status}`} className="mb-1 text-[13px] font-semibold uppercase tracking-wider text-ink-3">
-                  {g.title} <span className="font-normal">· {items.length}</span>
+                <h2 id={`group-${g.status}`} className="mb-1">
+                  <button
+                    type="button"
+                    aria-expanded={expanded.includes(g.status)}
+                    onClick={() => setExpanded((e) => (e.includes(g.status) ? e.filter((x) => x !== g.status) : [...e, g.status]))}
+                    className="flex min-h-8 items-center gap-1 text-[13px] font-semibold uppercase tracking-wider text-ink-3 hover:text-ink"
+                  >
+                    <ChevronDown size={15} className={expanded.includes(g.status) ? "" : "-rotate-90"} aria-hidden />
+                    {g.title} <span className="font-normal">· {items.length}</span>
+                  </button>
                 </h2>
-                <ul className="-mx-2">
+                {expanded.includes(g.status) && <ul className="-mx-2">
                   {items.map((l) => (
                     <TaskRow key={l.id} loop={l} area="tasks" />
                   ))}
-                </ul>
+                </ul>}
               </section>
             );
           })}

@@ -23,11 +23,10 @@ export function meetingSummary(c: Course): string {
 }
 
 export function CourseCard({ course }: { course: Course }) {
-  const { derived, state } = useOrbit();
+  const { derived } = useOrbit();
   const next = useNextUp(course.id);
   const hasSyllabus = !!course.syllabusDocumentId;
   const updates = derived.changes.filter((c) => c.courseId === course.id).length;
-  const upcoming = state.assignments.filter((a) => a.courseId === course.id && !a.completed && a.due && a.due >= derived.today).length;
 
   return (
     <li>
@@ -51,7 +50,6 @@ export function CourseCard({ course }: { course: Course }) {
             <span className="inline-flex items-center gap-1.5 text-accent"><FileUp size={15} aria-hidden /> Add the syllabus</span>
           )}
         </p>
-        {hasSyllabus && <p className="mt-1 text-[14px] text-ink-3">{upcoming} upcoming</p>}
       </Link>
     </li>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import type { RankedLoop } from "@/types";
 import { cn } from "@/lib/cn";
 import { datePart, formatTime, relativeDay, timePart, toDateStr, toTimeStr } from "@/lib/time";
@@ -68,7 +68,6 @@ export function TaskRow({ loop, area, emphasizeToday = true }: { loop: RankedLoo
           />
         </div>
       )}
-      <ChevronRight size={16} className="shrink-0 text-ink-3/60" aria-hidden />
     </li>
   );
 }
