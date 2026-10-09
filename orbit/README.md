@@ -23,7 +23,7 @@ To start over, use **Settings → Reset demo** or clear site data.
 1. **Syllabus → dates.** Courses → Upload syllabus → "Use sample ARTH 202 syllabus". ORBIT reads it, finds 18 dates, and asks you to review the two it isn't sure about.
 2. **Needs reply.** Professor Martin asked a direct question yesterday and you haven't replied. It's a priority on Today. Open it to get a draft reply; ORBIT never sends anything for you.
 3. **Change detection.** Professor Reyes's email moves the FIN 359 midterm from Thu 10 AM to Tue 8 AM. ORBIT flags it and won't touch your calendar until you approve.
-4. **Conflict detection.** Tuesday's Finance review (2:00–3:00) overlaps your advising appointment (2:30–3:00). Review options shows a timeline and safe choices.
+4. **Conflict detection.** Tuesday's Finance review (2:00–3:00) overlaps your advising appointment (2:30–3:00). ORBIT recommends one plan; other options are one tap away.
 5. **"What am I forgetting?"** In Ask ORBIT, the answer pulls from email, Open Loops, and your calendar.
 
 ## How it's organized for the user
@@ -54,5 +54,5 @@ You can also try Capture (the + button, or ⌘K / Ctrl+K, or `c`). Type, speak (
 - It asks first before changing the calendar, applying a detected change, resolving a conflict, or ignoring a source.
 - It never sends email or texts, submits forms, buys things, or cancels plans. It can recognize that a reply is needed and offer a draft for you to send yourself.
 - Uncertain extractions are labeled "High confidence", "I think this is correct", or "Needs review". Raw scores are never shown.
-- Every important item shows its source and has an optional **Why this?** explanation.
+- Every important item shows its source, and its details explain why ORBIT surfaced it.
 - Integrations, voice, and image reading are simulated, and the UI says so where it matters.
