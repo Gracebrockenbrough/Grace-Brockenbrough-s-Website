@@ -39,6 +39,8 @@ export interface CalendarSource {
   assignments: Assignment[];
   loops: RankedLoop[];
   pendingChanges: DetectedChange[];
+  /** Source kinds with no active connection; their events are hidden. */
+  hiddenKinds?: Set<string>;
 }
 
 /** Every item on the calendar between two dates (inclusive), sorted by time. */
@@ -50,11 +52,13 @@ export function buildCalendarItems(src: CalendarSource, start: string, end: stri
   for (const e of src.events) {
     const last = e.endDate ?? e.date;
     if (last < start || e.date > end) continue;
+    if (src.hiddenKinds?.has(e.source.kind)) continue;
     items.push({ ...e, kind: "event", refId: e.id });
   }
 
   for (const day of days) {
     if (day < SEMESTER_START || day > SEMESTER_END || noClassDates.includes(day)) continue;
+    if (src.hiddenKinds?.has("calendar")) continue;
     for (const course of src.courses) {
       if (!course.meetingDays.includes(weekday(day) as Course["meetingDays"][number])) continue;
       const examSameSlot = src.exams.some(
@@ -233,6 +237,7 @@ function shortTitle(i: CalendarItem): string {
 
 /** Forgotten preparation: an exam soon with no study time planned. */
 export function detectPrepGaps(exams: Exam[], events: CalendarEvent[], courses: Course[], today: string, horizonDays = 5): Conflict[] {
+  // horizonDays is learned: users who dismiss early study nudges get them later.
   return exams
     .filter((x) => x.date && x.date > today && diffDays(x.date, today) <= horizonDays)
     .filter((x) => !events.some((e) => e.category === "study" && (e.prepForExamId === x.id || (e.courseId === x.courseId && e.suggestedByOrbit)) && e.date >= today && e.date <= x.date!))

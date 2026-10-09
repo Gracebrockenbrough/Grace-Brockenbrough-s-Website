@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[14.5px] font-medium text-ink">{state.user.fullName}</span>
-              <span className="block text-[13px] text-ink-3">Settings</span>
+              <span className="block text-[13px] text-ink-3">Profile &amp; connections</span>
             </span>
             <Settings size={17} className="text-ink-3" aria-hidden />
           </Link>
@@ -126,7 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link href="/today" aria-label="ORBIT home">
           <Logo />
         </Link>
-        <Link href="/settings" aria-label="Settings" className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-[14px] font-semibold text-accent-strong">
+        <Link href="/settings" aria-label="Profile" className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-[14px] font-semibold text-accent-strong">
           {state.user.name[0]}
         </Link>
       </header>

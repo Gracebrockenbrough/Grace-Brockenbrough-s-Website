@@ -63,7 +63,8 @@ export function parseWhen(text: string, today: string): When {
     date = dateFromMonthDay(today, Number(m[1]) - 1, Number(m[2]));
   } else if ((m = take(/\b(?:(next|this)\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/))) {
     const target = WEEKDAYS.findIndex((d) => d.toLowerCase() === m![2]);
-    date = nextWeekday(today, target, m[1] === "next");
+    // "by Friday" said on a Friday means next Friday; "this Friday" means today.
+    date = nextWeekday(today, target, m[1] === "next" || (m[1] !== "this" && target === weekday(today)));
   }
 
   return { date, time, matched: matched.map((x) => x.trim()) };

@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, FileUp } from "lucide-react";
+import { FileUp } from "lucide-react";
 import type { Course } from "@/types";
-import { cn } from "@/lib/cn";
 import { datePart, relativeDay, WEEKDAYS_SHORT, formatTimeRange } from "@/lib/time";
 import { useOrbit } from "@/store/OrbitProvider";
-import { COURSE_COLOR } from "@/components/ui/Badges";
 
 /** The closest assignment or exam for a course. */
 export function useNextUp(courseId: string) {
@@ -27,38 +25,33 @@ export function meetingSummary(c: Course): string {
 export function CourseCard({ course }: { course: Course }) {
   const { derived, state } = useOrbit();
   const next = useNextUp(course.id);
-  const color = COURSE_COLOR[course.color];
   const hasSyllabus = !!course.syllabusDocumentId;
-  const pendingChange = derived.changes.some((c) => c.courseId === course.id);
-  const open = state.assignments.filter((a) => a.courseId === course.id && !a.completed && a.due && a.due >= derived.today).length;
+  const updates = derived.changes.filter((c) => c.courseId === course.id).length;
+  const upcoming = state.assignments.filter((a) => a.courseId === course.id && !a.completed && a.due && a.due >= derived.today).length;
 
   return (
-    <li className="group relative overflow-hidden rounded-2xl border border-line bg-surface shadow-card transition-shadow hover:shadow-raised">
-      <span className={cn("absolute inset-y-0 left-0 w-1.5", color.bar)} aria-hidden />
-      <Link href={`/courses/${course.id}`} className="block p-5 pl-6">
-        <p className={cn("text-[14px] font-semibold tracking-wide", color.text)}>{course.code}</p>
-        <p className="mt-0.5 text-[19px] font-semibold leading-snug text-ink">{course.name}</p>
-        <p className="mt-1 text-[14px] text-ink-3">
-          {course.professor.replace("Professor ", "Prof. ")} · {meetingSummary(course)}
-        </p>
-        <div className="mt-4 rounded-xl bg-canvas px-3.5 py-2.5">
-          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-ink-3">Next</p>
+    <li>
+      <Link href={`/courses/${course.id}`} className="group block rounded-2xl border border-line bg-surface p-5 shadow-card transition-shadow hover:shadow-raised">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[14px] font-semibold tracking-wide text-academic">{course.code}</p>
+            <p className="mt-0.5 text-[19px] font-semibold leading-snug text-ink">{course.name}</p>
+          </div>
+          {updates > 0 && <span className="shrink-0 rounded-full bg-attention-soft px-2.5 py-0.5 text-[13px] font-semibold text-attention">{updates} update{updates > 1 ? "s" : ""}</span>}
+        </div>
+        <p className="mt-4 text-[15.5px] text-ink">
           {next ? (
-            <p className="mt-0.5 text-[15.5px] text-ink">
-              <span className="font-medium">{next.title}</span> · {relativeDay(next.date, derived.today)}
-            </p>
+            <>
+              <span className="text-ink-3">Next: </span>
+              {next.title} · {relativeDay(next.date, derived.today)}
+            </>
           ) : hasSyllabus ? (
-            <p className="mt-0.5 text-[15px] text-ink-2">Nothing coming up</p>
+            <span className="text-ink-3">Nothing coming up</span>
           ) : (
-            <p className="mt-0.5 flex items-center gap-1.5 text-[15px] text-accent">
-              <FileUp size={15} aria-hidden /> Upload the syllabus to see what&apos;s coming
-            </p>
+            <span className="inline-flex items-center gap-1.5 text-accent"><FileUp size={15} aria-hidden /> Add the syllabus</span>
           )}
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[13.5px] text-ink-3">
-          <span>{hasSyllabus ? `${open} upcoming ${open === 1 ? "assignment" : "assignments"}` : "No syllabus yet"}</span>
-          {pendingChange ? <span className="font-medium text-attention">Date change detected</span> : <ArrowRight size={16} className="text-ink-3 transition-transform group-hover:translate-x-0.5" aria-hidden />}
-        </div>
+        </p>
+        {hasSyllabus && <p className="mt-1 text-[14px] text-ink-3">{upcoming} upcoming</p>}
       </Link>
     </li>
   );

@@ -8,7 +8,7 @@ import { useUI } from "@/store/UIProvider";
 import { Drawer, DetailRow } from "@/components/ui/Overlay";
 import { Button } from "@/components/ui/Button";
 import { ConfidenceTag, SourceBadge } from "@/components/ui/Badges";
-import { CATEGORY_META } from "@/components/today/Timeline";
+import { EVENT_META as CATEGORY_META } from "@/components/calendar/eventStyle";
 import { describeWhen } from "@/services/changes";
 import { findCalendarItem } from "./lookup";
 

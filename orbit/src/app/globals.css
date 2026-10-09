@@ -32,6 +32,23 @@
   --color-success: #2b7a4b;
   --color-success-soft: #e9f4ed;
 
+  /* Calendar meaning, used everywhere an event appears. Muted on purpose. */
+  --color-academic: #3a49c4;
+  --color-academic-soft: #eceefb;
+  --color-academic-ink: #2a358f;
+  --color-meet: #12756b;
+  --color-meet-soft: #e2f1ee;
+  --color-meet-ink: #0b5a52;
+  --color-personal: #8a8f96;
+  --color-personal-soft: #efede8;
+  --color-personal-ink: #40454c;
+  --color-social: #c0566b;
+  --color-social-soft: #fbebee;
+  --color-social-ink: #95324a;
+  --color-due: #b7791f;
+  --color-due-soft: #fbf1df;
+  --color-due-ink: #7a4f0b;
+
   --color-teal: #0f766e;
   --color-teal-soft: #e6f4f2;
   --color-indigo: #3a49c4;

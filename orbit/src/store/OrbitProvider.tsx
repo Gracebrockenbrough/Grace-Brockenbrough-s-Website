@@ -23,6 +23,8 @@ function historyReducer(h: History, action: HistoryAction): History {
   if (action.type === "HYDRATE") return { present: action.state, past: [] };
   const next = orbitReducer(h.present, action);
   if (next === h.present) return h;
+  // Passive signals and display tweaks aren't user edits, so they don't create an undo step.
+  if (action.type === "SIGNAL" || action.type === "SET_DEMO_TIME") return { present: next, past: h.past };
   return { present: next, past: [h.present, ...h.past].slice(0, 20) };
 }
 
@@ -74,7 +76,7 @@ export function OrbitProvider({ children }: { children: ReactNode }) {
 
   const dispatch = useCallback((action: OrbitAction) => dispatchHistory(action), []);
   const undo = useCallback(() => dispatchHistory({ type: "UNDO" }), []);
-  const derived = useMemo(() => computeDerived(history.present, demoNow()), [history.present]);
+  const derived = useMemo(() => computeDerived(history.present, demoNow(history.present.demoTime)), [history.present]);
 
   const value = useMemo(
     () => ({ state: history.present, derived, dispatch, undo, canUndo: history.past.length > 0, hydrated }),

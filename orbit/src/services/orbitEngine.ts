@@ -30,7 +30,9 @@ import {
   suggestFreeTime,
   type CalendarSource,
 } from "./calendar";
-import { buildAttention, buildComingUp, createMorningBrief, type ComingUpGroup } from "./attention";
+import { buildAttention, buildComingUp, buildNoticed, createMorningBrief, type ComingUpGroup, type NoticedItem } from "./attention";
+import { computeLearned, type Learned } from "./learning";
+import { hiddenKinds } from "./connections";
 
 export { calculatePriority, buildRankedLoops, selectPriorities } from "./priority";
 export { classifyMessage, requiresReply } from "./messages";
@@ -58,11 +60,17 @@ export interface OrbitDerived {
   upcomingItems: CalendarItem[];
   calendarSource: CalendarSource;
   classified: { message: Message; classification: MessageClassification }[];
+  /** Everything ORBIT noticed that isn't a normal task, ranked. */
+  noticed: NoticedItem[];
+  tomorrowItems: CalendarItem[];
+  learned: Learned;
 }
 
 export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
   const today = toDateStr(now);
   const prefs = state.preferences;
+  const learned = computeLearned(state);
+  const hidden = hiddenKinds(state.sources);
 
   const loops = buildRankedLoops({
     loops: state.loops,
@@ -73,6 +81,8 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
     prefs,
     sources: state.sources,
     now,
+    learnedAdjust: learned.loopPenalty,
+    fastReplyTypes: learned.fastReplyTypes,
   });
   const openLoops = loops.filter((l) => l.status !== "done");
   const priorities = selectPriorities(openLoops);
@@ -86,6 +96,7 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
     assignments: state.assignments,
     loops,
     pendingChanges: changes,
+    hiddenKinds: hidden,
   };
 
   const horizonEnd = addDays(today, 14);
@@ -96,13 +107,12 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
   const conflicts: Conflict[] = [
     ...timeConflicts,
     ...detectWorkloadConflicts(upcomingItems, state.assignments, today).filter((c) => !state.conflictStatus[c.id]),
-    ...detectPrepGaps(state.exams, state.events, state.courses, today).filter((c) => !state.conflictStatus[c.id]),
+    ...detectPrepGaps(state.exams, state.events, state.courses, today, learned.prepHorizonDays).filter((c) => !state.conflictStatus[c.id]),
     ...detectMissingInfo(state.exams, state.assignments, state.courses).filter((c) => !state.conflictStatus[c.id]),
   ].filter((c) => !state.dismissed.includes(c.id));
 
-  const disabledKinds = new Set(state.sources.filter((s) => !s.enabled).map((s) => s.kind));
   const classified = state.messages
-    .filter((m) => !disabledKinds.has(m.source))
+    .filter((m) => !hidden.has(m.source))
     .map((message) => ({ message, classification: classifyMessage(message, prefs) }))
     .sort((a, b) => b.message.timestamp.localeCompare(a.message.timestamp));
 
@@ -131,7 +141,12 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
     prefs,
     today,
     now,
+    quieted: learned.quietedKinds,
   });
+  const visibleReplies = needsReply.filter((n) => !priorityIds.has(`msg:${n.message.id}`));
+  const noticed = buildNoticed(attention, visibleReplies);
+  const tomorrow = addDays(today, 1);
+  const tomorrowItems = upcomingItems.filter((i) => i.date === tomorrow);
 
   // Coming Up stays high-level: anything already flagged in Needs Attention is left out.
   const comingUp = buildComingUp(upcomingItems, today, new Set(attention.filter((a) => a.kind === "deadline").map((a) => a.refId)));
@@ -158,7 +173,7 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
     conflicts,
     timeConflicts,
     attention,
-    needsReply: needsReply.filter((n) => !priorityIds.has(`msg:${n.message.id}`)),
+    needsReply: visibleReplies,
     todayItems,
     freeTime,
     comingUp,
@@ -166,5 +181,8 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
     upcomingItems,
     calendarSource,
     classified,
+    noticed,
+    tomorrowItems,
+    learned,
   };
 }

@@ -40,7 +40,7 @@ export function ChangeModal({ id, onClose }: { id: string; onClose: () => void }
 
   return (
     <Modal
-      title={confident ? "Important change detected" : "Possible change"}
+      title={confident ? (change.entityType === "exam" ? "Exam moved" : "Due date moved") : "This may have moved"}
       onClose={onClose}
       eyebrow={<span className="text-[13px] font-semibold uppercase tracking-wide text-attention">{course?.code ?? "Change"}</span>}
       footer={
@@ -50,7 +50,7 @@ export function ChangeModal({ id, onClose }: { id: string; onClose: () => void }
           </Button>
           {message && (
             <Button variant="secondary" onClick={() => open({ type: "message", id: message.id })}>
-              Review source
+              See {change.source.kind === "email" ? "email" : "message"}
             </Button>
           )}
           <Button variant="ghost" onClick={ignore}>
@@ -59,19 +59,17 @@ export function ChangeModal({ id, onClose }: { id: string; onClose: () => void }
         </div>
       }
     >
-      <p className="text-[16px] text-ink">
-        <span className="font-semibold">{change.title}</span> {confident ? "appears to have moved." : "may have moved, but it isn't confirmed."}
-      </p>
+      <p className="text-[16px] font-semibold text-ink">{change.title}</p>
 
-      <div className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+      <div className="mt-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
         <div className="flex-1 rounded-2xl border border-line bg-canvas p-4">
-          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-ink-3">On your calendar</p>
+          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-ink-3">Was</p>
           <p className="mt-1 text-[16px] text-ink-2 line-through decoration-ink-3/60">{describeWhen(change.previousValue)}</p>
         </div>
         <ArrowRight className="hidden shrink-0 text-ink-3 sm:block" size={20} aria-hidden />
         <ArrowDown className="mx-auto shrink-0 text-ink-3 sm:hidden" size={20} aria-hidden />
         <div className="flex-1 rounded-2xl border border-attention-line bg-attention-soft p-4">
-          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-attention">New information</p>
+          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-attention">Now</p>
           <p className="mt-1 text-[16px] font-semibold text-ink">{describeWhen(change.newValue)}</p>
         </div>
       </div>
@@ -87,9 +85,7 @@ export function ChangeModal({ id, onClose }: { id: string; onClose: () => void }
 
       <p className="mt-5 flex items-start gap-2 text-[14px] text-ink-2">
         <ShieldCheck size={16} className="mt-0.5 shrink-0 text-success" aria-hidden />
-        {confident
-          ? "ORBIT hasn't changed your calendar yet. Updating moves the exam and rechecks your week for conflicts."
-          : "Only a classmate mentioned this. ORBIT won't change anything unless you say so."}
+        {confident ? "Your calendar hasn't changed yet." : "Only a classmate mentioned this. Nothing changes unless you say so."}
       </p>
     </Modal>
   );

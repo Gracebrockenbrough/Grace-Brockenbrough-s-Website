@@ -4,6 +4,10 @@ import type {
   Capture,
   CourseDocument,
   CourseMilestone,
+  ConnectionStatus,
+  DemoTime,
+  DisplayPreference,
+  InteractionSignal,
   Exam,
   LoopMeta,
   LoopStatus,
@@ -13,6 +17,17 @@ import type {
   SenderType,
 } from "@/types";
 import { createInitialState, type OrbitState } from "./state";
+import { DEMO_TIMES } from "@/data/demoClock";
+
+const MAX_SIGNALS = 300;
+let signalCounter = 0;
+
+/** Append a behavior signal. Learning reads these; nothing else depends on them. */
+export function withSignal(state: OrbitState, signal: Omit<InteractionSignal, "id" | "at">): OrbitState {
+  signalCounter += 1;
+  const entry: InteractionSignal = { ...signal, id: `sig-${Date.now().toString(36)}-${signalCounter}`, at: DEMO_TIMES[state.demoTime] };
+  return { ...state, signals: [...state.signals, entry].slice(-MAX_SIGNALS) };
+}
 
 export type MessageFeedback = "not_important" | "important" | "replied" | "remind_later" | "ignore_source";
 
@@ -72,10 +87,15 @@ export type OrbitAction =
       officeHours?: string;
     }
   // Settings
-  | { type: "SET_SOURCE_ENABLED"; id: string; enabled: boolean }
+  | { type: "SET_SOURCE_STATUS"; id: string; status: ConnectionStatus }
   | { type: "SET_NOTIFICATION"; key: keyof NotificationSettings; value: boolean }
   // Capture
-  | { type: "ADD_CAPTURE"; capture: Capture };
+  | { type: "ADD_CAPTURE"; capture: Capture }
+  // Learning & display
+  | { type: "SIGNAL"; signal: Omit<InteractionSignal, "id" | "at"> }
+  | { type: "SET_DISPLAY_PREF"; patch: Partial<DisplayPreference> }
+  | { type: "ANSWER_PROMPT"; id: string; answer: "yes" | "no" }
+  | { type: "SET_DEMO_TIME"; time: DemoTime };
 
 function updateMeta(state: OrbitState, id: string, patch: Partial<LoopMeta>): OrbitState {
   return { ...state, loopMeta: { ...state.loopMeta, [id]: { ...state.loopMeta[id], ...patch } } };
@@ -104,12 +124,47 @@ function adjust(map: Record<string, number>, key: string, delta: number): Record
 export const senderKey = (sender: string) => `sender:${sender}`;
 export const typeKey = (type: SenderType) => `type:${type}`;
 
+/** Actions that teach ORBIT something are recorded as signals automatically. */
+function signalFor(state: OrbitState, action: OrbitAction): Omit<InteractionSignal, "id" | "at"> | undefined {
+  switch (action.type) {
+    case "COMPLETE_LOOP":
+      return { itemType: "loop", action: "complete", context: { id: action.id } };
+    case "SNOOZE_LOOP":
+      return { itemType: "loop", action: "snooze", context: { id: action.id } };
+    case "MARK_LOOP_NOT_IMPORTANT":
+      return { itemType: "loop", action: "dismiss", context: { id: action.id } };
+    case "SET_LOOP_PRIORITY":
+      return { itemType: "loop", action: "reprioritize", context: { id: action.id, to: action.priority ?? "auto" } };
+    case "MESSAGE_FEEDBACK": {
+      const m = state.messages.find((x) => x.id === action.id);
+      const map = { not_important: "dismiss", important: "promote", replied: "complete", remind_later: "snooze", ignore_source: "mute" } as const;
+      return { itemType: "message", action: map[action.feedback], context: { sender: m?.sender ?? "", senderType: m?.senderType ?? "" } };
+    }
+    case "DISMISS":
+      return { itemType: "attention", action: "dismiss", context: { id: action.id, kind: action.id.split(":")[0] } };
+    case "ADD_EVENT":
+      return action.event.suggestedByOrbit ? { itemType: "suggestion", action: "accept", context: { title: action.event.title } } : undefined;
+    case "APPLY_CHANGE":
+      return { itemType: "change", action: "accept", context: { id: action.changeId } };
+    case "DISMISS_CHANGE":
+      return { itemType: "change", action: "dismiss", context: { id: action.changeId } };
+  }
+  return undefined;
+}
+
 export function orbitReducer(state: OrbitState, action: OrbitAction): OrbitState {
+  const next = baseReducer(state, action);
+  if (next === state) return state;
+  const signal = signalFor(state, action);
+  return signal ? withSignal(next, signal) : next;
+}
+
+function baseReducer(state: OrbitState, action: OrbitAction): OrbitState {
   switch (action.type) {
     case "HYDRATE":
       return action.state;
     case "RESET_DEMO":
-      return { ...createInitialState(), onboarded: true, briefSeen: false };
+      return { ...createInitialState(), onboarded: true, briefSeen: false, demoTime: state.demoTime };
     case "COMPLETE_ONBOARDING":
       return { ...state, onboarded: true };
     case "SET_BRIEF_SEEN":
@@ -234,7 +289,13 @@ export function orbitReducer(state: OrbitState, action: OrbitAction): OrbitState
         },
       };
     case "RESET_LEARNING":
-      return { ...state, preferences: { sourceAdjust: {}, ignoredSources: [], recommendationAdjust: {} } };
+      return {
+        ...state,
+        preferences: { sourceAdjust: {}, ignoredSources: [], recommendationAdjust: {} },
+        signals: [],
+        displayPrefs: {},
+        promptsAnswered: {},
+      };
 
     // ---- Changes, conflicts, suggestions ---------------------------------
     case "APPLY_CHANGE": {
@@ -326,12 +387,21 @@ export function orbitReducer(state: OrbitState, action: OrbitAction): OrbitState
       };
 
     // ---- Settings ----------------------------------------------------------
-    case "SET_SOURCE_ENABLED":
-      return { ...state, sources: state.sources.map((s) => (s.id === action.id ? { ...s, enabled: action.enabled } : s)) };
+    case "SET_SOURCE_STATUS":
+      return { ...state, sources: state.sources.map((s) => (s.id === action.id ? { ...s, status: action.status } : s)) };
     case "SET_NOTIFICATION":
       return { ...state, notificationSettings: { ...state.notificationSettings, [action.key]: action.value } };
 
     case "ADD_CAPTURE":
       return { ...state, captures: [action.capture, ...state.captures].slice(0, 30) };
+
+    case "SIGNAL":
+      return withSignal(state, action.signal);
+    case "SET_DISPLAY_PREF":
+      return { ...state, displayPrefs: { ...state.displayPrefs, ...action.patch } };
+    case "ANSWER_PROMPT":
+      return { ...state, promptsAnswered: { ...state.promptsAnswered, [action.id]: action.answer } };
+    case "SET_DEMO_TIME":
+      return { ...state, demoTime: action.time, briefSeen: action.time !== "morning" ? true : state.briefSeen };
   }
 }

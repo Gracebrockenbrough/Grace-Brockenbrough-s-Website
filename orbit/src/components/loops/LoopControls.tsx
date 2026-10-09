@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Clock } from "lucide-react";
+import { Check } from "lucide-react";
 import type { RankedLoop } from "@/types";
 import { cn } from "@/lib/cn";
-import { Menu, type MenuItem } from "@/components/ui/Menu";
-import { SNOOZE_OPTIONS, useLoopActions } from "@/store/useActions";
+import { useLoopActions } from "@/store/useActions";
 
 /** Round "mark done" control with a short completion animation. */
 export function DoneCircle({ loop, onComplete, size = "md" }: { loop: RankedLoop; onComplete: () => void; size?: "md" | "lg" }) {
@@ -43,22 +42,4 @@ export function useCompleting(loop: RankedLoop) {
     window.setTimeout(() => actions.complete(loop.id), 240);
   };
   return { completing, complete };
-}
-
-export function SnoozeMenu({ loop }: { loop: RankedLoop }) {
-  const actions = useLoopActions();
-  const items: MenuItem[] = SNOOZE_OPTIONS.map((o) => ({ label: o.label, onSelect: () => actions.snooze(loop.id, o.until, o.label) }));
-  return (
-    <Menu
-      label={`Snooze “${loop.title}”`}
-      items={items}
-      align="left"
-      trigger={
-        <span className="inline-flex items-center gap-1.5 px-2 text-[14px] font-medium text-ink-2">
-          <Clock size={15} aria-hidden />
-          Snooze
-        </span>
-      }
-    />
-  );
 }

@@ -12,6 +12,7 @@ import type {
   RankedLoop,
 } from "@/types";
 import { hoursBetween, parseDateTime } from "@/lib/time";
+import { hiddenKinds } from "./connections";
 import { SENDER_IMPORTANCE, classifyMessage, isIgnored, replyWhy } from "./messages";
 
 /**
@@ -168,12 +169,16 @@ export interface BuildLoopsInput {
   prefs: Preferences;
   sources: ConnectedSource[];
   now: Date;
+  /** Learned per-item adjustments (e.g. tasks the user keeps pushing back). */
+  learnedAdjust?: Record<string, number>;
+  /** Sender types the user reliably answers fast. */
+  fastReplyTypes?: string[];
 }
 
 /** Every Open Loop ORBIT knows about, scored and sorted by recommendation. */
 export function buildRankedLoops(input: BuildLoopsInput): RankedLoop[] {
   const { now, prefs, loopMeta } = input;
-  const disabledKinds = new Set(input.sources.filter((s) => !s.enabled).map((s) => s.kind));
+  const disabledKinds = hiddenKinds(input.sources);
   const candidates: { loop: OpenLoop; derivedFrom: RankedLoop["derivedFrom"] }[] = [];
 
   for (const loop of input.loops) {
@@ -211,7 +216,10 @@ export function buildRankedLoops(input: BuildLoopsInput): RankedLoop[] {
     const meta = loopMeta[loop.id];
     if (meta?.removed) continue;
     const snoozed = !!meta?.snoozedUntil && parseDateTime(meta.snoozedUntil) > now;
-    const score = calculatePriority({ loop, meta, prefs, now });
+    const score =
+      calculatePriority({ loop, meta, prefs, now }) +
+      (input.learnedAdjust?.[loop.id] ?? 0) +
+      (loop.requiresResponse && input.fastReplyTypes?.includes(loop.senderType) ? 4 : 0);
     const status = statusFor(loop, meta, score, snoozed, now);
     ranked.push({
       ...loop,

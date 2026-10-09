@@ -1,4 +1,5 @@
 import type { Assignment, ConnectedSource, Course, DetectedChange, Exam, ExtractedFact } from "@/types";
+import { hiddenKinds } from "./connections";
 import { datePart, formatShortDate, formatTime, timePart } from "@/lib/time";
 
 /**
@@ -14,7 +15,7 @@ export function detectChanges(
   sources: ConnectedSource[],
   status: Record<string, "applied" | "dismissed">,
 ): DetectedChange[] {
-  const disabled = new Set(sources.filter((s) => !s.enabled).map((s) => s.kind));
+  const disabled = hiddenKinds(sources);
   const changes: DetectedChange[] = [];
 
   for (const fact of facts) {

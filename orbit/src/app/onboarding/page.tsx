@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CalendarDays, Check, FileUp, Bell, GitCompareArrows, ListChecks } from "lucide-react";
+import { ArrowLeft, Check, FileUp, GitCompareArrows, ListChecks, Plug, Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
 import { Button } from "@/components/ui/Button";
 import { Logo, OrbitMark } from "@/components/shell/Logo";
+import { Modal } from "@/components/ui/Overlay";
+import { ConnectFlow } from "@/components/connections/ConnectFlow";
+import { ConnectionIcon } from "@/components/connections/ConnectionIcon";
 
 const STEPS = 5;
 
@@ -14,8 +17,10 @@ export default function OnboardingPage() {
   const { state, dispatch } = useOrbit();
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [connecting, setConnecting] = useState(false);
-  const [connected, setConnected] = useState(false);
+  // Onboarding tracks its own progress; the demo's sample data loads either way.
+  const [linked, setLinked] = useState<string[]>([]);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const primary = state.sources.filter((s) => s.group === "primary");
   const [coursePath, setCoursePath] = useState<"none" | "manual">("none");
   const [picked, setPicked] = useState<string[]>(state.courses.map((c) => c.id));
 
@@ -67,12 +72,12 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div>
               <h1 className="text-[28px] font-semibold leading-tight tracking-tight">What ORBIT does</h1>
-              <p className="mt-3 text-[17px] text-ink-2">Connect your schedule, courses, and important information. ORBIT notices deadlines, conflicts, and things you may have forgotten.</p>
               <ul className="mt-8 space-y-4">
                 {[
-                  { icon: ListChecks, title: "Shows what matters today", body: "Three to five priorities, not a hundred tasks." },
-                  { icon: GitCompareArrows, title: "Notices when things change", body: "Moved exams, overlapping plans, unanswered emails." },
-                  { icon: Bell, title: "Speaks up only when it should", body: "Quiet by default. Never sends anything without you." },
+                  { icon: Plug, title: "Connects to your life", body: "Calendar, email, classes, and group chats." },
+                  { icon: GitCompareArrows, title: "Notices what changed", body: "Moved exams, conflicts, people waiting on you." },
+                  { icon: ListChecks, title: "Shows what matters", body: "A few things a day, not a hundred." },
+                  { icon: Sparkles, title: "Learns what matters to you", body: "It gets quieter and sharper as you use it." },
                 ].map(({ icon: Icon, title, body }) => (
                   <li key={title} className="flex gap-4">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent" aria-hidden>
@@ -93,41 +98,50 @@ export default function OnboardingPage() {
 
           {step === 2 && (
             <div>
-              <h1 className="text-[28px] font-semibold leading-tight tracking-tight">Start with your calendar</h1>
-              <p className="mt-3 text-[17px] text-ink-2">ORBIT reads your schedule to find free time and conflicts. It never changes an event without asking.</p>
-              <div className="mt-8 flex items-center gap-4 rounded-2xl border border-line bg-surface p-4 shadow-card">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sunken" aria-hidden>
-                  <CalendarDays size={22} />
-                </span>
-                <div className="flex-1">
-                  <p className="font-semibold">Google Calendar</p>
-                  <p className="text-[14px] text-ink-3">{connected ? "Connected · 2 calendars" : "Demo connection"}</p>
-                </div>
-                {connected ? (
-                  <span className="inline-flex items-center gap-1.5 text-[14.5px] font-medium text-success">
-                    <Check size={17} aria-hidden /> Connected
-                  </span>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={connecting}
-                    onClick={() => {
-                      setConnecting(true);
-                      window.setTimeout(() => {
-                        setConnecting(false);
-                        setConnected(true);
-                      }, 900);
-                    }}
-                  >
-                    {connecting ? "Connecting…" : "Connect"}
-                  </Button>
-                )}
-              </div>
-              <p className="mt-3 text-[13.5px] text-ink-3">This prototype uses sample data. No real account is connected.</p>
-              <Button variant="primary" size="lg" className="mt-10 w-full" onClick={next} disabled={connecting}>
-                {connected ? "Continue" : "Skip for demo"}
+              <h1 className="text-[28px] font-semibold leading-tight tracking-tight">Connect the places where your life already happens</h1>
+              <p className="mt-3 text-[17px] text-ink-2">You don&apos;t need to organize anything. ORBIT does that part.</p>
+              <ul className="mt-7 space-y-2.5">
+                {primary.map((src) => {
+                  const done = linked.includes(src.id);
+                  return (
+                    <li key={src.id} className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5 shadow-card">
+                      <ConnectionIcon source={{ ...src, status: done ? "connected" : "available" }} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{src.name}</p>
+                        <p className="text-[14px] leading-snug text-ink-3">{src.blurb}</p>
+                      </div>
+                      {done ? (
+                        <span className="inline-flex shrink-0 items-center gap-1 text-[14.5px] font-medium text-success">
+                          <Check size={16} aria-hidden /> Connected
+                        </span>
+                      ) : (
+                        <Button size="sm" variant="secondary" className="shrink-0" onClick={() => setConnectingId(src.id)}>
+                          Connect
+                        </Button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <Button variant="primary" size="lg" className="mt-8 w-full" onClick={next}>
+                Continue
               </Button>
+              <button type="button" onClick={next} className="mt-3 w-full min-h-10 text-[15px] text-ink-3 hover:text-ink">
+                I&apos;ll do this later
+              </button>
+              {connectingId && (
+                <Modal title="Connect" hideTitle onClose={() => setConnectingId(null)}>
+                  <ConnectFlow
+                    source={state.sources.find((x) => x.id === connectingId)!}
+                    email={state.user.email}
+                    onConnected={() => {
+                      setLinked((l) => [...l, connectingId]);
+                      dispatch({ type: "SET_SOURCE_STATUS", id: connectingId, status: "connected" });
+                    }}
+                    onClose={() => setConnectingId(null)}
+                  />
+                </Modal>
+              )}
             </div>
           )}
 
@@ -207,7 +221,7 @@ export default function OnboardingPage() {
                 </span>
               </div>
               <h1 className="text-[30px] font-semibold leading-tight tracking-tight">You&apos;re ready</h1>
-              <p className="mt-3 text-[17px] text-ink-2">ORBIT will start organizing what matters.</p>
+              <p className="mt-3 text-[17px] text-ink-2">ORBIT will start organizing what matters. You can add connections anytime from your profile.</p>
               <Button variant="primary" size="lg" className="mt-10 w-full" onClick={() => finish()} data-autofocus>
                 Go to Today
               </Button>

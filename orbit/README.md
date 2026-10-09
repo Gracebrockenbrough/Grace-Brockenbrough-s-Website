@@ -26,6 +26,18 @@ To start over, use **Settings → Reset demo** or clear site data.
 4. **Conflict detection.** Tuesday's Finance review (2:00–3:00) overlaps your advising appointment (2:30–3:00). Review options shows a timeline and safe choices.
 5. **"What am I forgetting?"** In Ask ORBIT, the answer pulls from email, Open Loops, and your calendar.
 
+## How it's organized for the user
+
+- **Today** has three layers: *What matters* (three rows), the day as a visual schedule, and *ORBIT noticed* (changes, conflicts, people waiting, deadlines at risk) ranked into one short list. Details open in a drawer.
+- **Calendar** uses one color meaning everywhere: classes indigo, meetings teal, personal neutral, social coral, deadlines amber, and red only for a real conflict. Day and Week are true time grids, and deadlines sit as markers above them.
+- **Tasks** (Open Loops) are plain rows: status, title, one detail.
+- **Connections** (Profile → Manage connections) shows what ORBIT can see. Each connection explains what ORBIT looks for and what it will never do.
+- **Time of day:** Settings → Prototype switches the demo between morning, midday, and evening so you can see Today adapt.
+
+## Personalization
+
+`src/services/learning.ts` turns behavior signals (views, opens, completions, snoozes, dismissals, questions) into small, predictable adjustments: a default calendar view, quieter alert types, suppressed sources, task ranking, and Ask suggestions. Navigation never moves. The demo starts with a few weeks of history, so ORBIT asks once whether to make Week the default and whether to hide Finance Club messages. Everything learned is listed in Profile and can be reset.
+
 You can also try Capture (the + button, or ⌘K / Ctrl+K, or `c`). Type, speak (simulated), or add a screenshot, and ORBIT works out whether it's a task, an event, a completion, or a preference.
 
 ## How it's built
@@ -40,6 +52,7 @@ You can also try Capture (the + button, or ⌘K / Ctrl+K, or `c`). Type, speak (
 
 - ORBIT automatically reads, ranks, suggests, and creates low-risk Open Loops (with Undo).
 - It asks first before changing the calendar, applying a detected change, resolving a conflict, or ignoring a source.
+- It never sends email or texts, submits forms, buys things, or cancels plans. It can recognize that a reply is needed and offer a draft for you to send yourself.
 - Uncertain extractions are labeled "High confidence", "I think this is correct", or "Needs review". Raw scores are never shown.
 - Every important item shows its source and has an optional **Why this?** explanation.
 - Integrations, voice, and image reading are simulated, and the UI says so where it matters.

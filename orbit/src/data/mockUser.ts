@@ -17,8 +17,8 @@ export const defaultPreferences: Preferences = {
 };
 
 export const defaultNotificationSettings: NotificationSettings = {
+  urgent: true,
+  today: true,
   morningBrief: true,
   importantChanges: true,
-  urgentDeadlines: true,
-  needsReply: true,
 };

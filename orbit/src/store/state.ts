@@ -3,6 +3,9 @@ import type {
   CalendarEvent,
   Capture,
   ConnectedSource,
+  DemoTime,
+  DisplayPreference,
+  InteractionSignal,
   Course,
   CourseDocument,
   CourseMilestone,
@@ -21,9 +24,10 @@ import { mockOpenLoops } from "@/data/mockOpenLoops";
 import { mockMessages } from "@/data/mockMessages";
 import { mockFacts } from "@/data/mockChanges";
 import { mockSources } from "@/data/mockSources";
+import { mockSignals } from "@/data/mockSignals";
 import { defaultNotificationSettings, defaultPreferences, mockUser } from "@/data/mockUser";
 
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 
 /**
  * Everything ORBIT knows. Components never read mock files directly — they read
@@ -52,6 +56,13 @@ export interface OrbitState {
   notificationSettings: NotificationSettings;
   sources: ConnectedSource[];
   captures: Capture[];
+  /** Behavior ORBIT learns from. Capped; oldest dropped first. */
+  signals: InteractionSignal[];
+  displayPrefs: DisplayPreference;
+  /** Answers to occasional learning questions, so ORBIT doesn't ask twice. */
+  promptsAnswered: Record<string, "yes" | "no">;
+  /** Prototype only: which part of Friday the demo shows. */
+  demoTime: DemoTime;
 }
 
 export function createInitialState(): OrbitState {
@@ -78,5 +89,9 @@ export function createInitialState(): OrbitState {
     notificationSettings: defaultNotificationSettings,
     sources: mockSources,
     captures: [],
+    signals: mockSignals,
+    displayPrefs: {},
+    promptsAnswered: {},
+    demoTime: "morning" as DemoTime,
   });
 }

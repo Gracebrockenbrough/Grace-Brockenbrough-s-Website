@@ -6,6 +6,7 @@ import { addDays, diffDays, parseDate, startOfMonth, startOfWeek, WEEKDAYS_SHORT
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { buildCalendarItems } from "@/services/calendar";
+import { EVENT_META, LEGEND } from "./eventStyle";
 
 const isMajor = (i: CalendarItem) => (i.major || i.kind === "exam" || i.category === "travel") && !i.title.endsWith("— done");
 
@@ -37,13 +38,18 @@ export function MonthView({ date, onPickDay }: { date: string; onPickDay: (d: st
         {Array.from({ length: weeks }, (_, w) => {
           const weekStart = addDays(gridStart, w * 7);
           const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-          const load = days.reduce((n, d) => n + onDay(d).filter((i) => i.kind === "exam" || i.kind === "deadline").length, 0);
-          const intense = load >= 3;
+          const weekItems = days.flatMap(onDay);
+          const exams = weekItems.filter((i) => i.kind === "exam").length;
+          const load = weekItems.filter((i) => i.kind === "exam" || i.kind === "deadline").length;
+          const travel = weekItems.some((i) => i.category === "travel");
+          // One label at most, and only when it says something useful.
+          const weekLabel = exams >= 2 ? "Exam week" : load >= 3 ? "Heavy week" : travel ? "Travel" : undefined;
+          const intense = weekLabel === "Exam week" || weekLabel === "Heavy week";
           return (
             <div key={w} className={cn("relative grid grid-cols-7 border-b border-line last:border-b-0", intense && "bg-attention-soft/40")}>
-              {intense && (
-                <span className="pointer-events-none absolute right-2 top-1.5 z-10 hidden rounded-full bg-attention-soft px-2 py-0.5 text-[12px] font-semibold text-attention md:inline">
-                  Heavy week
+              {weekLabel && (
+                <span className={cn("pointer-events-none absolute right-2 top-1.5 z-10 hidden rounded-full px-2 py-0.5 text-[12px] font-semibold md:inline", intense ? "bg-attention-soft text-attention" : "bg-personal-soft text-personal-ink")}>
+                  {weekLabel}
                 </span>
               )}
               {days.map((d) => {
@@ -66,7 +72,7 @@ export function MonthView({ date, onPickDay }: { date: string; onPickDay: (d: st
                     {/* Mobile: dots. Desktop: short labels. */}
                     <div className="mt-1 flex gap-1 md:hidden" aria-hidden>
                       {dayItems.slice(0, 3).map((i) => (
-                        <span key={i.id} className={cn("h-1.5 w-1.5 rounded-full", i.kind === "exam" ? "bg-critical" : i.kind === "deadline" ? "bg-attention" : "bg-accent")} />
+                        <span key={i.id} className={cn("h-1.5 w-1.5 rounded-full", EVENT_META[i.category].dot)} />
                       ))}
                     </div>
                     <ul className="mt-1 hidden space-y-1 md:block">
@@ -77,7 +83,7 @@ export function MonthView({ date, onPickDay }: { date: string; onPickDay: (d: st
                             onClick={() => open(i.kind === "deadline" ? { type: "loop", id: i.refId } : { type: "event", id: i.id })}
                             className={cn(
                               "block w-full truncate rounded-md px-1.5 py-0.5 text-left text-[12.5px] font-medium",
-                              i.kind === "exam" ? "bg-critical-soft text-critical" : i.kind === "deadline" ? "bg-attention-soft text-attention" : "bg-accent-soft text-accent-strong",
+                              EVENT_META[i.category].chip,
                               i.pendingChange && "ring-1 ring-dashed ring-attention",
                             )}
                           >
@@ -102,9 +108,9 @@ export function MonthView({ date, onPickDay }: { date: string; onPickDay: (d: st
       </div>
 
       <div className="mt-4 flex flex-wrap gap-4 text-[13.5px] text-ink-2">
-        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-critical" aria-hidden />Exams</span>
-        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-attention" aria-hidden />Big deadlines</span>
-        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-accent" aria-hidden />Events & travel</span>
+        {LEGEND.map((l) => (
+          <span key={l.label} className="flex items-center gap-1.5"><span className={cn("h-2 w-2 rounded-full", l.dot)} aria-hidden />{l.label}</span>
+        ))}
       </div>
 
       {/* Mobile list, since month cells are too small for labels */}

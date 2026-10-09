@@ -11,7 +11,7 @@ import {
   PenLine,
   Sparkles,
 } from "lucide-react";
-import type { CourseColor, PriorityLevel, Source, SourceKind } from "@/types";
+import type { PriorityLevel, Source, SourceKind } from "@/types";
 import { cn } from "@/lib/cn";
 import { confidenceLabel } from "@/services/changes";
 
@@ -80,10 +80,3 @@ export function Pill({ children, tone = "neutral", className }: { children: Reac
   };
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12.5px] font-medium", tones[tone], className)}>{children}</span>;
 }
-
-export const COURSE_COLOR: Record<CourseColor, { bar: string; soft: string; text: string; border: string }> = {
-  teal: { bar: "bg-teal", soft: "bg-teal-soft", text: "text-teal", border: "border-teal/30" },
-  indigo: { bar: "bg-indigo", soft: "bg-indigo-soft", text: "text-indigo", border: "border-indigo/30" },
-  amber: { bar: "bg-amber", soft: "bg-amber-soft", text: "text-amber", border: "border-amber/30" },
-  rose: { bar: "bg-rose", soft: "bg-rose-soft", text: "text-rose", border: "border-rose/30" },
-};

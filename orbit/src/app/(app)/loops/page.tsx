@@ -3,116 +3,89 @@
 import { useState } from "react";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import type { LoopStatus, RankedLoop } from "@/types";
+import { cn } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
-import { useUI } from "@/store/UIProvider";
-import { EmptyState, PageHeader } from "@/components/ui/Card";
-import { FilterChips } from "@/components/ui/SegmentedControl";
-import { OpenLoopCard } from "@/components/loops/OpenLoopCard";
-import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/Card";
+import { TaskRow } from "@/components/loops/TaskRow";
 
-type Filter = "all" | "school" | "work" | "personal" | "waiting";
-type Sort = "recommended" | "due" | "category" | "recent";
+type Filter = "all" | "school" | "work" | "personal";
+type Sort = "recommended" | "due" | "recent";
 
-const GROUPS: { status: LoopStatus; title: string; hint: string }[] = [
-  { status: "now", title: "Now", hint: "Needs attention very soon" },
-  { status: "soon", title: "Soon", hint: "Important, not immediate" },
-  { status: "later", title: "Later", hint: "Not urgent" },
-  { status: "waiting", title: "Waiting", hint: "On someone else" },
+const GROUPS: { status: LoopStatus; title: string }[] = [
+  { status: "now", title: "Now" },
+  { status: "soon", title: "Soon" },
+  { status: "later", title: "Later" },
+  { status: "waiting", title: "Waiting" },
 ];
 
 function sortLoops(loops: RankedLoop[], sort: Sort): RankedLoop[] {
   const copy = [...loops];
-  switch (sort) {
-    case "due":
-      return copy.sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"));
-    case "category":
-      return copy.sort((a, b) => a.category.localeCompare(b.category) || b.priorityScore - a.priorityScore);
-    case "recent":
-      return copy.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    default:
-      return copy.sort((a, b) => b.priorityScore - a.priorityScore);
-  }
+  if (sort === "due") return copy.sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"));
+  if (sort === "recent") return copy.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return copy.sort((a, b) => b.priorityScore - a.priorityScore);
 }
 
-export default function LoopsPage() {
+/**
+ * Every Open Loop: anything that still needs attention. Rows stay minimal;
+ * details, source, and priority live in the drawer.
+ */
+export default function TasksPage() {
   const { derived } = useOrbit();
-  const { open } = useUI();
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("recommended");
   const [showDone, setShowDone] = useState(false);
 
-  const matches = (l: RankedLoop) => (filter === "all" ? true : filter === "waiting" ? l.status === "waiting" : l.category === filter);
-  const open_ = sortLoops(derived.openLoops.filter(matches), sort);
+  const matches = (l: RankedLoop) => filter === "all" || l.category === filter;
+  const open = sortLoops(derived.openLoops.filter(matches), sort);
   const done = derived.loops.filter((l) => l.status === "done" && matches(l));
 
-  const count = (f: Filter) => derived.openLoops.filter((l) => (f === "all" ? true : f === "waiting" ? l.status === "waiting" : l.category === f)).length;
-
   return (
-    <div>
-      <PageHeader
-        title="Open Loops"
-        subtitle="Everything that still needs your attention. ORBIT sorts it for you."
-        action={
-          <Button variant="secondary" onClick={() => open({ type: "capture" })}>
-            Add something
-          </Button>
-        }
-      />
+    <div className="mx-auto max-w-2xl">
+      <header className="mb-6">
+        <h1 className="text-[28px] font-semibold tracking-tight md:text-[32px]">Open Loops</h1>
+        <p className="mt-1 text-[15.5px] text-ink-2">Everything you still need to handle.</p>
+      </header>
 
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <FilterChips<Filter>
-          label="Filter open loops"
-          value={filter}
-          onChange={setFilter}
-          options={[
-            { value: "all", label: "All", count: count("all") },
-            { value: "school", label: "School", count: count("school") },
-            { value: "work", label: "Work", count: count("work") },
-            { value: "personal", label: "Personal", count: count("personal") },
-            { value: "waiting", label: "Waiting", count: count("waiting") },
-          ]}
-        />
-        <label className="flex items-center gap-2 text-[14.5px] text-ink-2">
-          Sort
-          <span className="relative">
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as Sort)}
-              className="min-h-9 appearance-none rounded-xl border border-line-strong bg-surface py-1 pl-3 pr-8 text-[14.5px] font-medium text-ink"
+      {/* Filters are secondary: small text tabs, not buttons. */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line">
+        <div role="group" aria-label="Filter" className="-mb-px flex gap-4">
+          {(["all", "school", "work", "personal"] as Filter[]).map((f) => (
+            <button
+              key={f}
+              type="button"
+              aria-pressed={filter === f}
+              onClick={() => setFilter(f)}
+              className={cn("min-h-10 border-b-2 text-[14.5px] font-medium capitalize", filter === f ? "border-ink text-ink" : "border-transparent text-ink-3 hover:text-ink")}
             >
-              <option value="recommended">Recommended</option>
-              <option value="due">Due date</option>
-              <option value="category">Category</option>
-              <option value="recent">Recently added</option>
-            </select>
-            <ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
-          </span>
+              {f}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center gap-1.5 pb-1 text-[14px] text-ink-3">
+          <span className="sr-only">Sort</span>
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="min-h-8 rounded-lg bg-transparent text-[14px] text-ink-2 hover:text-ink">
+            <option value="recommended">Recommended</option>
+            <option value="due">By due date</option>
+            <option value="recent">Recently added</option>
+          </select>
         </label>
       </div>
 
-      {open_.length === 0 ? (
-        <EmptyState
-          icon={<CheckCircle2 size={28} />}
-          title="You're caught up."
-          body={filter === "all" ? "Nothing needs your attention right now." : "Nothing here right now. Try another filter."}
-        />
+      {open.length === 0 ? (
+        <EmptyState icon={<CheckCircle2 size={28} />} title="You're caught up." body="Nothing needs your attention right now." />
       ) : sort === "recommended" ? (
         <div className="space-y-8">
           {GROUPS.map((g) => {
-            const items = open_.filter((l) => l.status === g.status);
+            const items = open.filter((l) => l.status === g.status);
             if (!items.length) return null;
             return (
               <section key={g.status} aria-labelledby={`group-${g.status}`}>
-                <div className="mb-3 flex items-baseline gap-3">
-                  <h2 id={`group-${g.status}`} className="text-[19px] font-semibold">
-                    {g.title}
-                    <span className="ml-2 text-[15px] font-normal text-ink-3">{items.length}</span>
-                  </h2>
-                  <p className="text-[14px] text-ink-3">{g.hint}</p>
-                </div>
-                <ul className="space-y-2.5">
+                <h2 id={`group-${g.status}`} className="mb-1 text-[13px] font-semibold uppercase tracking-wider text-ink-3">
+                  {g.title} <span className="font-normal">· {items.length}</span>
+                </h2>
+                <ul className="-mx-2">
                   {items.map((l) => (
-                    <OpenLoopCard key={l.id} loop={l} />
+                    <TaskRow key={l.id} loop={l} area="tasks" />
                   ))}
                 </ul>
               </section>
@@ -120,29 +93,28 @@ export default function LoopsPage() {
           })}
         </div>
       ) : (
-        <ul className="space-y-2.5">
-          {open_.map((l) => (
-            <OpenLoopCard key={l.id} loop={l} />
+        <ul className="-mx-2">
+          {open.map((l) => (
+            <TaskRow key={l.id} loop={l} area="tasks" />
           ))}
         </ul>
       )}
 
       {done.length > 0 && (
-        <section className="mt-10" aria-labelledby="group-done">
+        <section className="mt-10">
           <button
             type="button"
             aria-expanded={showDone}
             onClick={() => setShowDone((v) => !v)}
-            className="flex min-h-10 items-center gap-2 rounded-xl text-[17px] font-semibold text-ink-2 hover:text-ink"
-            id="group-done"
+            className="flex min-h-10 items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-ink-3 hover:text-ink"
           >
-            <ChevronDown size={18} className={showDone ? "" : "-rotate-90"} aria-hidden />
-            Done <span className="font-normal text-ink-3">{done.length}</span>
+            <ChevronDown size={16} className={showDone ? "" : "-rotate-90"} aria-hidden />
+            Done · {done.length}
           </button>
           {showDone && (
-            <ul className="mt-3 space-y-2.5">
+            <ul className="-mx-2 mt-1">
               {done.map((l) => (
-                <OpenLoopCard key={l.id} loop={l} />
+                <TaskRow key={l.id} loop={l} emphasizeToday={false} />
               ))}
             </ul>
           )}

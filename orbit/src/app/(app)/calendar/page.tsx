@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useOrbit } from "@/store/OrbitProvider";
@@ -10,15 +10,23 @@ import { Button } from "@/components/ui/Button";
 import { MonthView } from "@/components/calendar/MonthView";
 import { WeekView } from "@/components/calendar/WeekView";
 import { DayView } from "@/components/calendar/DayView";
+import { LearningPrompt } from "@/components/ui/LearningPrompt";
 
 type View = "month" | "week" | "day";
 
 function CalendarInner() {
-  const { derived } = useOrbit();
+  const { derived, dispatch } = useOrbit();
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const view = (["month", "week", "day"].includes(params.get("view") ?? "") ? params.get("view") : "week") as View;
+  // No view in the link? Use the one ORBIT learned this person prefers.
+  const view = (["month", "week", "day"].includes(params.get("view") ?? "") ? params.get("view") : derived.learned.calendarView) as View;
+  const prompt = derived.learned.prompts.find((p) => p.surface === "calendar");
+
+  // Every visit is a quiet signal about which view this person actually uses.
+  useEffect(() => {
+    dispatch({ type: "SIGNAL", signal: { itemType: "calendar", action: "view", context: { view } } });
+  }, [view, dispatch]);
   const date = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") ? params.get("date")! : derived.today;
 
   const go = (v: View, d: string) => router.replace(`${pathname}?view=${v}&date=${d}`, { scroll: false });
@@ -61,6 +69,12 @@ function CalendarInner() {
           ]}
         />
       </header>
+
+      {prompt && (
+        <div className="mb-5">
+          <LearningPrompt prompt={prompt} onAccept={() => go(prompt.value as View, date)} />
+        </div>
+      )}
 
       <div key={view} className="animate-fade-in">
         {view === "month" && <MonthView date={date} onPickDay={(d) => go("day", d)} />}

@@ -67,7 +67,7 @@ export function answerQuestion(question: string, state: OrbitState, d: OrbitDeri
   const { today } = d;
 
   if (/forget|missing|slip|overlook/.test(q)) return forgetting(state, d);
-  if (/tonight|this evening|do today|today\b.*(do|focus)|what should i (do|work)/.test(q) && !/free hour/.test(q)) return tonight(d);
+  if (/unfinished|still open|left to do|tonight|this evening|do today|today\b.*(do|focus)|what should i (do|work)/.test(q) && !/free hour/.test(q)) return tonight(d);
   if (/chang|moved|update/.test(q)) return changes(d);
   if (/owe|respon|reply|get back/.test(q)) return owe(d);
   if (/free hour|free time|what should i do during/.test(q)) return freeHour(d);

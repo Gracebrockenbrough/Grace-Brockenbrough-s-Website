@@ -1,3 +1,4 @@
+import type { DemoTime } from "@/types";
 import { parseDateTime } from "@/lib/time";
 
 /**
@@ -8,6 +9,13 @@ import { parseDateTime } from "@/lib/time";
 export const DEMO_NOW_STR = "2026-10-09T08:12";
 export const DEMO_TODAY = "2026-10-09";
 
-export function demoNow(): Date {
-  return parseDateTime(DEMO_NOW_STR);
+/** The demo can show Friday morning, midday, or evening to show how ORBIT adapts. */
+export const DEMO_TIMES: Record<DemoTime, string> = {
+  morning: "2026-10-09T08:12",
+  midday: "2026-10-09T13:05",
+  evening: "2026-10-09T19:45",
+};
+
+export function demoNow(time: DemoTime = "morning"): Date {
+  return parseDateTime(DEMO_TIMES[time] ?? DEMO_NOW_STR);
 }

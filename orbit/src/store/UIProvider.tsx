@@ -11,7 +11,9 @@ export type Overlay =
   | { type: "conflict"; id: string }
   | { type: "attention"; id: string }
   | { type: "capture"; initialMode?: "type" | "speak" | "photo" | "screenshot" | "file" }
-  | { type: "brief" };
+  | { type: "brief" }
+  | { type: "connect"; id: string }
+  | { type: "connection"; id: string };
 
 export interface Toast {
   id: number;

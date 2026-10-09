@@ -1,23 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, GraduationCap, Mail, MessageCircle, MessagesSquare, FileText, RotateCcw, X } from "lucide-react";
-import type { NotificationSettings, SourceKind } from "@/types";
+import { ChevronRight, RotateCcw, X } from "lucide-react";
+import type { DemoTime, NotificationSettings } from "@/types";
 import { cn } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
-import { Card, PageHeader, SectionHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Pill } from "@/components/ui/Badges";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 
-const ICON: Partial<Record<SourceKind, typeof Mail>> = { calendar: CalendarDays, email: Mail, canvas: GraduationCap, groupme: MessagesSquare, text: MessageCircle };
-
-function Toggle({ checked, onChange, label, description }: { checked: boolean; onChange: (v: boolean) => void; label: string; description?: string }) {
+function Toggle({ checked, onChange, label, description }: { checked: boolean; onChange: (v: boolean) => void; label: string; description: string }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-4 py-3.5">
+    <label className="flex cursor-pointer items-center justify-between gap-4 py-3">
       <span>
         <span className="block text-[15.5px] font-medium">{label}</span>
-        {description && <span className="block text-[14px] text-ink-3">{description}</span>}
+        <span className="block text-[14px] text-ink-3">{description}</span>
       </span>
       <span className="relative inline-flex shrink-0">
         <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
@@ -29,115 +27,84 @@ function Toggle({ checked, onChange, label, description }: { checked: boolean; o
 }
 
 const NOTIFICATIONS: { key: keyof NotificationSettings; label: string; description: string }[] = [
-  { key: "morningBrief", label: "Morning Brief", description: "A short summary the first time you open ORBIT each morning." },
-  { key: "importantChanges", label: "Important changes", description: "When an exam, deadline, or meeting appears to move." },
-  { key: "urgentDeadlines", label: "Urgent deadlines", description: "Only hard deadlines in the next day." },
-  { key: "needsReply", label: "Needs reply", description: "When someone important is waiting on you." },
+  { key: "urgent", label: "Urgent", description: "Rare. A hard deadline in the next few hours." },
+  { key: "today", label: "Today", description: "Someone important is waiting, or a plan needs you today." },
+  { key: "morningBrief", label: "Morning brief", description: "One short summary when you start your day." },
+  { key: "importantChanges", label: "Important changes", description: "An exam, deadline, or meeting moves." },
 ];
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section aria-label={title}>
+      <h2 className="mb-2 text-[13px] font-semibold uppercase tracking-wider text-ink-3">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+/** Profile: connections first, then notifications, what ORBIT learned, and account. */
 export default function SettingsPage() {
-  const { state, dispatch } = useOrbit();
+  const { state, derived, dispatch } = useOrbit();
   const { notify, open } = useUI();
   const router = useRouter();
-  const learned = Object.entries(state.preferences.sourceAdjust).filter(([, v]) => v !== 0);
-  const learnedRecs = Object.entries(state.preferences.recommendationAdjust).filter(([, v]) => v !== 0);
+  const connected = state.sources.filter((s) => s.status === "connected");
+  const { routines } = derived.learned;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-10">
-      <PageHeader title="Settings" subtitle="ORBIT learns from what you do. You can see and change all of it here." />
+    <div className="mx-auto max-w-2xl space-y-10">
+      <header className="flex items-center gap-4">
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-[22px] font-semibold text-accent-strong" aria-hidden>
+          {state.user.name[0]}
+        </span>
+        <div>
+          <h1 className="text-[26px] font-semibold tracking-tight">{state.user.fullName}</h1>
+          <p className="text-[15px] text-ink-2">{state.user.school} · {state.user.year}</p>
+        </div>
+      </header>
 
-      <section aria-labelledby="account">
-        <SectionHeader id="account" title="Account" />
-        <Card className="flex items-center gap-4 p-5">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-[18px] font-semibold text-accent-strong" aria-hidden>
-            {state.user.name[0]}
-          </span>
-          <div>
-            <p className="text-[16px] font-semibold">{state.user.fullName}</p>
-            <p className="text-[14.5px] text-ink-2">{state.user.school} · {state.user.year}</p>
-            <p className="text-[14px] text-ink-3">{state.user.email}</p>
-          </div>
-        </Card>
-      </section>
+      <Link href="/settings/connections" className="group block rounded-2xl border border-line bg-surface p-5 shadow-card hover:shadow-raised">
+        <p className="text-[17px] font-semibold">ORBIT is connected to {connected.length} {connected.length === 1 ? "place" : "places"}</p>
+        <p className="mt-0.5 text-[15px] text-ink-2">{connected.map((s) => s.name.replace("Google ", "")).join(" · ") || "Nothing yet"}</p>
+        <p className="mt-3 inline-flex items-center gap-1 text-[15px] font-medium text-accent">
+          Manage connections <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
+        </p>
+      </Link>
 
-      <section aria-labelledby="sources">
-        <SectionHeader id="sources" title="Connected sources" />
-        <Card className="divide-y divide-line px-5">
-          {state.sources.map((s) => {
-            const Icon = ICON[s.kind] ?? FileText;
-            return (
-              <div key={s.id} className="flex items-center gap-4 py-3.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sunken" aria-hidden>
-                  <Icon size={19} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="flex flex-wrap items-center gap-2 text-[15.5px] font-medium">
-                    {s.name}
-                    {s.enabled ? (
-                      <Pill tone={s.status === "connected" ? "success" : "neutral"}>{s.status === "connected" ? "Connected" : "Demo connection"}</Pill>
-                    ) : (
-                      <Pill>Paused</Pill>
-                    )}
-                  </p>
-                  <p className="text-[14px] text-ink-3">{s.detail}</p>
-                </div>
-                <Button
-                  size="sm"
-                  variant={s.enabled ? "secondary" : "primary"}
-                  onClick={() => {
-                    dispatch({ type: "SET_SOURCE_ENABLED", id: s.id, enabled: !s.enabled });
-                    notify(s.enabled ? `ORBIT stopped reading ${s.name}.` : `ORBIT is reading ${s.name} again.`, { undoable: true });
-                  }}
-                >
-                  {s.enabled ? "Pause" : "Resume"}
-                </Button>
-              </div>
-            );
-          })}
-          <div className="flex items-center gap-4 py-3.5">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sunken" aria-hidden>
-              <FileText size={19} />
-            </span>
-            <div className="flex-1">
-              <p className="text-[15.5px] font-medium">Uploaded documents</p>
-              <p className="text-[14px] text-ink-3">{state.documents.length} syllabi and course files</p>
-            </div>
-          </div>
-        </Card>
-        <p className="mt-2 text-[13.5px] text-ink-3">Integrations are simulated in this prototype. Pausing a source hides everything ORBIT learned from it.</p>
-      </section>
-
-      <section aria-labelledby="notifications">
-        <SectionHeader id="notifications" title="Notifications" />
-        <Card className="divide-y divide-line px-5">
+      <Section title="Notifications">
+        <div className="divide-y divide-line">
           {NOTIFICATIONS.map((n) => (
-            <Toggle
-              key={n.key}
-              label={n.label}
-              description={n.description}
-              checked={state.notificationSettings[n.key]}
-              onChange={(v) => dispatch({ type: "SET_NOTIFICATION", key: n.key, value: v })}
-            />
+            <Toggle key={n.key} label={n.label} description={n.description} checked={state.notificationSettings[n.key]} onChange={(v) => dispatch({ type: "SET_NOTIFICATION", key: n.key, value: v })} />
           ))}
-        </Card>
-        <p className="mt-2 text-[13.5px] text-ink-3">Everything else stays quietly inside ORBIT until you look.</p>
-      </section>
+        </div>
+        <p className="mt-2 text-[14px] text-ink-3">Everything else stays quietly inside ORBIT.</p>
+      </Section>
 
-      <section aria-labelledby="prefs">
-        <SectionHeader id="prefs" title="ORBIT preferences" />
-        <Card className="p-5">
-          <p className="text-[15.5px] font-semibold">Sources ORBIT ignores</p>
-          {state.preferences.ignoredSources.length ? (
+      <Section title="What ORBIT has learned">
+        {routines.length ? (
+          <ul className="divide-y divide-line">
+            {routines.map((r) => (
+              <li key={r.id} className="py-3">
+                <p className="text-[15.5px] font-medium">{r.pattern}</p>
+                <p className="text-[14px] text-ink-3">{r.effect}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[15px] text-ink-2">Nothing yet. ORBIT learns quietly from what you open, finish, snooze, and dismiss.</p>
+        )}
+        {state.preferences.ignoredSources.length > 0 && (
+          <div className="mt-4">
+            <p className="text-[15px] font-medium">Hidden sources</p>
             <ul className="mt-2 flex flex-wrap gap-2">
               {state.preferences.ignoredSources.map((s) => (
                 <li key={s.key} className="inline-flex items-center gap-1 rounded-full bg-sunken py-1 pl-3 pr-1 text-[14px]">
                   {s.label}
                   <button
                     type="button"
-                    aria-label={`Stop ignoring ${s.label}`}
+                    aria-label={`Show ${s.label} again`}
                     onClick={() => {
                       dispatch({ type: "UNIGNORE_SOURCE", key: s.key });
-                      notify(`ORBIT will read ${s.label} again.`, { undoable: true });
+                      notify(`ORBIT will show ${s.label} again.`, { undoable: true });
                     }}
                     className="flex h-7 w-7 items-center justify-center rounded-full text-ink-3 hover:bg-line hover:text-ink"
                   >
@@ -146,54 +113,52 @@ export default function SettingsPage() {
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="mt-1 text-[14.5px] text-ink-3">None. Use “Always ignore this source” on any message to add one.</p>
-          )}
+          </div>
+        )}
+        <Button size="sm" variant="ghost" className="mt-3 -ml-3" onClick={() => { dispatch({ type: "RESET_LEARNING" }); notify("ORBIT will start learning from scratch.", { undoable: true }); }}>
+          Reset what ORBIT learned
+        </Button>
+      </Section>
 
-          <p className="mt-6 text-[15.5px] font-semibold">What ORBIT has learned</p>
-          {learned.length || learnedRecs.length ? (
-            <ul className="mt-2 space-y-1.5 text-[14.5px]">
-              {learned.map(([k, v]) => (
-                <li key={k} className="flex justify-between gap-3">
-                  <span>{k.replace(/^sender:|^type:/, "")}</span>
-                  <span className={v > 0 ? "text-success" : "text-ink-3"}>{v > 0 ? "More important to you" : "Less important to you"}</span>
-                </li>
-              ))}
-              {learnedRecs.map(([k, v]) => (
-                <li key={k} className="flex justify-between gap-3">
-                  <span>{k.replace("attention:", "").replace("_", " ").replace(/^./, (c) => c.toUpperCase())} alerts</span>
-                  <span className={v > 0 ? "text-success" : "text-ink-3"}>{v > 0 ? "Show more" : "Show fewer"}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-1 text-[14.5px] text-ink-3">Nothing yet. When you mark things important or not, ORBIT adjusts and lists it here.</p>
-          )}
-          {(learned.length > 0 || learnedRecs.length > 0) && (
-            <Button size="sm" variant="ghost" className="mt-3" onClick={() => { dispatch({ type: "RESET_LEARNING" }); notify("ORBIT's learned preferences were reset.", { undoable: true }); }}>
-              Reset what ORBIT learned
+      <Section title="Account">
+        <p className="text-[15.5px]">{state.user.email}</p>
+        <p className="text-[14px] text-ink-3">Time zone: Eastern</p>
+      </Section>
+
+      <Section title="Prototype">
+        <div className="space-y-4 rounded-2xl bg-sunken p-4">
+          <div>
+            <p className="mb-2 text-[14.5px] text-ink-2">See how Today changes through Friday, October 9.</p>
+            <SegmentedControl<DemoTime>
+              label="Demo time"
+              value={state.demoTime}
+              onChange={(t) => {
+                dispatch({ type: "SET_DEMO_TIME", time: t });
+                router.push("/today");
+              }}
+              options={[
+                { value: "morning", label: "Morning" },
+                { value: "midday", label: "Midday" },
+                { value: "evening", label: "Evening" },
+              ]}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" onClick={() => open({ type: "brief" })}>Show morning brief</Button>
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => {
+                dispatch({ type: "RESET_DEMO" });
+                router.push("/today");
+                notify("Demo reset.");
+              }}
+            >
+              <RotateCcw size={15} aria-hidden /> Reset demo
             </Button>
-          )}
-        </Card>
-      </section>
-
-      <section aria-labelledby="demo">
-        <SectionHeader id="demo" title="Prototype" />
-        <Card className="flex flex-wrap items-center gap-3 p-5">
-          <p className="flex-1 text-[14.5px] text-ink-2">This is a demo with sample data on a fixed date (Friday, October 9). Your changes are saved in this browser.</p>
-          <Button variant="secondary" onClick={() => open({ type: "brief" })}>Show Morning Brief</Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              dispatch({ type: "RESET_DEMO" });
-              router.push("/today");
-              notify("Demo reset to Friday morning.");
-            }}
-          >
-            <RotateCcw size={16} aria-hidden /> Reset demo
-          </Button>
-        </Card>
-      </section>
+          </div>
+        </div>
+      </Section>
     </div>
   );
 }

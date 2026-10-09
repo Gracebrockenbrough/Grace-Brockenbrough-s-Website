@@ -104,7 +104,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
 
       {loop.why && (
         <div className="mb-5 rounded-2xl bg-accent-soft px-4 py-3">
-          <p className="text-[13px] font-semibold uppercase tracking-wide text-accent-strong">Why this matters</p>
+          <p className="text-[13px] font-semibold uppercase tracking-wide text-accent-strong">Why ORBIT surfaced this</p>
           <p className="mt-0.5 text-[15px] text-ink">{loop.why}</p>
         </div>
       )}
@@ -189,7 +189,12 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
       </dl>
 
       {!done && (
-        <div className="mt-6 space-y-4">
+        <details className="group mt-6 rounded-2xl border border-line px-4 py-1 open:pb-4">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-[15px] font-medium text-ink-2 hover:text-ink">
+            Change status or priority
+            <span className="text-ink-3 transition-transform group-open:rotate-90" aria-hidden>›</span>
+          </summary>
+        <div className="mt-2 space-y-4">
           <div>
             <p id="status-label" className="mb-2 text-[14px] font-medium text-ink-2">Status{loop.snoozed ? " · snoozed" : ""}</p>
             <SegmentedControl<LoopStatus>
@@ -223,6 +228,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
             />
           </div>
         </div>
+        </details>
       )}
     </Drawer>
   );

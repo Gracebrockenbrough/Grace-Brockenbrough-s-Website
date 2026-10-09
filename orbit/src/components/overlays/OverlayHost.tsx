@@ -11,6 +11,7 @@ import { ConflictModal } from "./ConflictModal";
 import { AttentionDrawer } from "./AttentionDrawer";
 import { CaptureModal } from "@/components/capture/CaptureModal";
 import { MorningBrief } from "@/components/today/MorningBrief";
+import { ConnectModal, ConnectionDrawer } from "./ConnectionOverlays";
 
 /** One overlay at a time. Opening another replaces the current one. */
 export function OverlayHost() {
@@ -41,5 +42,9 @@ export function OverlayHost() {
       return <CaptureModal key={key} onClose={close} initialMode={overlay.initialMode} />;
     case "brief":
       return <MorningBrief key={key} onClose={close} />;
+    case "connect":
+      return <ConnectModal key={key} id={overlay.id} onClose={close} />;
+    case "connection":
+      return <ConnectionDrawer key={key} id={overlay.id} onClose={close} />;
   }
 }

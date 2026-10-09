@@ -32,13 +32,26 @@ export interface Source {
   ref?: ID;
 }
 
+export type ConnectionStatus = "connected" | "paused" | "available";
+
+/** A place where the user's life already happens. Plain-language copy only. */
 export interface ConnectedSource {
   id: ID;
   name: string;
-  kind: SourceKind;
-  status: "connected" | "demo" | "disconnected";
-  enabled: boolean;
-  detail: string;
+  kind: SourceKind | "drive" | "reminders" | "notes";
+  status: ConnectionStatus;
+  /** One line shown on onboarding cards, e.g. "Know where you need to be." */
+  blurb: string;
+  /** "ORBIT uses Gmail to notice:" */
+  notices: string[];
+  /** "What ORBIT usually ignores" */
+  ignores?: string[];
+  /** What ORBIT will never do with this connection. */
+  promise: string;
+  /** primary = shown first, more = "Add more", other = behind "See all connections". */
+  group: "primary" | "more" | "other";
+  /** The demo has sample data for this source. */
+  hasDemoData?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,11 +82,63 @@ export interface Preferences {
   recommendationAdjust: Record<string, number>;
 }
 
+/** Conservative tiers. Everything else stays quietly inside ORBIT. */
 export interface NotificationSettings {
+  urgent: boolean;
+  today: boolean;
   morningBrief: boolean;
   importantChanges: boolean;
-  urgentDeadlines: boolean;
-  needsReply: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Learning & personalization
+// ---------------------------------------------------------------------------
+
+export type CalendarView = "month" | "week" | "day";
+export type DemoTime = "morning" | "midday" | "evening";
+
+/** Something the user did. Passive behavior teaches ORBIT. */
+export interface InteractionSignal {
+  id: ID;
+  itemType: string; // "calendar", "loop", "message", "attention", "suggestion", "ask", "noticed"
+  action: string; // "view", "open", "complete", "snooze", "dismiss", "accept", "ask", "expand"
+  at: string;
+  context?: Record<string, string>;
+}
+
+export interface DisplayPreference {
+  calendarView?: CalendarView;
+  /** "noticed_first" once the user repeatedly goes to ORBIT noticed before anything else. */
+  todayOrder?: "default" | "noticed_first";
+  planningStyle?: "suggest" | "manual";
+}
+
+/** A pattern ORBIT has picked up, described the way a person would say it. */
+export interface LearnedRoutine {
+  id: ID;
+  pattern: string;
+  effect: string;
+  confidence: number;
+  lastObserved: string;
+}
+
+export interface SourcePreference {
+  key: string;
+  label: string;
+  importanceWeight: number;
+  ignoreProbability: number;
+  userExplicitlyMuted: boolean;
+}
+
+/** An occasional, polite question. Never more than one on screen. */
+export interface LearningPrompt {
+  id: ID;
+  surface: "today" | "calendar";
+  message: string;
+  acceptLabel: string;
+  kind: "calendar_view" | "ignore_source";
+  value: string;
+  label?: string;
 }
 
 export interface User {

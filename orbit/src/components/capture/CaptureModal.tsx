@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Camera, Check, CircleDot, FileUp, Image as ImageIcon, Keyboard, Mic, Undo2 } from "lucide-react";
+import { CalendarPlus, Camera, Check, CircleDot, FileUp, Mic, Undo2 } from "lucide-react";
 import type { CaptureInputKind, CaptureResult } from "@/types";
 import { cn, uid } from "@/lib/cn";
 import { formatShortDate, formatTime } from "@/lib/time";
@@ -16,7 +16,7 @@ import { DEMO_SCREENSHOT_TEXT, VOICE_EXAMPLES, processCapture } from "@/services
 
 type Phase = "input" | "listening" | "reading" | "result";
 
-const EXAMPLES = ["Return the blue dress by next Friday", "Buy Mom's birthday present Sunday", "Coffee with Sarah tomorrow at 3"];
+const EXAMPLES = ["Return my dress by Friday", "Dinner with Sarah tomorrow at 7"];
 
 let voiceIndex = 0;
 
@@ -35,7 +35,6 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
   const [courseChoice, setCourseChoice] = useState<string | undefined>();
   const textRef = useRef<HTMLTextAreaElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
-  const screenshotRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const timers = useRef<number[]>([]);
 
@@ -190,63 +189,56 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
             <label htmlFor="capture-input" className="sr-only">
               What do you want ORBIT to remember?
             </label>
-            <textarea
-              id="capture-input"
-              ref={textRef}
-              data-autofocus
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  submitText();
-                }
-              }}
-              rows={3}
-              placeholder="Type anything — a deadline, a plan, a reminder…"
-              className="w-full resize-none rounded-2xl border border-line-strong bg-canvas px-4 py-3 text-[17px] leading-relaxed placeholder:text-ink-3 focus:border-accent focus:bg-surface focus:outline-none"
-            />
-            <p className="mt-2 text-[14px] text-ink-3">You don&apos;t need to pick a task, event, or course. ORBIT figures out what it is.</p>
-            <div className="mt-4 grid grid-cols-5 gap-2">
+            <div className="flex items-end gap-2 rounded-2xl border border-line-strong bg-canvas p-2 pl-4 focus-within:border-accent focus-within:bg-surface">
+              <textarea
+                id="capture-input"
+                ref={textRef}
+                data-autofocus
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    submitText();
+                  }
+                }}
+                rows={2}
+                placeholder="Type or speak…"
+                className="min-w-0 flex-1 resize-none bg-transparent py-1.5 text-[18px] leading-relaxed placeholder:text-ink-3 focus:outline-none focus-visible:outline-none"
+              />
+              <Button type="submit" variant="primary" disabled={!text.trim()}>
+                Add
+              </Button>
+            </div>
+            <div className="mt-3 flex gap-2">
               {[
                 { label: "Speak", icon: Mic, onClick: startVoice },
-                { label: "Type", icon: Keyboard, onClick: () => textRef.current?.focus() },
-                { label: "Take photo", icon: Camera, onClick: () => photoRef.current?.click() },
-                { label: "Screenshot", icon: ImageIcon, onClick: () => screenshotRef.current?.click() },
-                { label: "Upload file", icon: FileUp, onClick: () => fileRef.current?.click() },
+                { label: "Photo", icon: Camera, onClick: () => photoRef.current?.click() },
+                { label: "File", icon: FileUp, onClick: () => fileRef.current?.click() },
               ].map(({ label, icon: Icon, onClick }) => (
                 <button
                   key={label}
                   type="button"
                   onClick={onClick}
-                  className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface px-1 text-[12.5px] font-medium text-ink-2 hover:border-line-strong hover:text-ink sm:text-[13.5px]"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-line px-3.5 text-[14.5px] font-medium text-ink-2 hover:border-line-strong hover:text-ink"
                 >
-                  <Icon size={20} aria-hidden />
+                  <Icon size={17} aria-hidden />
                   {label}
                 </button>
               ))}
             </div>
-            <input ref={photoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && readImage("photo")} />
-            <input ref={screenshotRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && readImage("screenshot")} />
+            {/* Photo covers camera and screenshots; File covers syllabi and documents. */}
+            <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && readImage("photo")} />
             <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,image/*" className="hidden" onChange={(e) => e.target.files?.[0] && readFile(e.target.files[0])} />
-            <div className="mt-5">
-              <p className="mb-2 text-[13.5px] font-medium text-ink-3">Try</p>
-              <div className="flex flex-wrap gap-2">
-                {EXAMPLES.map((ex) => (
-                  <button key={ex} type="button" onClick={() => submitText(ex)} className="min-h-9 rounded-full bg-sunken px-3 text-[14px] text-ink-2 hover:bg-line hover:text-ink">
-                    {ex}
-                  </button>
-                ))}
-                <button type="button" onClick={() => readImage("screenshot")} className="min-h-9 rounded-full bg-sunken px-3 text-[14px] text-ink-2 hover:bg-line hover:text-ink">
-                  Sample concert screenshot
+            <div className="mt-6 space-y-1">
+              {EXAMPLES.map((ex) => (
+                <button key={ex} type="button" onClick={() => submitText(ex)} className="block rounded-lg px-1 py-1 text-left text-[15px] text-ink-3 hover:text-ink">
+                  “{ex}”
                 </button>
-              </div>
-            </div>
-            <div className="mt-6 flex items-center justify-between gap-3">
-              <span className="hidden text-[13px] text-ink-3 md:inline">Press Enter to add · ⌘K opens this anywhere</span>
-              <Button type="submit" variant="primary" disabled={!text.trim()} className="ml-auto">
-                Add
-              </Button>
+              ))}
+              <button type="button" onClick={() => readImage("screenshot")} className="block rounded-lg px-1 py-1 text-left text-[14px] text-ink-3 hover:text-ink">
+                Or try a sample concert screenshot
+              </button>
             </div>
           </form>
         </div>

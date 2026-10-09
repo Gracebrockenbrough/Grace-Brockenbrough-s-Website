@@ -9,7 +9,7 @@ import { datePart, formatShortDate, formatTime, formatMonthDay, relativeDateTime
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { Card, EmptyState, SectionHeader } from "@/components/ui/Card";
-import { COURSE_COLOR, ConfidenceTag, SourceBadge } from "@/components/ui/Badges";
+import { ConfidenceTag, SourceBadge } from "@/components/ui/Badges";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { meetingSummary, useNextUp } from "@/components/courses/CourseCard";
 
@@ -53,6 +53,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const { state, derived } = useOrbit();
   const { open } = useUI();
   const [tab, setTab] = useState<"upcoming" | "completed">("upcoming");
+  const [showAllWork, setShowAllWork] = useState(false);
   const course = state.courses.find((c) => c.id === id);
   const next = useNextUp(id);
 
@@ -67,9 +68,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     );
   }
 
-  const color = COURSE_COLOR[course.color];
+  const color = { text: "text-academic", soft: "bg-academic-soft" };
   const assignments = state.assignments.filter((a) => a.courseId === id).sort((a, b) => (a.due ?? "9").localeCompare(b.due ?? "9"));
-  const upcoming = assignments.filter((a) => !a.completed);
+  const upcoming = assignments.filter((a) => !a.completed && a.id !== next?.id);
   const completed = assignments.filter((a) => a.completed);
   const exams = state.exams.filter((x) => x.courseId === id).sort((a, b) => (a.date ?? "9").localeCompare(b.date ?? "9"));
   const milestones = state.milestones.filter((m) => m.courseId === id).sort((a, b) => (a.date ?? "9").localeCompare(b.date ?? "9"));
@@ -78,7 +79,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const hasSyllabus = !!course.syllabusDocumentId;
 
   return (
-    <div>
+    <div className="mx-auto max-w-2xl">
       <Link href="/courses" className="mb-4 inline-flex min-h-10 items-center gap-1.5 rounded-lg text-[15px] text-ink-2 hover:text-ink">
         <ArrowLeft size={17} aria-hidden /> Courses
       </Link>
@@ -97,7 +98,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         <div key={c.id} className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-attention-line bg-attention-soft px-4 py-3">
           <GitCompareArrows size={18} className="text-attention" aria-hidden />
           <p className="flex-1 text-[15px]">
-            <span className="font-semibold">{c.title}</span> {c.confidence >= 0.8 ? "appears to have moved." : "may have moved."}
+            <span className="font-semibold">{c.title.replace(`${course.code} `, "")} {c.confidence >= 0.8 ? "moved" : "may have moved"}</span>
           </p>
           <button type="button" onClick={() => open({ type: "change", id: c.id })} className="min-h-9 rounded-xl bg-accent px-3 text-[14px] font-medium text-white hover:bg-accent-strong">
             Review
@@ -118,7 +119,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <div className="space-y-10">
         <div className="space-y-10">
           {next && (
             <section aria-labelledby="next-up">
@@ -139,7 +140,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           <section aria-labelledby="assignments">
             <SectionHeader
               id="assignments"
-              title="Assignments"
+              title="Upcoming work"
               action={
                 <SegmentedControl
                   label="Assignment filter"
@@ -155,12 +156,17 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             {(tab === "upcoming" ? upcoming : completed).length ? (
               <Card className="px-4 md:px-5">
                 <ul className="divide-y divide-line">
-                  {(tab === "upcoming" ? upcoming : completed).map((a) => (
+                  {(tab === "upcoming" ? (showAllWork ? upcoming : upcoming.slice(0, 4)) : completed).map((a) => (
                     <AssignmentRow key={a.id} a={a} />
                   ))}
                 </ul>
               </Card>
-            ) : (
+            ) : null}
+            {tab === "upcoming" && upcoming.length > 4 && !showAllWork ? (
+              <button type="button" onClick={() => setShowAllWork(true)} className="mt-2 min-h-9 rounded-lg px-1 text-[14.5px] font-medium text-ink-2 hover:text-ink">
+                Show all {upcoming.length} →
+              </button>
+            ) : (tab === "upcoming" ? upcoming : completed).length ? null : (
               <p className="rounded-2xl border border-dashed border-line-strong px-4 py-5 text-[15px] text-ink-2">
                 {tab === "upcoming" ? (hasSyllabus ? "You're caught up in this class." : "Upload the syllabus and assignments will appear here.") : "Nothing completed yet."}
               </p>
@@ -198,8 +204,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           </section>
 
           {milestones.length > 0 && (
-            <section aria-labelledby="schedule">
-              <SectionHeader id="schedule" title="Course schedule" />
+            <details className="group rounded-2xl border border-line bg-surface px-5 open:pb-5">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between text-[16px] font-semibold">
+              Course schedule
+              <span className="text-ink-3 transition-transform group-open:rotate-90" aria-hidden>›</span>
+            </summary>
               <Card className="divide-y divide-line px-4 md:px-5">
                 {milestones.map((m) => (
                   <div key={m.id} className="flex justify-between gap-3 py-3 text-[15px]">
@@ -208,13 +217,16 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                   </div>
                 ))}
               </Card>
-            </section>
+            </details>
           )}
         </div>
 
-        <aside className="space-y-10">
-          <section aria-labelledby="professor">
-            <SectionHeader id="professor" title="Professor" />
+        <div className="space-y-2">
+          <details className="group rounded-2xl border border-line bg-surface px-5 open:pb-5">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between text-[16px] font-semibold">
+              Professor & office hours
+              <span className="text-ink-3 transition-transform group-open:rotate-90" aria-hidden>›</span>
+            </summary>
             <Card className="p-5">
               <p className="text-[16px] font-semibold">{course.professor}</p>
               <a href={`mailto:${course.professorEmail}`} className="mt-1 inline-flex items-center gap-1.5 text-[15px] text-accent hover:underline">
@@ -226,18 +238,13 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 {course.officeHoursSource && <SourceBadge source={course.officeHoursSource} className="mt-1" />}
               </div>
             </Card>
-          </section>
+          </details>
 
-          <section aria-labelledby="documents">
-            <SectionHeader
-              id="documents"
-              title="Documents"
-              action={
-                <Link href={`/courses/upload?course=${course.id}`} className="text-[14.5px] font-medium text-accent hover:underline">
-                  Upload
-                </Link>
-              }
-            />
+          <details className="group rounded-2xl border border-line bg-surface px-5 open:pb-5">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between text-[16px] font-semibold">
+              Syllabus & documents
+              <span className="text-ink-3 transition-transform group-open:rotate-90" aria-hidden>›</span>
+            </summary>
             {documents.length ? (
               <Card className="divide-y divide-line">
                 {documents.map((d) => (
@@ -255,8 +262,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             ) : (
               <p className="rounded-2xl border border-dashed border-line-strong px-4 py-5 text-[15px] text-ink-2">No documents yet.</p>
             )}
-          </section>
-        </aside>
+          </details>
+        </div>
       </div>
     </div>
   );

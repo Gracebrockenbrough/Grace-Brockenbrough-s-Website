@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CalendarDays, GitCompareArrows, Telescope } from "lucide-react";
+import { AlertCircle, CalendarDays, GitCompareArrows } from "lucide-react";
 import { formatLongDate } from "@/lib/time";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
@@ -76,7 +76,7 @@ export function MorningBrief({ onClose }: { onClose: () => void }) {
       {brief.change && (
         <section className="mt-4 rounded-2xl border border-line px-4 py-3" aria-labelledby="brief-change">
           <h3 id="brief-change" className="flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-ink-3">
-            <GitCompareArrows size={15} aria-hidden /> Something changed
+            <GitCompareArrows size={15} aria-hidden /> Changed overnight
           </h3>
           <p className="mt-1 text-[15.5px] text-ink">{brief.change}</p>
           {derived.changes[0] && (
@@ -94,14 +94,6 @@ export function MorningBrief({ onClose }: { onClose: () => void }) {
         </section>
       )}
 
-      {brief.lookingAhead && (
-        <section className="mt-6" aria-labelledby="brief-ahead">
-          <h3 id="brief-ahead" className="flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-ink-3">
-            <Telescope size={15} aria-hidden /> Looking ahead
-          </h3>
-          <p className="mt-1 text-[15.5px] text-ink">{brief.lookingAhead}</p>
-        </section>
-      )}
     </Modal>
   );
 }

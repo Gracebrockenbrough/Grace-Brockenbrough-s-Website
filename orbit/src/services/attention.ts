@@ -1,5 +1,6 @@
 import type {
   AttentionItem,
+  AttentionKind,
   CalendarItem,
   Conflict,
   Course,
@@ -10,7 +11,7 @@ import type {
   Preferences,
   RankedLoop,
 } from "@/types";
-import { datePart, diffDays, formatShortDate, hoursBetween, parseDateTime, formatTime, formatTimeRange, relativeDateTime, relativeDay, timePart } from "@/lib/time";
+import { datePart, diffDays, formatShortDate, hoursBetween, parseDate, parseDateTime, formatTime, formatTimeRange, relativeDateTime, relativeDay, timePart } from "@/lib/time";
 import { describeWhen } from "./changes";
 
 interface AttentionInput {
@@ -23,26 +24,39 @@ interface AttentionInput {
   prefs: Preferences;
   today: string;
   now: Date;
+  /** Kinds the user keeps dismissing; ORBIT turns them down. */
+  quieted?: AttentionKind[];
+}
+
+const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** "Thu 10 AM" — compact enough for a one-line detail. */
+function whenShort(v: { date?: string; startTime?: string }): string {
+  if (!v.date) return "no date";
+  const day = DAY_SHORT[parseDate(v.date).getDay()];
+  return v.startTime && v.startTime !== "23:59" ? `${day} ${formatTime(v.startTime)}` : day;
 }
 
 /**
- * "Needs Attention" holds exceptions, not normal tasks: changes, conflicts,
- * deadlines that could slip, and gaps in what ORBIT knows.
+ * Exceptions only: changes, conflicts, deadlines that could slip, and gaps in
+ * what ORBIT knows. Copy is deliberately short; details live behind a tap.
  */
 export function buildAttention(input: AttentionInput): AttentionItem[] {
-  const { changes, conflicts, loops, priorities, dismissed, prefs, today } = input;
+  const { changes, conflicts, loops, priorities, courses, dismissed, prefs, today } = input;
   const items: AttentionItem[] = [];
+  const code = (courseId?: string) => courses.find((c) => c.id === courseId)?.code ?? "";
 
   for (const c of changes) {
     const confident = c.confidence >= 0.8;
+    const what = c.entityType === "exam" ? "Exam" : "Due date";
     items.push({
       id: c.id,
       kind: confident ? "change" : "possible_change",
-      label: confident ? "Important change" : "Possible change",
-      title: confident ? `${c.title} appears to have moved` : `${c.title} may have moved`,
-      body: `${describeWhen(c.previousValue)} → ${describeWhen(c.newValue)}`,
+      label: confident ? "Changed" : "Possible change",
+      title: confident ? `${what} moved` : `${what} may have moved`,
+      body: `${code(c.courseId)} · ${whenShort(c.previousValue)} → ${whenShort(c.newValue)}`,
       why: confident
-        ? `${c.source.label} says the date changed, and it doesn't match your calendar.`
+        ? `${c.source.label} gives a new date that doesn't match your calendar.`
         : `A classmate mentioned it in ${c.source.label}. Your professor hasn't confirmed it, so ORBIT hasn't changed anything.`,
       weight: confident ? 95 : 55,
       refId: c.id,
@@ -57,43 +71,46 @@ export function buildAttention(input: AttentionInput): AttentionItem[] {
       items.push({
         id: c.id,
         kind: "conflict",
-        label: "Schedule conflict",
-        title: `${a?.title} and ${b?.title?.toLowerCase()} overlap`,
-        body: `${relativeDay(c.date!, today)} · ${formatTimeRange(a?.startTime, a?.endTime)} and ${formatTimeRange(b?.startTime, b?.endTime)}`,
+        label: "Conflict",
+        title: `Conflict ${relativeDay(c.date!, today)}`,
+        body: `${shortName(a?.title)} overlaps ${shortName(b?.title).toLowerCase()}`,
         why: `Both are on your calendar ${relativeDay(c.date!, today)} and overlap by ${c.overlapMinutes} minutes.`,
         weight: 85 - within,
         refId: c.id,
       });
     } else if (c.type === "workload") {
+      const n = c.items?.length ?? 3;
       items.push({
         id: c.id,
         kind: "workload",
-        label: "Busy stretch ahead",
-        title: c.summary.split(":")[0],
-        body: c.summary.split(":")[1]?.trim() ?? "",
-        why: "Several graded deadlines land close together. Starting early spreads out the work.",
+        label: "Busy stretch",
+        title: `Busy ${spanDays(c.items ?? [])}`,
+        body: `${n} big deadlines close together`,
+        why: "Several graded deadlines land close together. Starting one early spreads out the work.",
         weight: 58,
         refId: c.id,
       });
     } else if (c.type === "prep") {
+      const examDay = c.date ? relativeDay(c.date, today) : "";
       items.push({
         id: c.id,
         kind: "prep",
-        label: "No study time yet",
-        title: c.summary,
-        body: "ORBIT can find a window for you.",
-        why: "Exams go better with planned review time, and your calendar doesn't have any yet.",
+        label: "Study time",
+        title: `No study time for ${examDay}'s exam`,
+        body: c.summary.split(" ")[0] + " " + (c.summary.split(" ")[1] ?? ""),
+        why: "Your calendar has no review time before this exam.",
         weight: 64,
         refId: c.id,
       });
     } else if (c.type === "missing_info") {
+      const m = c.summary.match(/“(.+)”/);
       items.push({
         id: c.id,
         kind: "missing_info",
-        label: "Missing information",
-        title: c.summary,
-        body: "Add the date when you know it, or ORBIT will watch for an announcement.",
-        why: "ORBIT can't plan around something without a date.",
+        label: "Missing date",
+        title: `${m?.[1] ?? "An item"} has no date`,
+        body: c.summary.match(/The (\S+ \S+)/)?.[1] ?? "",
+        why: "ORBIT can't plan around something without a date. It will watch for an announcement.",
         weight: 28,
         refId: c.id,
       });
@@ -109,20 +126,102 @@ export function buildAttention(input: AttentionInput): AttentionItem[] {
     items.push({
       id: `deadline:${l.id}`,
       kind: "deadline",
-      label: "Upcoming deadline",
-      title: capitalize(`${l.title.replace(/^Submit /, "")} ${verbFor(l.title)} ${relativeDay(datePart(l.deadline), today)}`),
-      body: l.blocks ? `${l.blocks} depends on it.` : l.description ?? "",
+      label: "Deadline",
+      title: capitalize(`${l.title.replace(/^Submit (spring )?/, "")} ${verbFor(l.title)} ${relativeDay(datePart(l.deadline), today)}`),
+      body: l.blocks ? `${l.blocks} depends on it` : "",
       why: l.why ?? "It has a hard deadline coming up.",
       weight: 70,
       refId: l.id,
     });
   }
 
+  const quieted = new Set(input.quieted ?? []);
   return items
     .filter((i) => !dismissed.includes(i.id))
-    .map((i) => ({ ...i, weight: i.weight + (prefs.recommendationAdjust[`attention:${i.kind}`] ?? 0) }))
+    .map((i) => ({ ...i, weight: i.weight + (prefs.recommendationAdjust[`attention:${i.kind}`] ?? 0) - (quieted.has(i.kind) ? 20 : 0) }))
     .filter((i) => i.weight > 10)
     .sort((a, b) => b.weight - a.weight);
+}
+
+// ---------------------------------------------------------------------------
+// ORBIT noticed — one list for everything that isn't a normal task
+// ---------------------------------------------------------------------------
+
+export type NoticedTarget = { type: "change" | "conflict" | "loop" | "message" | "attention"; id: string };
+
+export interface NoticedItem {
+  id: string;
+  kind: AttentionKind | "reply";
+  title: string;
+  detail: string;
+  /** The one obvious action. */
+  action: string;
+  target: NoticedTarget;
+  why: string;
+  weight: number;
+  /** Unusual or important enough to deserve a card instead of a row. */
+  prominent: boolean;
+}
+
+const ACTION: Record<AttentionKind, string> = {
+  change: "Review",
+  possible_change: "Review",
+  conflict: "Fix",
+  deadline: "Open",
+  prep: "Plan",
+  workload: "See week",
+  missing_info: "Add date",
+};
+
+export function buildNoticed(attention: AttentionItem[], replies: { message: Message; loop?: RankedLoop }[]): NoticedItem[] {
+  const fromAttention: NoticedItem[] = attention.map((a) => ({
+    id: a.id,
+    kind: a.kind,
+    title: a.title,
+    detail: a.body,
+    action: ACTION[a.kind],
+    target:
+      a.kind === "change" || a.kind === "possible_change"
+        ? { type: "change", id: a.refId }
+        : a.kind === "conflict"
+          ? { type: "conflict", id: a.refId }
+          : a.kind === "deadline"
+            ? { type: "loop", id: a.refId }
+            : { type: "attention", id: a.id },
+    why: a.why,
+    weight: a.weight,
+    prominent: a.kind === "change" || a.kind === "conflict",
+  }));
+  const fromReplies: NoticedItem[] = replies.map(({ message, loop }) => ({
+    id: `reply:${message.id}`,
+    kind: "reply",
+    title: `${message.sender.split(" (")[0]} is waiting for a reply`,
+    detail: shortQuestion(message.content),
+    action: "Open",
+    target: { type: "message", id: message.id },
+    why: loop?.why ?? `${message.sender} asked you a direct question.`,
+    weight: 55 + (message.senderType === "employer" || message.senderType === "professor" ? 17 : message.senderType === "family" ? 5 : 0),
+    prominent: false,
+  }));
+  return [...fromAttention, ...fromReplies].sort((a, b) => b.weight - a.weight);
+}
+
+function shortQuestion(content: string): string {
+  const body = content.replace(/^(hi|hey|hello)[^\n]*\n+/i, "").trim();
+  const q = (body.split(/(?<=[?.!])\s/).find((x) => x.includes("?")) ?? body.split("\n")[0]).trim();
+  return q.length > 52 ? `${q.slice(0, 50).trim()}…` : q;
+}
+
+/** "Finance review session" → "Finance review". */
+function shortName(title = ""): string {
+  return title.replace(/\s+(session|appointment)$/i, "");
+}
+
+const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+function spanDays(items: CalendarItem[]): string {
+  const days = [...new Set(items.map((i) => i.date))].sort();
+  const name = (d: string) => DAY_LONG[parseDate(d).getDay()];
+  return days.length > 1 ? `${name(days[0])}–${name(days[days.length - 1])}` : name(days[0] ?? "");
 }
 
 function capitalize(s: string): string {
