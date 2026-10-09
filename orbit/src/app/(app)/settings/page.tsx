@@ -80,7 +80,7 @@ export default function SettingsPage() {
         <p className="mt-2 text-[14px] text-ink-3">Everything else stays quietly inside ORBIT.</p>
       </Section>
 
-      <Section title="What ORBIT has learned">
+      <Section title="ORBIT preferences">
         {derived.learned.prompts.filter((p) => p.surface === "today").map((p) => (
           <div key={p.id} className="mb-3">
             <LearningPrompt prompt={p} />

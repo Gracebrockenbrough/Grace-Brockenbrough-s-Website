@@ -53,8 +53,8 @@ export function buildAttention(input: AttentionInput): AttentionItem[] {
       id: c.id,
       kind: confident ? "change" : "possible_change",
       label: confident ? "Changed" : "Possible change",
-      title: confident ? `${what} moved` : `${what} may have moved`,
-      body: `${code(c.courseId)} · ${whenShort(c.previousValue)} → ${whenShort(c.newValue)}`,
+      title: `${code(c.courseId)} ${what.toLowerCase()} ${confident ? "moved" : "may have moved"}`.trim(),
+      body: `${whenShort(c.newValue)} instead of ${whenShort(c.previousValue)}`,
       why: confident
         ? `${c.source.label} gives a new date that doesn't match your calendar.`
         : `A classmate mentioned it in ${c.source.label}. Your professor hasn't confirmed it, so ORBIT hasn't changed anything.`,

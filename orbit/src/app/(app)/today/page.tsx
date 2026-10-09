@@ -42,7 +42,7 @@ const SeeAll = ({ href, children }: { href: string; children: React.ReactNode })
 function UpNext({ items, now, label }: { items: CalendarItem[]; now: Date; label: string }) {
   const { open } = useUI();
   const nowMin = toMinutes(toTimeStr(now));
-  const upcoming = items.filter((i) => i.kind !== "deadline" && i.startTime && i.endTime && toMinutes(i.endTime) > nowMin).slice(0, 3);
+  const upcoming = items.filter((i) => i.kind !== "deadline" && i.startTime && i.endTime && toMinutes(i.endTime) > nowMin).slice(0, 2);
   if (!upcoming.length) return <p className="px-2 text-[15px] text-ink-2">Nothing else {label === "Tomorrow" ? "tomorrow" : "today"}.</p>;
   return (
     <ul className="space-y-1">
@@ -68,6 +68,7 @@ function UpNext({ items, now, label }: { items: CalendarItem[]; now: Date; label
 
 export default function TodayPage() {
   const { state, derived } = useOrbit();
+  const { open } = useUI();
   const { priorities, noticed, todayItems, tomorrowItems, today, now, learned } = derived;
   const ctx = CONTEXT[state.demoTime];
   const evening = state.demoTime === "evening";
@@ -108,11 +109,18 @@ export default function TodayPage() {
   return (
     <div className="space-y-10">
       <header>
-        <p className="text-[15px] font-medium text-ink-3">{formatLongDate(today)}</p>
-        <h1 className="mt-0.5 text-[30px] font-semibold leading-tight tracking-tight md:text-[34px]">
+        <h1 className="text-[30px] font-semibold leading-tight tracking-tight md:text-[34px]">
           {greeting}, {state.user.name}
         </h1>
-        <p className="mt-1 text-[17px] text-ink-2">{ctx.headline(matters.length)}</p>
+        <p className="mt-1 text-[15.5px] text-ink-3">{formatLongDate(today)}</p>
+        <p className="mt-3 flex flex-wrap items-baseline gap-x-4 text-[17px] text-ink-2">
+          {ctx.headline(matters.length)}
+          {state.demoTime === "morning" && (
+            <button type="button" onClick={() => open({ type: "brief" })} className="text-[14.5px] text-ink-3 underline-offset-4 hover:text-ink hover:underline">
+              Morning brief
+            </button>
+          )}
+        </p>
       </header>
 
       {/* Desktop: two things on the left, the shape of the day on the right. Nothing else. */}

@@ -149,7 +149,7 @@ export function TimeGrid({
                     className="absolute inset-x-1 z-[1] flex flex-col justify-center gap-1 overflow-hidden rounded-lg border border-dashed border-accent-line bg-accent-soft/50 px-2.5"
                     style={{ top: y + 2, height: h - 4 }}
                   >
-                    <p className="truncate text-[12.5px] font-semibold text-accent-strong">{formatDuration(s.minutes)} open</p>
+                    <p className="truncate text-[12.5px] font-semibold text-accent-strong">{s.minutes >= 60 ? `${(Math.round(s.minutes / 30) / 2).toString().replace(".5", "½")} ${s.minutes >= 90 ? "hours" : "hour"}` : formatDuration(s.minutes)} free at {formatTime(s.start)}</p>
                     {h > 44 && (
                       <div className="flex min-w-0 items-center gap-2">
                         <p className="min-w-0 truncate text-[12.5px] text-ink-2">Good time for {s.planTitle.replace(/^Study for /, "studying ")}</p>

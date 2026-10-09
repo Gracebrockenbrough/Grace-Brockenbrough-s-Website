@@ -82,7 +82,7 @@ export function Noticed({ items, limit }: { items: NoticedItem[]; limit: number 
   return (
     <div>
       <ul className="space-y-1.5">
-        {shown.map((item, i) => (i === 0 && item.prominent ? <NoticedCard key={item.id} item={item} /> : <NoticedRow key={item.id} item={item} />))}
+        {shown.map((item) => (item.prominent ? <NoticedCard key={item.id} item={item} /> : <NoticedRow key={item.id} item={item} />))}
       </ul>
       {hidden > 0 && (
         <button
