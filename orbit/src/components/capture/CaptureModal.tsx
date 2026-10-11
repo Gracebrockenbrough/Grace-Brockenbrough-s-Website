@@ -5,18 +5,26 @@ import { useRouter } from "next/navigation";
 import { CalendarPlus, Camera, Check, CircleDot, FileUp, Mic, Undo2 } from "lucide-react";
 import type { CaptureInputKind, CaptureResult } from "@/types";
 import { cn, uid } from "@/lib/cn";
-import { formatShortDate, formatTime } from "@/lib/time";
+import { formatShortDate, formatTime, relativeDateTime } from "@/lib/time";
 import { DEMO_NOW_STR } from "@/data/demoClock";
+import { AREA_LABEL } from "@/lib/areas";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { Modal } from "@/components/ui/Overlay";
 import { Button } from "@/components/ui/Button";
 import { OrbitMark } from "@/components/shell/Logo";
-import { DEMO_SCREENSHOT_TEXT, VOICE_EXAMPLES, processCapture } from "@/services/capture";
+import { DEMO_SCREENSHOT_TEXT, VOICE_EXAMPLES, processCaptureMany } from "@/services/capture";
 
-type Phase = "input" | "listening" | "reading" | "result";
+type Phase = "input" | "listening" | "reading" | "result" | "review" | "added";
 
-const EXAMPLES = ["Return my dress by Friday", "Dinner with Sarah tomorrow at 7"];
+/** One thing ORBIT understood, waiting for the user's OK. */
+interface ReviewItem {
+  id: string;
+  include: boolean;
+  result: Extract<CaptureResult, { type: "loop" } | { type: "event" } | { type: "completion" }>;
+}
+
+const EXAMPLES = ["Return my dress by Friday", "Paper due Friday. Call Dad about Thanksgiving. Dinner with Sarah tomorrow at 7"];
 
 let voiceIndex = 0;
 
@@ -33,6 +41,8 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
   const [applied, setApplied] = useState(false);
   const [simulatedImage, setSimulatedImage] = useState(false);
   const [courseChoice, setCourseChoice] = useState<string | undefined>();
+  const [review, setReview] = useState<ReviewItem[]>([]);
+  const [addedCount, setAddedCount] = useState(0);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -47,18 +57,33 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
 
   const ctx = { today: derived.today, nowStr: DEMO_NOW_STR, courses: state.courses, loops: derived.loops };
 
-  function finish(r: CaptureResult, kind: CaptureInputKind, raw: string) {
-    setResult(r);
+  /** Nothing is saved until the user has had a look. */
+  function finish(results: CaptureResult[], kind: CaptureInputKind, raw: string) {
     setInputKind(kind);
-    setPhase("result");
     setApplied(false);
-    setCourseChoice(r.type === "office_hours" ? r.courseId : undefined);
-    // Low-risk items are added immediately (with undo). Anything touching the calendar waits for approval.
-    if (r.type === "loop") {
-      dispatch({ type: "ADD_LOOP", loop: r.loop });
-      dispatch({ type: "ADD_CAPTURE", capture: { id: uid("cap"), kind, raw, createdAt: DEMO_NOW_STR, resultSummary: r.detail } });
-      setApplied(true);
+    const reviewable = results.filter((r): r is ReviewItem["result"] => r.type === "loop" || r.type === "event" || r.type === "completion");
+    if (results.length === 1 && reviewable.length === 0) {
+      const r = results[0];
+      setResult(r);
+      setCourseChoice(r.type === "office_hours" ? r.courseId : undefined);
+      setPhase("result");
+      return;
     }
+    setReview(reviewable.map((r) => ({ id: uid("rev"), include: true, result: r })));
+    setText(raw);
+    setPhase("review");
+  }
+
+  function addReviewed() {
+    const chosen = review.filter((i) => i.include);
+    for (const { result: r } of chosen) {
+      if (r.type === "loop") dispatch({ type: "ADD_LOOP", loop: r.loop });
+      else if (r.type === "event") dispatch({ type: "ADD_EVENT", event: r.event });
+      else dispatch({ type: "COMPLETE_LOOP", id: r.loopId, at: DEMO_NOW_STR });
+    }
+    dispatch({ type: "ADD_CAPTURE", capture: { id: uid("cap"), kind: inputKind, raw: text, createdAt: DEMO_NOW_STR, resultSummary: `${chosen.length} items` } });
+    setAddedCount(chosen.length);
+    setPhase("added");
   }
 
   function submitText(value = text, kind: CaptureInputKind = "text") {
@@ -68,7 +93,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
     }
     setReadingLabel("ORBIT is reading…");
     setPhase("reading");
-    later(() => finish(processCapture({ kind, text: value }, ctx), kind, value), 650);
+    later(() => finish(processCaptureMany({ kind, text: value }, ctx), kind, value), 650);
   }
 
   function startVoice() {
@@ -80,7 +105,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
       setText(phrase);
       setReadingLabel("Understanding what you said…");
       setPhase("reading");
-      later(() => finish(processCapture({ kind: "voice", text: phrase }, ctx), "voice", phrase), 600);
+      later(() => finish(processCaptureMany({ kind: "voice", text: phrase }, ctx), "voice", phrase), 600);
     }, 900 + phrase.split(" ").length * 170);
   }
 
@@ -89,7 +114,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
     setPhase("reading");
     setReadingLabel("Reading your screenshot…");
     later(() => setReadingLabel("Found a date and a time…"), 700);
-    later(() => finish(processCapture({ kind, text: DEMO_SCREENSHOT_TEXT }, ctx), kind, DEMO_SCREENSHOT_TEXT), 1400);
+    later(() => finish(processCaptureMany({ kind, text: DEMO_SCREENSHOT_TEXT }, ctx), kind, DEMO_SCREENSHOT_TEXT), 1400);
   }
 
   function readFile(file: File) {
@@ -99,7 +124,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
     }
     setPhase("reading");
     setReadingLabel("Looking at your file…");
-    later(() => finish(processCapture({ kind: "file", fileName: file.name, fileType: file.type }, ctx), "file", file.name), 800);
+    later(() => finish(processCaptureMany({ kind: "file", fileName: file.name, fileType: file.type }, ctx), "file", file.name), 800);
   }
 
   function reset() {
@@ -144,37 +169,6 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
     setApplied(true);
   }
 
-  function saveAsLoop() {
-    if (!result) return;
-    const title = result.type === "event" ? result.event.title : text || "New item";
-    const r = processCapture({ kind: "text", text: `${title}${result.type === "event" ? ` ${formatShortDate(result.event.date)}` : ""}` }, ctx);
-    if (r.type === "loop") finish(r, inputKind, text);
-    else if (result.type === "event") {
-      finish(
-        {
-          type: "loop",
-          headline: "Added an Open Loop",
-          detail: `${result.event.title} · ${formatShortDate(result.event.date)}`,
-          loop: {
-            id: uid("loop"),
-            title: result.event.title,
-            category: "personal",
-            source: result.event.source,
-            deadline: `${result.event.date}T${result.event.startTime ?? "23:59"}`,
-            hardDeadline: false,
-            consequence: "social",
-            senderType: "family",
-            requiresResponse: false,
-            confidence: 0.85,
-            completed: false,
-            createdAt: DEMO_NOW_STR,
-          },
-        },
-        inputKind,
-        text,
-      );
-    }
-  }
 
   return (
     <Modal title="Add anything" onClose={onClose} className="md:max-w-xl">
@@ -263,6 +257,33 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
         </div>
       )}
 
+      {phase === "review" && (
+        <CaptureReview items={review} setItems={setReview} simulatedImage={simulatedImage} onCancel={reset} onAdd={addReviewed} />
+      )}
+
+      {phase === "added" && (
+        <div className="animate-rise-in py-4 text-center" aria-live="polite">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success-soft text-success">
+            <Check size={24} strokeWidth={2.5} aria-hidden />
+          </span>
+          <p className="mt-3 text-[18px] font-semibold">Added {addedCount} {addedCount === 1 ? "thing" : "things"} to ORBIT</p>
+          <p className="mt-1 text-[15px] text-ink-2">ORBIT will bring them up when they matter.</p>
+          <div className="mt-6 flex justify-center gap-2">
+            <Button variant="primary" onClick={reset}>Add another</Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                for (let i = 0; i <= addedCount; i++) undo();
+                reset();
+              }}
+            >
+              <Undo2 size={16} aria-hidden /> Undo
+            </Button>
+            <Button variant="ghost" onClick={onClose}>Done</Button>
+          </div>
+        </div>
+      )}
+
       {phase === "result" && result && (
         <div className="animate-rise-in" aria-live="polite">
           <CaptureResultView result={result} applied={applied} courseChoice={courseChoice} setCourseChoice={setCourseChoice} simulatedImage={simulatedImage && (inputKind === "photo" || inputKind === "screenshot")} />
@@ -299,9 +320,6 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
                   <>
                     <Button variant="primary" onClick={approve}>
                       <CalendarPlus size={16} aria-hidden /> Add to calendar
-                    </Button>
-                    <Button variant="secondary" onClick={saveAsLoop}>
-                      Save as Open Loop instead
                     </Button>
                   </>
                 )}
@@ -376,7 +394,7 @@ function CaptureResultView({
             {result.loop.deadline
               ? `${formatShortDate(result.loop.deadline.split("T")[0])}${result.loop.deadline.endsWith("23:59") ? "" : ` · ${formatTime(result.loop.deadline.split("T")[1])}`}`
               : "No deadline"}{" "}
-            · {result.loop.category === "school" ? "School" : result.loop.category === "work" ? "Work" : "Personal"}
+            · {AREA_LABEL[result.loop.category]}
           </p>
           <p className="mt-2 text-[13.5px] text-ink-3">ORBIT added this to Open Loops and will bring it up when it matters.</p>
         </div>
@@ -412,4 +430,126 @@ function CaptureResultView({
       )}
     </div>
   );
+}
+
+/** "Check before saving": every item ORBIT found, with anything unsure flagged. */
+function CaptureReview({
+  items,
+  setItems,
+  simulatedImage,
+  onCancel,
+  onAdd,
+}: {
+  items: ReviewItem[];
+  setItems: (fn: (items: ReviewItem[]) => ReviewItem[]) => void;
+  simulatedImage: boolean;
+  onCancel: () => void;
+  onAdd: () => void;
+}) {
+  const { derived } = useOrbit();
+  const [editing, setEditing] = useState<string | null>(null);
+  const chosen = items.filter((i) => i.include).length;
+  const unsure = items.filter((i) => flag(i.result, simulatedImage)).length;
+
+  const patch = (id: string, fn: (r: ReviewItem["result"]) => ReviewItem["result"]) =>
+    setItems((all) => all.map((i) => (i.id === id ? { ...i, result: fn(i.result) } : i)));
+
+  if (!items.length) {
+    return (
+      <div className="py-6 text-center">
+        <p className="text-[16px] font-semibold">I didn&apos;t find anything to add.</p>
+        <Button variant="primary" className="mt-4" onClick={onCancel}>Try again</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="animate-rise-in">
+      <p className="text-[18px] font-semibold">
+        {items.length === 1 ? "Here's what I understood." : `I found ${items.length} things to keep track of.`}
+      </p>
+      <p className="mt-0.5 text-[14.5px] text-ink-2">
+        {unsure ? `${unsure} ${unsure === 1 ? "needs" : "need"} a quick look. ` : ""}Nothing is saved until you press Add.
+      </p>
+      <ul className="mt-4 divide-y divide-line">
+        {items.map(({ id, include, result: r }) => {
+          const note = flag(r, simulatedImage);
+          const title = r.type === "loop" ? r.loop.title : r.type === "event" ? r.event.title : `Mark done: ${r.loopTitle}`;
+          const date = r.type === "loop" ? r.loop.deadline?.split("T")[0] : r.type === "event" ? r.event.date : undefined;
+          const meta =
+            r.type === "loop"
+              ? [r.loop.deadline ? `Due ${relativeDateTime(r.loop.deadline, derived.today)}` : "No date", AREA_LABEL[r.loop.category]].join(" · ")
+              : r.type === "event"
+                ? `${formatShortDate(r.event.date)} · ${formatTime(r.event.startTime)} · Calendar`
+                : "Completes an existing task";
+          return (
+            <li key={id} className="flex items-start gap-3 py-3">
+              <input
+                type="checkbox"
+                checked={include}
+                onChange={() => setItems((all) => all.map((i) => (i.id === id ? { ...i, include: !i.include } : i)))}
+                aria-label={`Include ${title}`}
+                className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+              />
+              <div className={cn("min-w-0 flex-1", !include && "opacity-50")}>
+                {editing === id && r.type !== "completion" ? (
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      autoFocus
+                      aria-label="Title"
+                      defaultValue={title}
+                      onBlur={(e) => patch(id, (x) => (x.type === "loop" ? { ...x, loop: { ...x.loop, title: e.target.value || x.loop.title } } : x.type === "event" ? { ...x, event: { ...x.event, title: e.target.value || x.event.title } } : x))}
+                      className="min-h-9 min-w-0 flex-1 rounded-lg border border-line-strong px-2 text-[15px]"
+                    />
+                    <input
+                      type="date"
+                      aria-label="Date"
+                      defaultValue={date}
+                      onChange={(e) =>
+                        e.target.value &&
+                        patch(id, (x) =>
+                          x.type === "loop"
+                            ? { ...x, loop: { ...x.loop, deadline: `${e.target.value}T${x.loop.deadline?.split("T")[1] ?? "23:59"}`, confidence: 1 } }
+                            : x.type === "event"
+                              ? { ...x, event: { ...x.event, date: e.target.value, confidence: 1 } }
+                              : x,
+                        )
+                      }
+                      className="min-h-9 rounded-lg border border-line-strong px-2 text-[15px]"
+                    />
+                    <button type="button" onClick={() => setEditing(null)} className="min-h-9 rounded-lg px-2 text-[14px] font-medium text-accent">Done</button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[16px] font-medium">{title}</p>
+                    <p className="text-[14px] text-ink-3">{meta}</p>
+                  </>
+                )}
+                {note && <p className="mt-1 text-[14px] text-due-ink">Check this: {note}</p>}
+              </div>
+              {r.type !== "completion" && editing !== id && (
+                <button type="button" onClick={() => setEditing(id)} className="shrink-0 rounded-lg px-2 py-1 text-[14px] font-medium text-ink-2 hover:text-ink">
+                  Edit
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button variant="primary" disabled={!chosen} onClick={onAdd}>
+          Add {chosen > 1 ? `${chosen} ` : ""}to ORBIT
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+
+function flag(r: ReviewItem["result"], simulatedImage: boolean): string | undefined {
+  if (r.type === "event" && simulatedImage) return "read from an image, so confirm the date and time.";
+  if (r.type === "event" && r.event.confidence < 0.85) return "the date or time may be off.";
+  if (r.type === "loop" && r.loop.confidence < 0.85) return "I wasn't sure about the details.";
+  return undefined;
 }

@@ -9,6 +9,7 @@ import { useUI } from "@/store/UIProvider";
 import { SNOOZE_OPTIONS, useLoopActions } from "@/store/useActions";
 import { Menu } from "@/components/ui/Menu";
 import { DoneCircle, useCompleting } from "./LoopControls";
+import { nextStepFor } from "@/services/helpers";
 
 /** One short detail: "Due 5 PM", "Closes tonight", "Reply by tomorrow", "Waiting on Maya". */
 export function taskDetail(loop: RankedLoop, now: Date): string {
@@ -35,7 +36,7 @@ export function taskDetail(loop: RankedLoop, now: Date): string {
  * The default way a task appears: status, title, one detail. Everything else
  * (source, priority, why ORBIT surfaced it) lives one tap away in the drawer.
  */
-export function TaskRow({ loop, area, emphasizeToday = true }: { loop: RankedLoop; area?: "matters" | "tasks"; emphasizeToday?: boolean }) {
+export function TaskRow({ loop, area, emphasizeToday = true, showStep = false }: { loop: RankedLoop; area?: "matters" | "tasks"; emphasizeToday?: boolean; showStep?: boolean }) {
   const { derived, dispatch } = useOrbit();
   const { open } = useUI();
   const actions = useLoopActions();
@@ -43,6 +44,7 @@ export function TaskRow({ loop, area, emphasizeToday = true }: { loop: RankedLoo
   const detail = taskDetail(loop, derived.now);
   const urgent = emphasizeToday && loop.status !== "done" && loop.deadline?.startsWith(derived.today);
   const done = loop.status === "done";
+  const step = showStep ? nextStepFor(loop) : undefined;
 
   return (
     <li className={cn("group relative flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-surface", completing && "completing")}>
@@ -58,6 +60,15 @@ export function TaskRow({ loop, area, emphasizeToday = true }: { loop: RankedLoo
         <span className={cn("block truncate text-[16px] font-medium leading-snug", done ? "text-ink-3 line-through" : "text-ink")}>{loop.title}</span>
         <span className={cn("block text-[14px]", urgent ? "text-due-ink" : "text-ink-3")}>{detail}</span>
       </button>
+      {step && (
+        <button
+          type="button"
+          onClick={() => open(step.kind === "draft" ? { type: "message", id: loop.messageId!, draft: true } : { type: "findTime", id: loop.id })}
+          className="shrink-0 rounded-full bg-accent-soft px-3 py-1 text-[13.5px] font-medium text-accent-strong hover:bg-accent-line/60"
+        >
+          {step.label}
+        </button>
+      )}
       {/* Desktop: quick actions on hover. Touch: tap the row. */}
       {!done && (
         <div className="hidden items-center opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 md:flex">

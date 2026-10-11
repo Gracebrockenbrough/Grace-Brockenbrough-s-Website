@@ -11,12 +11,20 @@ import { Modal } from "@/components/ui/Overlay";
 import { ConnectFlow } from "@/components/connections/ConnectFlow";
 import { ConnectionIcon } from "@/components/connections/ConnectionIcon";
 
-const STEPS = 5;
+const STEPS = 6;
+
+const STARTING_POINTS = [
+  "My life is scattered across different places.",
+  "I already have a system, but want more help.",
+  "I'm new to AI and want to see what it can do.",
+  "I use AI for work but want help with my personal life.",
+];
 
 export default function OnboardingPage() {
   const { state, dispatch } = useOrbit();
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [startingPoint, setStartingPoint] = useState<string | undefined>();
   // Onboarding tracks its own progress; the demo's sample data loads either way.
   const [linked, setLinked] = useState<string[]>([]);
   const [connectingId, setConnectingId] = useState<string | null>(null);
@@ -98,6 +106,45 @@ export default function OnboardingPage() {
 
           {step === 2 && (
             <div>
+              <h1 className="text-[28px] font-semibold leading-tight tracking-tight">Where are you starting from?</h1>
+              <p className="mt-3 text-[17px] text-ink-2">There&apos;s no wrong answer. It helps ORBIT know where to begin.</p>
+              <div role="radiogroup" aria-label="Where are you starting from?" className="mt-7 space-y-2.5">
+                {STARTING_POINTS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    role="radio"
+                    aria-checked={startingPoint === p}
+                    onClick={() => setStartingPoint(p)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-2xl border p-4 text-left text-[16px] transition-colors",
+                      startingPoint === p ? "border-accent bg-accent-soft/60" : "border-line bg-surface hover:border-line-strong",
+                    )}
+                  >
+                    <span className={cn("h-5 w-5 shrink-0 rounded-full border-2", startingPoint === p ? "border-[6px] border-accent" : "border-line-strong")} aria-hidden />
+                    {p}
+                  </button>
+                ))}
+              </div>
+              <Button
+                variant="primary"
+                size="lg"
+                className="mt-8 w-full"
+                onClick={() => {
+                  if (startingPoint) dispatch({ type: "SET_DISPLAY_PREF", patch: { startingPoint } });
+                  next();
+                }}
+              >
+                Continue
+              </Button>
+              <button type="button" onClick={next} className="mt-3 min-h-10 w-full text-[15px] text-ink-3 hover:text-ink">
+                Skip this question
+              </button>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
               <h1 className="text-[28px] font-semibold leading-tight tracking-tight">Connect the places where your life already happens</h1>
               <p className="mt-3 text-[17px] text-ink-2">You don&apos;t need to organize anything. ORBIT does that part.</p>
               <ul className="mt-7 space-y-2.5">
@@ -127,8 +174,9 @@ export default function OnboardingPage() {
                 Continue
               </Button>
               <button type="button" onClick={next} className="mt-3 w-full min-h-10 text-[15px] text-ink-3 hover:text-ink">
-                I&apos;ll do this later
+                I&apos;d rather add things myself
               </button>
+              <p className="text-center text-[13.5px] text-ink-3">No accounts needed. Only what you choose to add.</p>
               {connectingId && (
                 <Modal title="Connect" hideTitle onClose={() => setConnectingId(null)}>
                   <ConnectFlow
@@ -145,7 +193,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <div>
               <h1 className="text-[28px] font-semibold leading-tight tracking-tight">Add your courses</h1>
               <p className="mt-3 text-[17px] text-ink-2">Upload a syllabus and ORBIT will find every assignment and exam date for you to confirm.</p>
@@ -213,7 +261,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <div className="text-center">
               <div className="mb-8 flex justify-center">
                 <span className="flex h-20 w-20 items-center justify-center rounded-full bg-accent-soft text-ink">

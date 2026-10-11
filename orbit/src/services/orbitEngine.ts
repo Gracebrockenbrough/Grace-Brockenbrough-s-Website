@@ -30,7 +30,7 @@ import {
   suggestFreeTime,
   type CalendarSource,
 } from "./calendar";
-import { buildAttention, buildComingUp, buildNoticed, createMorningBrief, type ComingUpGroup, type NoticedItem } from "./attention";
+import { buildAttention, buildComingUp, buildNoticed, buildOpening, createMorningBrief, type ComingUpGroup, type NoticedItem } from "./attention";
 import { computeLearned, type Learned } from "./learning";
 import { hiddenKinds } from "./connections";
 
@@ -87,7 +87,7 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
   const openLoops = loops.filter((l) => l.status !== "done");
   const priorities = selectPriorities(openLoops);
 
-  const changes = detectChanges(state.facts, state.exams, state.assignments, state.courses, state.sources, state.changeStatus);
+  const changes = detectChanges(state.facts, state.exams, state.assignments, state.courses, state.sources, state.changeStatus, today);
 
   const calendarSource: CalendarSource = {
     courses: state.courses,
@@ -144,7 +144,8 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
     quieted: learned.quietedKinds,
   });
   const visibleReplies = needsReply.filter((n) => !priorityIds.has(`msg:${n.message.id}`));
-  const noticed = buildNoticed(attention, visibleReplies);
+  const opening = buildOpening(upcomingItems, today, state.dismissed);
+  const noticed = [...buildNoticed(attention, visibleReplies), ...(opening ? [opening] : [])].sort((a, b) => b.weight - a.weight);
   const tomorrow = addDays(today, 1);
   const tomorrowItems = upcomingItems.filter((i) => i.date === tomorrow);
 

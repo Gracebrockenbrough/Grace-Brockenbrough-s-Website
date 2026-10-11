@@ -134,7 +134,14 @@ export function loopFromMessage(m: Message, now: Date): OpenLoop {
     id: `msg:${m.id}`,
     title: m.replyAction ?? `Reply to ${m.sender}`,
     description: m.subject ? `“${m.subject}” — ${m.channel}` : `“${m.content.length > 48 ? `${m.content.slice(0, 46).trim()}…` : m.content}” — ${m.channel}`,
-    category: m.senderType === "employer" || m.senderType === "professional" ? "work" : m.senderType === "family" || m.senderType === "friend" ? "personal" : "school",
+    category:
+      m.senderType === "employer" || m.senderType === "professional"
+        ? "work"
+        : /flight|trip|travel/i.test(m.content)
+          ? "travel"
+          : m.senderType === "family" || m.senderType === "friend"
+            ? "social"
+            : "school",
     source: { kind: m.source, label: `${m.sender} ${m.source === "email" ? "email" : "message"}`, ref: m.id },
     deadline: m.respondBy,
     hardDeadline: false,

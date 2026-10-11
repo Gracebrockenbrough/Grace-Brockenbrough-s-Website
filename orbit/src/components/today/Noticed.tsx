@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CalendarClock, CalendarX2, FileQuestion, GitCompareArrows, Layers, MessageCircle, NotebookPen } from "lucide-react";
+import { Sparkles, ArrowRight, CalendarClock, CalendarX2, FileQuestion, GitCompareArrows, Layers, MessageCircle, NotebookPen } from "lucide-react";
 import type { NoticedItem } from "@/services/attention";
 import { cn } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
+import { usePlanBlock } from "@/store/useActions";
 import { useUI } from "@/store/UIProvider";
 
 const ICON: Record<NoticedItem["kind"], typeof GitCompareArrows> = {
@@ -17,12 +18,14 @@ const ICON: Record<NoticedItem["kind"], typeof GitCompareArrows> = {
   missing_info: FileQuestion,
   workload: Layers,
   reply: MessageCircle,
+  opening: Sparkles,
 };
 
 function useNoticedAction() {
   const { dispatch } = useOrbit();
   const { open } = useUI();
   const router = useRouter();
+  const plan = usePlanBlock();
   return (item: NoticedItem) => {
     dispatch({ type: "SIGNAL", signal: { itemType: "today", action: "open", context: { area: "noticed", kind: item.kind } } });
     if (item.kind === "workload") {
@@ -30,7 +33,12 @@ function useNoticedAction() {
       router.push(`/calendar?view=week${date ? `&date=${date}` : ""}`);
       return;
     }
-    open(item.target);
+    const t = item.target;
+    if (t.type === "plan") {
+      plan({ title: t.title, date: t.date, start: t.start, end: t.end, category: "personal" });
+      return;
+    }
+    open(t);
   };
 }
 
@@ -43,6 +51,7 @@ function NoticedCard({ item }: { item: NoticedItem }) {
     <li className={cn("flex items-center gap-3.5 rounded-2xl border p-4", tone)}>
       <Icon size={20} className={item.kind === "conflict" ? "shrink-0 text-critical" : "shrink-0 text-attention"} aria-hidden />
       <div className="min-w-0 flex-1">
+        {item.eyebrow && <p className="text-[12.5px] font-semibold uppercase tracking-wide text-ink-3">{item.eyebrow}</p>}
         <p className="text-[16px] font-semibold text-ink">{item.title}</p>
         <p className="truncate text-[14.5px] text-ink-2">{item.detail}</p>
       </div>

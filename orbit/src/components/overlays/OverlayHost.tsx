@@ -12,6 +12,7 @@ import { AttentionDrawer } from "./AttentionDrawer";
 import { CaptureModal } from "@/components/capture/CaptureModal";
 import { MorningBrief } from "@/components/today/MorningBrief";
 import { ConnectModal, ConnectionDrawer } from "./ConnectionOverlays";
+import { FindTimeDrawer } from "./FindTimeDrawer";
 
 /** One overlay at a time. Opening another replaces the current one. */
 export function OverlayHost() {
@@ -31,7 +32,7 @@ export function OverlayHost() {
     case "event":
       return <EventDrawer key={key} id={overlay.id} onClose={close} />;
     case "message":
-      return <MessageDrawer key={key} id={overlay.id} onClose={close} />;
+      return <MessageDrawer key={key} id={overlay.id} startDraft={overlay.draft} onClose={close} />;
     case "change":
       return <ChangeModal key={key} id={overlay.id} onClose={close} />;
     case "conflict":
@@ -42,6 +43,8 @@ export function OverlayHost() {
       return <CaptureModal key={key} onClose={close} initialMode={overlay.initialMode} />;
     case "brief":
       return <MorningBrief key={key} onClose={close} />;
+    case "findTime":
+      return <FindTimeDrawer key={key} id={overlay.id} onClose={close} />;
     case "connect":
       return <ConnectModal key={key} id={overlay.id} onClose={close} />;
     case "connection":

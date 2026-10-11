@@ -103,14 +103,14 @@ export function usePlanBlock() {
   const { dispatch } = useOrbit();
   const { notify } = useUI();
   return useCallback(
-    (block: { title: string; date: string; start: string; end: string; courseId?: string; loopId?: string; examId?: string }) => {
+    (block: { title: string; date: string; start: string; end: string; courseId?: string; loopId?: string; examId?: string; category?: CalendarEvent["category"] }) => {
       const event: CalendarEvent = {
         id: uid("plan"),
         title: block.title,
         date: block.date,
         startTime: block.start,
         endTime: block.end,
-        category: "study",
+        category: block.category ?? "study",
         source: { kind: "orbit", label: "Planned with ORBIT" },
         hardCommitment: false,
         confidence: 1,

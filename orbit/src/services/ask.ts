@@ -66,6 +66,7 @@ export function answerQuestion(question: string, state: OrbitState, d: OrbitDeri
   const q = question.toLowerCase();
   const { today } = d;
 
+  if (/coming up|next (7|seven) days|look like this week|what'?s ahead/.test(q)) return comingUp(d);
   if (/forget|missing|slip|overlook/.test(q)) return forgetting(state, d);
   if (/unfinished|still open|left to do|tonight|this evening|do today|today\b.*(do|focus)|what should i (do|work)/.test(q) && !/free hour/.test(q)) return tonight(d);
   if (/chang|moved|update/.test(q)) return changes(d);
@@ -83,6 +84,25 @@ export function answerQuestion(question: string, state: OrbitState, d: OrbitDeri
     intro: "I'm not sure how to answer that one yet. Here's what I can help with:",
     items: ["What you might be forgetting", "What to do tonight or during a free hour", "What changed and who's waiting on you", "When you have time to study"],
     outro: `Right now, your top priority is ${d.priorities[0] ? lowerFirst(d.priorities[0].title) : "nothing urgent"}${d.priorities[0]?.deadline ? ` (${dueText(d.priorities[0], today).toLowerCase()})` : ""}.`,
+  };
+}
+
+/** The next seven days, one line per day, plus anything overdue. */
+function comingUp(d: OrbitDerived): AskAnswer {
+  const items = d.upcomingItems.filter((i) => i.date > d.today && diffDays(i.date, d.today) <= 7 && i.kind !== "class" && !i.title.endsWith("— done"));
+  const days = [...new Set(items.map((i) => i.date))];
+  const lines = days.map((day) => {
+    const parts = items
+      .filter((i) => i.date === day)
+      .map((i) => (i.kind === "deadline" ? `Due: ${i.title.replace(/ due$/, "")}` : `${formatTime(i.startTime) || "All day"} ${i.title}`));
+    return `${relativeDay(day, d.today)} — ${parts.join(" · ")}`;
+  });
+  const overdue = d.openLoops.filter((l) => l.deadline && l.deadline < `${d.today}T00:00`);
+  return {
+    intro: lines.length ? "Here's your next 7 days (classes left out):" : "Your next 7 days are clear.",
+    items: lines,
+    outro: overdue.length ? `Also overdue: ${overdue.map((l) => l.title).join(", ")}.` : undefined,
+    actions: [{ kind: "navigate", label: "View week", href: "/calendar?view=week" }],
   };
 }
 

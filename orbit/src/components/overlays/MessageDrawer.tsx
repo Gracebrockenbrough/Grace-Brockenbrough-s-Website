@@ -16,13 +16,39 @@ import { mockReplyDrafts } from "@/data/mockReplyDrafts";
 import { SOURCE_KIND_LABEL } from "@/data/mockSources";
 
 /** Needs Reply details. ORBIT drafts, the user decides — nothing is sent automatically. */
-export function MessageDrawer({ id, onClose }: { id: string; onClose: () => void }) {
+const TONES = ["Friendly", "Casual", "Formal", "Brief", "Apologetic"] as const;
+type Tone = (typeof TONES)[number];
+
+/** Rewrites ORBIT's suggested reply in a different tone. The user still sends it. */
+function toneDraft(base: string, tone: Tone): string {
+  const lines = base.split("\n");
+  const greeting = /^(hi|hey|hello|dear)\b/i.test(lines[0]) ? lines[0].replace(/,$/, "") : "";
+  const name = greeting.replace(/^(hi|hey|hello|dear)\s*/i, "");
+  const signIdx = lines.findIndex((l) => /^(best|thank you|thanks|love|cheers)/i.test(l.trim()));
+  const body = lines.slice(greeting ? 1 : 0, signIdx >= 0 ? signIdx : undefined).join("\n").trim();
+  const firstSentence = body.split(/(?<=[.!?])\s/)[0];
+  switch (tone) {
+    case "Friendly":
+      return base;
+    case "Casual":
+      return `${name ? `Hey ${name}! ` : ""}${body}`;
+    case "Formal":
+      return `${name ? `Dear ${name},\n\n` : ""}${body}\n\nBest regards,\nGrace Brockenbrough`;
+    case "Brief":
+      return `${firstSentence}${name ? "\n\nThanks,\nGrace" : ""}`;
+    case "Apologetic":
+      return `${greeting ? `${greeting},\n\n` : ""}Sorry for the slow reply! ${body}${signIdx >= 0 ? `\n\n${lines.slice(signIdx).join("\n")}` : ""}`;
+  }
+}
+
+export function MessageDrawer({ id, onClose, startDraft = false }: { id: string; onClose: () => void; startDraft?: boolean }) {
   const { state, derived, dispatch } = useOrbit();
   const { notify } = useUI();
   const feedback = useMessageActions();
   const message = state.messages.find((m) => m.id === id);
   const draftData = message ? mockReplyDrafts[message.id] : undefined;
-  const [showDraft, setShowDraft] = useState(false);
+  const [showDraft, setShowDraft] = useState(startDraft);
+  const [tone, setTone] = useState<Tone>("Friendly");
   const [draft, setDraft] = useState(draftData?.draft ?? "");
   const [addFollowUp, setAddFollowUp] = useState(true);
 
@@ -121,9 +147,24 @@ export function MessageDrawer({ id, onClose }: { id: string; onClose: () => void
 
       {showDraft && needsReply && (
         <div className="mt-5 animate-rise-in">
-          <label htmlFor="draft" className="text-[14px] font-medium text-ink-2">
-            Suggested reply — edit it, then send it from {message.channel}
-          </label>
+          <p className="text-[14px] text-ink-2">ORBIT writes it; you check it and send it yourself from {message.channel}.</p>
+          <div role="group" aria-label="Tone" className="mt-3 flex flex-wrap gap-1.5">
+            {TONES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={tone === t}
+                onClick={() => {
+                  setTone(t);
+                  setDraft(toneDraft(draftData?.draft ?? "", t));
+                }}
+                className={`min-h-8 rounded-full border px-3 text-[14px] ${tone === t ? "border-accent bg-accent-soft font-medium text-accent-strong" : "border-line-strong text-ink-2 hover:text-ink"}`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          <label htmlFor="draft" className="sr-only">Your message</label>
           <textarea
             id="draft"
             value={draft}

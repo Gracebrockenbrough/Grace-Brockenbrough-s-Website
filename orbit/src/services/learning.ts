@@ -40,6 +40,7 @@ const last = (signals: InteractionSignal[], f: (s: InteractionSignal) => boolean
 
 const ASK_BASE = [
   "What am I forgetting?",
+  "What's coming up?",
   "What should I do tonight?",
   "Did anything change?",
   "When do I have time to study?",
@@ -193,6 +194,16 @@ export function computeLearned(state: OrbitState): Learned {
     routines.push({ id: "noticed-first", pattern: "You check what ORBIT noticed first.", effect: "Today shows it higher and expands it a bit more.", confidence: 0.7, lastObserved: last(signals, (s) => s.context?.area === "noticed") });
   }
 
+  if (displayPrefs.startingPoint) {
+    routines.unshift({
+      id: "starting-point",
+      pattern: `You said: “${displayPrefs.startingPoint.replace(/\.$/, "")}.”`,
+      effect: /new to AI/i.test(displayPrefs.startingPoint) ? "ORBIT keeps suggestions simple and shows examples." : "ORBIT uses this to decide where to start.",
+      confidence: 1,
+      lastObserved: "",
+    });
+  }
+
   return {
     calendarView,
     noticedFirst,
@@ -213,7 +224,7 @@ function askSuggestionsFor(time: DemoTime, signals: InteractionSignal[]): string
   const asked = new Map<string, number>();
   signals.filter((s) => s.itemType === "ask").forEach((s) => asked.set(s.context?.q ?? "", (asked.get(s.context?.q ?? "") ?? 0) + 1));
   const byTime: Record<DemoTime, string[]> = {
-    morning: ["What am I forgetting?", "Did anything change?", "When do I have time to study?", "What should I do tonight?"],
+    morning: ["What am I forgetting?", "What's coming up?", "Did anything change?", "When do I have time to study?"],
     midday: ["What should I do during my free hour?", "What am I forgetting?", "Did anything change?", "What should I do tonight?"],
     evening: ["Plan tomorrow", "What's unfinished?", "Did anything change?", "What am I forgetting?"],
   };

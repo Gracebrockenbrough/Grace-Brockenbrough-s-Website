@@ -54,7 +54,7 @@ export function buildAttention(input: AttentionInput): AttentionItem[] {
       kind: confident ? "change" : "possible_change",
       label: confident ? "Changed" : "Possible change",
       title: `${code(c.courseId)} ${what.toLowerCase()} ${confident ? "moved" : "may have moved"}`.trim(),
-      body: `${whenShort(c.newValue)} instead of ${whenShort(c.previousValue)}`,
+      body: `${whenShort(c.newValue)} instead of ${whenShort(c.previousValue)}${c.impact?.match(/removes (\d+)/) ? ` · ${c.impact.match(/removes (\d+)/)![1]} fewer study days` : ""}`,
       why: confident
         ? `${c.source.label} gives a new date that doesn't match your calendar.`
         : `A classmate mentioned it in ${c.source.label}. Your professor hasn't confirmed it, so ORBIT hasn't changed anything.`,
@@ -147,11 +147,15 @@ export function buildAttention(input: AttentionInput): AttentionItem[] {
 // ORBIT noticed — one list for everything that isn't a normal task
 // ---------------------------------------------------------------------------
 
-export type NoticedTarget = { type: "change" | "conflict" | "loop" | "message" | "attention"; id: string };
+export type NoticedTarget =
+  | { type: "change" | "conflict" | "loop" | "message" | "attention"; id: string }
+  | { type: "plan"; date: string; start: string; end: string; title: string };
 
 export interface NoticedItem {
   id: string;
-  kind: AttentionKind | "reply";
+  kind: AttentionKind | "reply" | "opening";
+  /** Small eyebrow on cards, e.g. "Changed · School". */
+  eyebrow?: string;
   title: string;
   detail: string;
   /** The one obvious action. */
@@ -191,6 +195,7 @@ export function buildNoticed(attention: AttentionItem[], replies: { message: Mes
     why: a.why,
     weight: a.weight,
     prominent: a.kind === "change" || a.kind === "conflict",
+    eyebrow: a.kind === "change" ? "Changed · School" : a.kind === "conflict" ? "Conflict · School" : undefined,
   }));
   const fromReplies: NoticedItem[] = replies.map(({ message, loop }) => ({
     id: `reply:${message.id}`,
@@ -204,6 +209,38 @@ export function buildNoticed(attention: AttentionItem[], replies: { message: Mes
     prominent: false,
   }));
   return [...fromAttention, ...fromReplies].sort((a, b) => b.weight - a.weight);
+}
+
+/** A non-school opening: free evening, no workout planned soon. Low weight, easy to ignore. */
+export function buildOpening(items: CalendarItem[], today: string, dismissed: string[]): NoticedItem | undefined {
+  const tomorrow = addDaysLocal(today, 1);
+  const soon = items.filter((i) => i.date >= today && i.date <= addDaysLocal(today, 2));
+  if (soon.some((i) => /gym|workout|run|yoga|tennis/i.test(i.title) && i.date > today)) return undefined;
+  const evening = items.filter((i) => i.date === tomorrow && i.startTime && i.endTime && i.kind !== "deadline" && i.endTime > "17:00" && i.startTime < "21:00");
+  const busyUntil = evening.reduce((t, i) => (i.endTime! > t ? i.endTime! : t), "17:00");
+  if (busyUntil > "19:30") return undefined;
+  const start = busyUntil > "17:00" ? busyUntil : "17:30";
+  const id = `opening:${tomorrow}`;
+  if (dismissed.includes(id)) return undefined;
+  const end = `${String(Number(start.slice(0, 2)) + 1).padStart(2, "0")}${start.slice(2)}`;
+  return {
+    id,
+    kind: "opening",
+    title: "Tomorrow evening is wide open",
+    detail: "Room for a workout if you want one",
+    action: "Add it",
+    target: { type: "plan", date: tomorrow, start, end, title: "Workout" },
+    why: "Nothing is planned tomorrow evening, and there is no workout on your calendar for the next two days.",
+    weight: 40,
+    prominent: false,
+    eyebrow: "Opening · Wellness",
+  };
+}
+
+function addDaysLocal(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + days);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 }
 
 function shortQuestion(content: string): string {

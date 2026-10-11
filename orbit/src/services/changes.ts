@@ -1,6 +1,6 @@
 import type { Assignment, ConnectedSource, Course, DetectedChange, Exam, ExtractedFact } from "@/types";
 import { hiddenKinds } from "./connections";
-import { datePart, formatShortDate, formatTime, timePart } from "@/lib/time";
+import { diffDays, datePart, formatShortDate, formatTime, timePart } from "@/lib/time";
 
 /**
  * Compare newly extracted facts with what ORBIT already knows. When a material
@@ -14,6 +14,7 @@ export function detectChanges(
   courses: Course[],
   sources: ConnectedSource[],
   status: Record<string, "applied" | "dismissed">,
+  today?: string,
 ): DetectedChange[] {
   const disabled = hiddenKinds(sources);
   const changes: DetectedChange[] = [];
@@ -39,6 +40,7 @@ export function detectChanges(
         importance: "high",
         confidence: fact.confidence,
         requiresApproval: true,
+        impact: today ? studyImpact(today, exam.date, fact.value.date) : undefined,
       });
     } else {
       const assignment = assignments.find((a) => a.id === fact.entityId);
@@ -64,6 +66,15 @@ export function detectChanges(
     }
   }
   return changes;
+}
+
+/** "That removes 2 study days." Counts the days left to prepare before and after the move. */
+function studyImpact(today: string, before: string | undefined, after: string): string | undefined {
+  if (!before) return undefined;
+  const lost = diffDays(before, today) - diffDays(after, today);
+  if (lost > 0) return `That removes ${lost} study ${lost === 1 ? "day" : "days"}. You now have ${Math.max(diffDays(after, today) - 1, 0)} days to prepare.`;
+  if (lost < 0) return `That gives you ${-lost} more ${lost === -1 ? "day" : "days"} to prepare.`;
+  return undefined;
 }
 
 export function describeWhen(value: { date?: string; startTime?: string }): string {

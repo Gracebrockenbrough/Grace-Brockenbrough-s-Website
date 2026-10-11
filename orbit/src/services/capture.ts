@@ -95,13 +95,19 @@ const IGNORE = /\bignore\s+(?:all\s+)?(?:emails?|messages?|texts?)?\s*(?:from\s+
 const SYLLABUS_FILE = /syllab/i;
 
 const WORK_WORDS = /\b(interview|application|recruiter|internship|resume|job|career|networking)\b/i;
-const PERSONAL_WORDS = /\b(mom|dad|birthday|present|gift|dress|return|dentist|doctor|haircut|laundry|groceries|package|flight|rent)\b/i;
+const PERSONAL_WORDS = /\b(mom|dad|birthday|present|gift|dress|return|haircut|laundry|groceries|package|rent)\b/i;
+const WELLNESS_WORDS = /\b(gym|workout|work out|run|yoga|dentist|doctor|therapy|sleep|meditat\w*|lift)\b/i;
+const SOCIAL_WORDS = /\b(dinner|lunch|brunch|coffee|party|concert|game|movie|friends?|hang out)\b/i;
+const TRAVEL_WORDS = /\b(flight|fly|trip|airport|hotel|train|bus ticket|packing|pack)\b/i;
 const MONEY_WORDS = /\b(return|refund|deposit|pay|bill|fee)\b/i;
 
 function categorize(text: string, courses: Course[]): { category: Category; courseId?: string; consequence: Consequence } {
   const course = matchCourse(text, courses);
   if (course) return { category: "school", courseId: course.id, consequence: "academic" };
   if (WORK_WORDS.test(text)) return { category: "work", consequence: "professional" };
+  if (TRAVEL_WORDS.test(text)) return { category: "travel", consequence: "travel" };
+  if (WELLNESS_WORDS.test(text)) return { category: "wellness", consequence: "low" };
+  if (SOCIAL_WORDS.test(text)) return { category: "social", consequence: "social" };
   if (PERSONAL_WORDS.test(text)) return { category: "personal", consequence: MONEY_WORDS.test(text) ? "financial" : "social" };
   if (/\b(class|exam|quiz|essay|paper|reading|professor|homework|problem set|study)\b/i.test(text)) return { category: "school", consequence: "academic" };
   return { category: "personal", consequence: "low" };
@@ -278,7 +284,8 @@ export function processCapture(input: CaptureInput, ctx: CaptureContext): Captur
     moneyAtRisk: MONEY_WORDS.test(text) ? 1 : undefined,
     courseId,
     effortMinutes: 30,
-    confidence: when.date ? 0.9 : 0.8,
+    // No date isn't uncertainty; a guessed date would be.
+    confidence: when.date ? 0.9 : 0.88,
     completed: false,
     createdAt: ctx.nowStr,
     why: deadline ? `You told ORBIT about this, and it's due ${relativeDateTime(deadline, ctx.today).toLowerCase()}.` : "You told ORBIT about this.",
@@ -289,6 +296,21 @@ export function processCapture(input: CaptureInput, ctx: CaptureContext): Captur
     headline: "Added an Open Loop",
     detail: deadline ? `${title} · ${relativeDateTime(deadline, ctx.today)}` : `${title} · No deadline`,
   };
+}
+
+/** One note can hold several things: "Paper due Friday. Call Dad about Thanksgiving." */
+export function splitCapture(text: string): string[] {
+  return text
+    .split(/\n+|;\s*|(?<=[.!?])\s+(?=[A-Z0-9“"])/)
+    .map((p) => p.trim().replace(/[.\s]+$/, ""))
+    .filter((p) => p.length > 1);
+}
+
+/** Process every item in a capture. Files and single thoughts return one result. */
+export function processCaptureMany(input: CaptureInput, ctx: CaptureContext): CaptureResult[] {
+  if (input.kind === "file" || !input.text) return [processCapture(input, ctx)];
+  const parts = splitCapture(input.text);
+  return (parts.length ? parts : [input.text]).map((text) => processCapture({ ...input, text }, ctx));
 }
 
 /** What the simulated screenshot reader "sees" in the demo image. */

@@ -111,6 +111,8 @@ export interface DisplayPreference {
   /** "noticed_first" once the user repeatedly goes to ORBIT noticed before anything else. */
   todayOrder?: "default" | "noticed_first";
   planningStyle?: "suggest" | "manual";
+  /** Answer to "Where are you starting from?" during onboarding. */
+  startingPoint?: string;
 }
 
 /** A pattern ORBIT has picked up, described the way a person would say it. */
@@ -274,7 +276,8 @@ export interface CalendarItem extends CalendarEvent {
 // Open Loops
 // ---------------------------------------------------------------------------
 
-export type Category = "school" | "work" | "personal";
+/** Life areas. "work" is shown as Career. */
+export type Category = "school" | "work" | "wellness" | "social" | "travel" | "personal";
 export type Consequence = "academic" | "professional" | "financial" | "travel" | "social" | "low";
 export type LoopStatus = "now" | "soon" | "later" | "waiting" | "done";
 export type PriorityLevel = "high" | "medium" | "low";
@@ -395,6 +398,8 @@ export interface DetectedChange {
   importance: PriorityLevel;
   confidence: number;
   requiresApproval: boolean;
+  /** What the change does to the user's plans, in one sentence. */
+  impact?: string;
 }
 
 export type ConflictType = "time" | "workload" | "prep" | "missing_info";

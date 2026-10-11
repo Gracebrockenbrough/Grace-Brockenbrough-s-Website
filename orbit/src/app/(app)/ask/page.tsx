@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Check } from "lucide-react";
+import { ArrowUp, Check, Mic } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
@@ -31,6 +31,19 @@ export default function AskPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const thinking = turns.some((t) => !t.answer);
   const [moreIdeas, setMoreIdeas] = useState(false);
+  const [listening, setListening] = useState(false);
+
+  /** Voice is simulated in the prototype: it "hears" one of a few common questions. */
+  function speak() {
+    const phrase = ["What's coming up?", "Did anything change?", "What should I do tonight?"][turns.length % 3];
+    setListening(true);
+    setInput("");
+    phrase.split(" ").forEach((_, i, words) => window.setTimeout(() => setInput(words.slice(0, i + 1).join(" ")), 250 + i * 160));
+    window.setTimeout(() => {
+      setListening(false);
+      ask(phrase);
+    }, 450 + phrase.split(" ").length * 160);
+  }
   // Personalized: time of day first, then what this person actually asks.
   const suggestions = derived.learned.askSuggestions;
 
@@ -111,6 +124,9 @@ export default function AskPage() {
               autoComplete="off"
               className="min-h-12 flex-1 bg-transparent text-[18px] placeholder:text-ink-3 focus:outline-none focus-visible:outline-none"
             />
+<button type="button" aria-label="Speak (simulated)" onClick={speak} disabled={thinking || listening} className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-ink-2 hover:bg-sunken", listening && "animate-pulse-soft text-accent")}>
+              <Mic size={19} aria-hidden />
+            </button>
             <button type="submit" aria-label="Ask" disabled={!input.trim()} className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-40">
               <ArrowUp size={20} aria-hidden />
             </button>
@@ -222,6 +238,9 @@ export default function AskPage() {
             className="min-h-10 flex-1 bg-transparent text-[16px] placeholder:text-ink-3 focus:outline-none focus-visible:outline-none"
             autoComplete="off"
           />
+<button type="button" aria-label="Speak (simulated)" onClick={speak} disabled={thinking || listening} className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-ink-2 hover:bg-sunken", listening && "animate-pulse-soft text-accent")}>
+            <Mic size={19} aria-hidden />
+          </button>
           <button type="submit" aria-label="Ask" disabled={!input.trim() || thinking} className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-40">
             <ArrowUp size={19} aria-hidden />
           </button>

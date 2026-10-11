@@ -117,7 +117,7 @@ export const mockOpenLoops: OpenLoop[] = [
   {
     id: "l-dentist",
     title: "Schedule dentist cleaning",
-    category: "personal",
+    category: "wellness",
     source: { kind: "manual", label: "Added by you" },
     hardDeadline: false,
     consequence: "low",

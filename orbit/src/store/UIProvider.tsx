@@ -6,7 +6,8 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 export type Overlay =
   | { type: "loop"; id: string }
   | { type: "event"; id: string }
-  | { type: "message"; id: string }
+  | { type: "message"; id: string; draft?: boolean }
+  | { type: "findTime"; id: string }
   | { type: "change"; id: string }
   | { type: "conflict"; id: string }
   | { type: "attention"; id: string }

@@ -5,61 +5,78 @@
  * attention; red only when something is genuinely critical.
  */
 @theme {
-  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* ORBIT night-sky palette: deep navy space, cream "paper" cards, soft planet colors. */
+  --font-sans: "Figtree", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
 
-  --color-canvas: #f7f6f3;
-  --color-surface: #ffffff;
-  --color-sunken: #f1efea;
-  --color-line: #e6e3dc;
-  --color-line-strong: #d6d2c8;
+  --color-space: #0d1430;
+  --color-space-2: #171d47;
+  --color-canvas: #121941;
+  --color-surface: #1b2252;
+  --color-sunken: #242c60;
+  --color-line: #2b3468;
+  --color-line-strong: #3b4580;
 
-  --color-ink: #1f2328;
-  --color-ink-2: #4b5259;
-  --color-ink-3: #656d76;
+  --color-cream: #f4efe6;
+  --color-cream-2: #e9e2d4;
+  --color-navy: #10163a;
+  --color-navy-2: #4a5079;
 
-  --color-accent: #3a49c4;
-  --color-accent-strong: #2e3aa3;
-  --color-accent-soft: #eef0fb;
-  --color-accent-line: #cdd3f4;
+  --color-ink: #f4efe6;
+  --color-ink-2: #b9c0da;
+  --color-ink-3: #8f97bd;
 
-  --color-attention: #8a5a00;
-  --color-attention-soft: #fbf3e2;
-  --color-attention-line: #efd9a6;
+  --color-accent: #8f9bff;
+  --color-accent-strong: #c3caff;
+  --color-accent-soft: #262f6a;
+  --color-accent-line: #3d48a3;
 
-  --color-critical: #b42318;
-  --color-critical-soft: #fdeeec;
+  --color-attention: #f2b866;
+  --color-attention-soft: #3a3020;
+  --color-attention-line: #6b5428;
 
-  --color-success: #2b7a4b;
-  --color-success-soft: #e9f4ed;
+  --color-critical: #ff8f7e;
+  --color-critical-soft: #43202c;
 
-  /* Calendar meaning, used everywhere an event appears. Muted on purpose. */
-  --color-academic: #3a49c4;
-  --color-academic-soft: #eceefb;
-  --color-academic-ink: #2a358f;
-  --color-meet: #12756b;
-  --color-meet-soft: #e2f1ee;
-  --color-meet-ink: #0b5a52;
-  --color-personal: #8a8f96;
-  --color-personal-soft: #efede8;
-  --color-personal-ink: #40454c;
-  --color-social: #c0566b;
-  --color-social-soft: #fbebee;
-  --color-social-ink: #95324a;
-  --color-due: #b7791f;
-  --color-due-soft: #fbf1df;
-  --color-due-ink: #7a4f0b;
+  --color-success: #7fd6a0;
+  --color-success-soft: #1d3c37;
 
-  --color-teal: #0f766e;
-  --color-teal-soft: #e6f4f2;
-  --color-indigo: #3a49c4;
-  --color-indigo-soft: #eef0fb;
-  --color-amber: #a15c07;
-  --color-amber-soft: #fbf1e1;
-  --color-rose: #b4235f;
-  --color-rose-soft: #fbecf2;
+  /* Calendar meaning, used everywhere an event appears. */
+  --color-academic: #8f9bff;
+  --color-academic-soft: #262f6a;
+  --color-academic-ink: #d3d8ff;
+  --color-meet: #5fcfbd;
+  --color-meet-soft: #173f45;
+  --color-meet-ink: #b6efe5;
+  --color-personal: #9aa1c4;
+  --color-personal-soft: #2a3160;
+  --color-personal-ink: #dde0ee;
+  --color-social: #f59bb9;
+  --color-social-soft: #47233f;
+  --color-social-ink: #ffd0df;
+  --color-due: #f2b866;
+  --color-due-soft: #3d3220;
+  --color-due-ink: #fbd99e;
 
-  --shadow-card: 0 1px 2px rgb(31 35 40 / 0.04), 0 1px 1px rgb(31 35 40 / 0.02);
-  --shadow-raised: 0 8px 28px rgb(31 35 40 / 0.12), 0 2px 6px rgb(31 35 40 / 0.06);
+  /* Life areas: each planet has its own color. */
+  --color-school: #f08a6e;
+  --color-career: #b9a6ff;
+  --color-wellness: #6fd3c1;
+  --color-social-area: #f2c46d;
+  --color-travel: #7ec3f7;
+  --color-personal-area: #f59bb9;
+
+  --color-teal: #5fcfbd;
+  --color-teal-soft: #173f45;
+  --color-indigo: #8f9bff;
+  --color-indigo-soft: #262f6a;
+  --color-amber: #f2b866;
+  --color-amber-soft: #3a3020;
+  --color-rose: #f59bb9;
+  --color-rose-soft: #47233f;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.18);
+  --shadow-raised: 0 12px 32px rgb(0 0 0 / 0.35), 0 2px 6px rgb(0 0 0 / 0.2);
 
   --animate-fade-in: fade-in 180ms ease-out both;
   --animate-rise-in: rise-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -81,12 +98,13 @@
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html,
 body {
-  background: var(--color-canvas);
+  background: linear-gradient(180deg, var(--color-space) 0%, var(--color-space-2) 100%) fixed;
+  background-color: var(--color-space);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -103,6 +121,28 @@ body {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 8px;
+}
+
+/* Headlines use the serif display face, set light, like a printed almanac. */
+h1,
+.font-display {
+  font-family: var(--font-display) !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.005em;
+}
+
+/* Cream "paper" cards carry their own dark ink. */
+.paper {
+  background: var(--color-cream);
+  color: var(--color-navy);
+}
+.paper .text-ink { color: var(--color-navy); }
+.paper .text-ink-2,
+.paper .text-ink-3 { color: var(--color-navy-2); }
+
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
 }
 
 ::selection {

@@ -14,8 +14,9 @@ import { ConfidenceTag, PriorityTag, SourceBadge } from "@/components/ui/Badges"
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Menu } from "@/components/ui/Menu";
 import { findLoop } from "./lookup";
+import { nextStepFor } from "@/services/helpers";
 
-const CATEGORY_LABEL = { school: "School", work: "Work", personal: "Personal" };
+import { AREA_LABEL as CATEGORY_LABEL } from "@/lib/areas";
 const CONSEQUENCE_LABEL = { academic: "Grade", professional: "Career", financial: "Money", travel: "Travel", social: "Social", low: "Low stakes" };
 
 export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void }) {
@@ -40,6 +41,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
   const course = state.courses.find((c) => c.id === loop.courseId);
   const editable = loop.derivedFrom === "loop";
   const done = loop.status === "done";
+  const step = nextStepFor(loop);
 
   return (
     <Drawer
@@ -107,6 +109,16 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
           <p className="text-[13px] font-semibold uppercase tracking-wide text-accent-strong">Why ORBIT surfaced this</p>
           <p className="mt-0.5 text-[15px] text-ink">{loop.why}</p>
         </div>
+      )}
+
+      {step && !done && (
+        <Button
+          variant="secondary"
+          className="mb-5"
+          onClick={() => open(step.kind === "draft" ? { type: "message", id: loop.messageId!, draft: true } : { type: "findTime", id: loop.id })}
+        >
+          {step.label}
+        </Button>
       )}
 
       {rescheduling && (
