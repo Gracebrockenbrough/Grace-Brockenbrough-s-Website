@@ -52,6 +52,7 @@ function OrbitMap() {
           <Link
             key={a.area}
             href={`/orbit/${a.area}`}
+            aria-label={`${AREA_LABEL[a.area]}: ${a.status}${a.count ? `, ${a.count} open` : ""}`}
             className="group absolute flex w-[96px] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center sm:w-[120px]"
             style={{ left: `${p.x}%`, top: `${p.y}%` }}
           >
@@ -150,22 +151,22 @@ export default function OrbitPage() {
 
       {view === "map" ? <OrbitMap /> : <Together />}
 
-      <div className="flex gap-2 overflow-x-auto pb-1" role="list" aria-label="Parts of life">
+      <ul className="flex gap-2 overflow-x-auto pb-1" aria-label="Parts of life">
         {derived.areas.map((a) => (
-          <Link
-            key={a.area}
-            role="listitem"
-            href={`/orbit/${a.area}`}
-            className={cn("flex min-w-[150px] shrink-0 items-center gap-3 rounded-2xl border bg-surface p-3 hover:shadow-raised", AREA_STYLE[a.area].border, "border-opacity-40")}
-          >
-            <Planet area={a.area} size={30} />
-            <span className="min-w-0">
-              <span className="block text-[14.5px] font-semibold">{AREA_LABEL[a.area]}</span>
-              <span className="block truncate text-[12.5px] text-ink-3">{a.loops.length} {a.loops.length === 1 ? "task" : "tasks"} · {a.goals.length} {a.goals.length === 1 ? "goal" : "goals"}</span>
-            </span>
-          </Link>
+          <li key={a.area} className="shrink-0">
+            <Link
+              href={`/orbit/${a.area}`}
+              className={cn("flex min-w-[150px] items-center gap-3 rounded-2xl border bg-surface p-3 hover:shadow-raised", AREA_STYLE[a.area].border)}
+            >
+              <Planet area={a.area} size={30} />
+              <span className="min-w-0">
+                <span className="block text-[14.5px] font-semibold">{AREA_LABEL[a.area]}</span>
+                <span className="block truncate text-[12.5px] text-ink-3">{a.loops.length} {a.loops.length === 1 ? "task" : "tasks"} · {a.goals.length} {a.goals.length === 1 ? "goal" : "goals"}</span>
+              </span>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
 
       <section aria-labelledby="goals-h">
         <div className="mb-3 flex items-baseline justify-between">
