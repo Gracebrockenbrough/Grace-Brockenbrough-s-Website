@@ -17,7 +17,7 @@ import { Menu } from "@/components/ui/Menu";
 import { findLoop } from "./lookup";
 import { nextStepFor } from "@/services/helpers";
 
-import { AREA_LABEL as CATEGORY_LABEL } from "@/lib/areas";
+import { areaLabel } from "@/lib/areas";
 const CONSEQUENCE_LABEL = { academic: "Grade", professional: "Career", financial: "Money", travel: "Travel", social: "Social", low: "Low stakes" };
 
 export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void }) {
@@ -44,7 +44,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
   const done = loop.status === "done";
   const step = nextStepFor(loop);
   const app = appFor(loop.title, loop.source.kind);
-  // "Call Dad", "Text Maya", "Email the recruiter" → ORBIT can draft it.
+  // "Call Dad", "Text Maya", "Email the recruiter" → Orbit can draft it.
   const who = loop.title.match(/^(?:[Cc]all|[Tt]ext|[Ee]mail|[Mm]essage|[Ss]end|[Tt]ell)\s+([A-Z][a-z]+)/)?.[1];
   const writeTo = who && !loop.messageId ? { kind: /^email/i.test(loop.title) ? ("email" as const) : ("text" as const), to: who } : undefined;
 
@@ -111,7 +111,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
 
       {loop.why && (
         <div className="mb-5 rounded-2xl bg-accent-soft px-4 py-3">
-          <p className="text-[13px] font-semibold uppercase tracking-wide text-accent-strong">Why ORBIT surfaced this</p>
+          <p className="text-[13.5px] font-semibold text-accent-strong">Why Orbit surfaced this</p>
           <p className="mt-0.5 text-[15px] text-ink">{loop.why}</p>
         </div>
       )}
@@ -152,7 +152,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
               { label: "Monday", value: "2026-10-12" },
               { label: "Next week", value: "2026-10-16" },
             ].map((q) => (
-              <button key={q.label} type="button" onClick={() => setDate(q.value)} className={`min-h-9 rounded-full border px-3 text-[14px] ${date === q.value ? "border-cream bg-cream text-navy" : "border-line-strong"}`}>
+              <button key={q.label} type="button" onClick={() => setDate(q.value)} className={`min-h-9 rounded-full border px-3 text-[14px] ${date === q.value ? "border-primary bg-primary text-on-primary" : "border-line-strong"}`}>
                 {q.label}
               </button>
             ))}
@@ -167,7 +167,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
               <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 min-h-10 rounded-xl border border-line-strong px-3 text-[15px] text-ink" />
             </label>
           </div>
-          {loop.derivedFrom === "assignment" && <p className="mt-3 text-[13.5px] text-ink-3">This changes the date ORBIT tracks. It doesn&apos;t change anything in Canvas.</p>}
+          {loop.derivedFrom === "assignment" && <p className="mt-3 text-[13.5px] text-ink-3">This changes the date Orbit tracks. It doesn&apos;t change anything in Canvas.</p>}
           <div className="mt-4 flex gap-2">
             <Button type="submit" size="sm" variant="primary">Save date</Button>
             <Button size="sm" variant="ghost" onClick={() => setRescheduling(false)}>Cancel</Button>
@@ -198,7 +198,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
           </DetailRow>
         )}
         <DetailRow label="Category">
-          {CATEGORY_LABEL[loop.category]} · {CONSEQUENCE_LABEL[loop.consequence]}
+          {areaLabel(loop.category)} · {CONSEQUENCE_LABEL[loop.consequence]}
           {loop.moneyAtRisk && loop.moneyAtRisk > 1 ? ` · $${loop.moneyAtRisk} at stake` : ""}
         </DetailRow>
         {loop.waitingOn && <DetailRow label="Waiting on">{loop.waitingOn}</DetailRow>}

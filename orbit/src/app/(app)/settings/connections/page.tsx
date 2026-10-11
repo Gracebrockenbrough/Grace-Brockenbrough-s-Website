@@ -56,7 +56,7 @@ export default function ConnectionsPage() {
       </header>
 
       <section aria-labelledby="connected">
-        <h2 id="connected" className="text-[13px] font-semibold uppercase tracking-wider text-ink-3">Connected</h2>
+        <h2 id="connected" className="text-[13.5px] font-semiboldr text-ink-3">Connected</h2>
         {linked.length ? (
           <ul className="divide-y divide-line">{linked.map((s) => <Row key={s.id} source={s} />)}</ul>
         ) : (
@@ -65,7 +65,7 @@ export default function ConnectionsPage() {
       </section>
 
       <section aria-labelledby="add-more" className="mt-8">
-        <h2 id="add-more" className="text-[13px] font-semibold uppercase tracking-wider text-ink-3">Add more</h2>
+        <h2 id="add-more" className="text-[13.5px] font-semiboldr text-ink-3">Add more</h2>
         <ul className="divide-y divide-line">{(showAll ? [...more, ...others] : more).map((s) => <Row key={s.id} source={s} />)}</ul>
         {!showAll && others.length > 0 && (
           <button type="button" onClick={() => setShowAll(true)} className="mt-2 min-h-9 rounded-lg text-[14.5px] font-medium text-ink-2 hover:text-ink">
@@ -76,8 +76,8 @@ export default function ConnectionsPage() {
 
       <ul className="mt-10 space-y-1.5 rounded-2xl bg-sunken px-5 py-4 text-[14.5px] text-ink-2">
         <li>Your information stays connected to your account.</li>
-        <li>ORBIT uses it to organize what matters.</li>
-        <li>ORBIT will not send messages without you.</li>
+        <li>Orbit uses it to organize what matters.</li>
+        <li>Orbit will not send messages without you.</li>
         <li>You can disconnect a source anytime.</li>
       </ul>
       <p className="mt-3 text-[13px] text-ink-3">Prototype: connections are simulated with sample data.</p>

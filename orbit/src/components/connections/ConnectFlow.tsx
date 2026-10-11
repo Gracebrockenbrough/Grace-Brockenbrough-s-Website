@@ -24,7 +24,7 @@ const PROVIDER: Record<string, string> = {
 };
 
 /**
- * Three short steps: what ORBIT looks for → sign in → connected.
+ * Three short steps: what Orbit looks for → sign in → connected.
  * Sign-in is simulated in the prototype.
  */
 export function ConnectFlow({ source, email, onConnected, onClose }: { source: ConnectedSource; email: string; onConnected: () => void; onClose: () => void }) {
@@ -40,7 +40,7 @@ export function ConnectFlow({ source, email, onConnected, onClose }: { source: C
           <ConnectionIcon source={source} size={44} />
           <p className="text-[20px] font-semibold">Connect {source.name}</p>
         </div>
-        <p className="mt-5 text-[15px] font-medium text-ink-2">ORBIT will look for:</p>
+        <p className="mt-5 text-[15px] font-medium text-ink-2">Orbit will look for:</p>
         <ul className="mt-2 space-y-1.5">
           {source.notices.map((n) => (
             <li key={n} className="flex items-center gap-2 text-[16px]">
@@ -67,8 +67,8 @@ export function ConnectFlow({ source, email, onConnected, onClose }: { source: C
     return (
       <div className="animate-rise-in">
         <div className="rounded-2xl border border-line p-5 text-center">
-          <p className="text-[13px] font-medium uppercase tracking-wide text-ink-3">{provider}</p>
-          <p className="mt-2 text-[19px] font-semibold">Sign in to continue to ORBIT</p>
+          <p className="text-[13.5px] font-medium text-ink-3">{provider}</p>
+          <p className="mt-2 text-[19px] font-semibold">Sign in to continue to Orbit</p>
           <button
             type="button"
             autoFocus
@@ -110,7 +110,7 @@ export function ConnectFlow({ source, email, onConnected, onClose }: { source: C
         <Check size={28} strokeWidth={2.5} aria-hidden />
       </span>
       <p className="mt-4 text-[20px] font-semibold">{source.name} connected</p>
-      <p className="mt-1 text-[15.5px] text-ink-2">ORBIT can now help with {source.notices[0].toLowerCase()}.</p>
+      <p className="mt-1 text-[15.5px] text-ink-2">Orbit can now help with {source.notices[0].toLowerCase()}.</p>
       <Button variant="primary" className="mt-6" onClick={onClose} autoFocus>
         Done
       </Button>

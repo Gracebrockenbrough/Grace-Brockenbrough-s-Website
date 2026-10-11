@@ -3,7 +3,7 @@ import { addDays, addMinutesToTime, datePart, diffDays, timePart, toTimeStr, wee
 import { findGaps } from "./calendar";
 
 /**
- * The one helpful next step for a task. ORBIT helps you do it; it never does
+ * The one helpful next step for a task. Orbit helps you do it; it never does
  * the outbound part (sending, booking) for you.
  */
 export type NextStep = { kind: "draft"; label: string } | { kind: "find_time"; label: string } | { kind: "schedule"; label: string };

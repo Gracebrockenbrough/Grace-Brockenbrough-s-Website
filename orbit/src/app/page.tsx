@@ -12,9 +12,9 @@ export default function Home() {
     if (hydrated) router.replace(state.onboarded ? "/today" : "/onboarding");
   }, [hydrated, state.onboarded, router]);
   return (
-    <div className="flex min-h-screen items-center justify-center" aria-busy="true">
+    <div className="flex min-h-[var(--app-h)] items-center justify-center" aria-busy="true">
       <OrbitMark size={36} spinning />
-      <span className="sr-only">Loading ORBIT</span>
+      <span className="sr-only">Loading Orbit</span>
     </div>
   );
 }

@@ -136,7 +136,7 @@ export function loopFromMessage(m: Message, now: Date): OpenLoop {
     description: m.subject ? `“${m.subject}” — ${m.channel}` : `“${m.content.length > 48 ? `${m.content.slice(0, 46).trim()}…` : m.content}” — ${m.channel}`,
     category:
       m.senderType === "employer" || m.senderType === "professional"
-        ? "work"
+        ? "career"
         : /flight|trip|travel/i.test(m.content)
           ? "travel"
           : m.senderType === "family" || m.senderType === "friend"
@@ -182,7 +182,7 @@ export interface BuildLoopsInput {
   fastReplyTypes?: string[];
 }
 
-/** Every Open Loop ORBIT knows about, scored and sorted by recommendation. */
+/** Every Open Loop Orbit knows about, scored and sorted by recommendation. */
 export function buildRankedLoops(input: BuildLoopsInput): RankedLoop[] {
   const { now, prefs, loopMeta } = input;
   const disabledKinds = hiddenKinds(input.sources);

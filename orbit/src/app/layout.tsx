@@ -2,17 +2,21 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { OrbitProvider } from "@/store/OrbitProvider";
 import { UIProvider } from "@/store/UIProvider";
+import { DeviceFrame } from "@/components/shell/DeviceFrame";
 
 export const metadata: Metadata = {
-  title: "ORBIT",
-  description: "Chatbots wait for you to ask. ORBIT notices. Your life, organized around what matters.",
+  title: "Orbit",
+  description: "Chatbots wait for you to ask. Orbit notices. Your life, organized around what matters.",
   icons: { icon: "/favicon.svg" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0d1430",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f4ee" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b122b" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -26,7 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <OrbitProvider>
-          <UIProvider>{children}</UIProvider>
+          <UIProvider>
+            <DeviceFrame>{children}</DeviceFrame>
+          </UIProvider>
         </OrbitProvider>
       </body>
     </html>

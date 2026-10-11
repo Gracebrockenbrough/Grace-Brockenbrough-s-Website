@@ -1,5 +1,5 @@
 /**
- * ORBIT core data model.
+ * Orbit core data model.
  *
  * Dates are stored as local, timezone-free strings so the demo behaves the
  * same everywhere:  date = "YYYY-MM-DD", time = "HH:MM", datetime = "YYYY-MM-DDTHH:MM".
@@ -9,7 +9,7 @@
 export type ID = string;
 
 // ---------------------------------------------------------------------------
-// Sources — where ORBIT learned something
+// Sources — where Orbit learned something
 // ---------------------------------------------------------------------------
 
 export type SourceKind =
@@ -42,11 +42,11 @@ export interface ConnectedSource {
   status: ConnectionStatus;
   /** One line shown on onboarding cards, e.g. "Know where you need to be." */
   blurb: string;
-  /** "ORBIT uses Gmail to notice:" */
+  /** "Orbit uses Gmail to notice:" */
   notices: string[];
-  /** "What ORBIT usually ignores" */
+  /** "What Orbit usually ignores" */
   ignores?: string[];
-  /** What ORBIT will never do with this connection. */
+  /** What Orbit will never do with this connection. */
   promise: string;
   /** primary = shown first, more = "Add more", other = behind "See all connections". */
   group: "primary" | "more" | "other";
@@ -82,7 +82,7 @@ export interface Preferences {
   recommendationAdjust: Record<string, number>;
 }
 
-/** Conservative tiers. Everything else stays quietly inside ORBIT. */
+/** Conservative tiers. Everything else stays quietly inside Orbit. */
 export interface NotificationSettings {
   urgent: boolean;
   today: boolean;
@@ -97,7 +97,7 @@ export interface NotificationSettings {
 export type CalendarView = "month" | "week" | "day";
 export type DemoTime = "morning" | "midday" | "evening";
 
-/** Something the user did. Passive behavior teaches ORBIT. */
+/** Something the user did. Passive behavior teaches Orbit. */
 export interface InteractionSignal {
   id: ID;
   itemType: string; // "calendar", "loop", "message", "attention", "suggestion", "ask", "noticed"
@@ -108,14 +108,15 @@ export interface InteractionSignal {
 
 export interface DisplayPreference {
   calendarView?: CalendarView;
-  /** "noticed_first" once the user repeatedly goes to ORBIT noticed before anything else. */
+  /** "noticed_first" once the user repeatedly goes to Orbit noticed before anything else. */
   todayOrder?: "default" | "noticed_first";
   planningStyle?: "suggest" | "manual";
   /** Answer to "Where are you starting from?" during onboarding. */
   startingPoint?: string;
+  theme?: "system" | "light" | "dark";
 }
 
-/** A pattern ORBIT has picked up, described the way a person would say it. */
+/** A pattern Orbit has picked up, described the way a person would say it. */
 export interface LearnedRoutine {
   id: ID;
   pattern: string;
@@ -250,13 +251,13 @@ export interface CalendarEvent {
   category: EventCategory;
   source: Source;
   location?: string;
-  /** Real commitments ORBIT must never move without approval. */
+  /** Real commitments Orbit must never move without approval. */
   hardCommitment: boolean;
   confidence: number;
   courseId?: ID;
   /** Shown on the Month view. */
   major?: boolean;
-  /** Suggested by ORBIT and accepted by the user. */
+  /** Suggested by Orbit and accepted by the user. */
   suggestedByOrbit?: boolean;
   /** Open Loop this block was planned for. */
   loopId?: ID;
@@ -276,8 +277,9 @@ export interface CalendarItem extends CalendarEvent {
 // Open Loops
 // ---------------------------------------------------------------------------
 
-/** Life areas. "work" is shown as Career. */
-export type Category = "school" | "work" | "wellness" | "social" | "travel" | "personal";
+/** Built-in parts of life. Users can also add their own ("custom:Wedding"). */
+export type BuiltinArea = "school" | "work" | "career" | "family" | "social" | "health" | "money" | "travel" | "home" | "personal";
+export type Category = BuiltinArea | `custom:${string}`;
 export type Consequence = "academic" | "professional" | "financial" | "travel" | "social" | "low";
 export type LoopStatus = "now" | "soon" | "later" | "waiting" | "done";
 export type PriorityLevel = "high" | "medium" | "low";
@@ -321,7 +323,7 @@ export interface LoopMeta {
   notImportant?: boolean;
 }
 
-/** A loop after ORBIT has scored it. Never show the raw score to users. */
+/** A loop after Orbit has scored it. Never show the raw score to users. */
 export interface RankedLoop extends OpenLoop {
   priorityScore: number;
   priority: PriorityLevel;
@@ -373,7 +375,7 @@ export interface MessageClassification {
 // Intelligence outputs
 // ---------------------------------------------------------------------------
 
-/** A fact ORBIT extracted from an incoming source that may contradict what it knows. */
+/** A fact Orbit extracted from an incoming source that may contradict what it knows. */
 export interface ExtractedFact {
   id: ID;
   entityType: "exam" | "assignment";
@@ -512,7 +514,7 @@ export interface SyllabusExtraction {
 }
 
 // ---------------------------------------------------------------------------
-// Goals, study progress, and what ORBIT knows about you
+// Goals, study progress, and what Orbit knows about you
 // ---------------------------------------------------------------------------
 
 export type GoalKind = "run" | "study" | "read" | "save" | "habit" | "career" | "generic";
@@ -527,7 +529,7 @@ export interface GoalStep {
   done: boolean;
 }
 
-/** A longer goal ORBIT breaks into steps over time. */
+/** A longer goal Orbit breaks into steps over time. */
 export interface Goal {
   id: ID;
   title: string;
@@ -541,14 +543,22 @@ export interface Goal {
   steps: GoalStep[];
 }
 
-/** Answers to the background questions asked during onboarding. */
+export type Involvement = "quiet" | "helpful" | "proactive";
+
+/** What Orbit learned during onboarding and from "Help Orbit know you". */
 export interface Profile {
-  userType?: string;
-  roles: string[];
+  /** "Student", "Working", "Parent / family"… — people have more than one life. */
+  lives: string[];
+  otherLife?: string;
+  /** The parts of life Orbit keeps track of, in the user's order. */
   areas: Category[];
-  hardest: string[];
+  /** "What usually makes life feel messy?" */
+  messy: string[];
+  /** "How do your days usually go?" */
+  days?: string;
+  /** How much Orbit speaks up. Quiet shows only what changed; Proactive also plans ahead. */
+  involvement: Involvement;
   briefTime?: string;
-  sleep?: string;
-  /** Short answers to "Help ORBIT know you" questions, by question id. */
+  /** Short answers to "Help Orbit know you" questions, by question id. */
   answers: Record<string, string>;
 }

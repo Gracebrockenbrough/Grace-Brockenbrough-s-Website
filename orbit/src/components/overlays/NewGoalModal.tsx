@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Mic, Sparkles } from "lucide-react";
 import type { Category } from "@/types";
-import { AREA_LABEL, AREA_ORDER, AREA_STYLE } from "@/lib/areas";
+import { BUILTIN_AREAS, areaLabel, areaStyle } from "@/lib/areas";
 import { cn } from "@/lib/cn";
 import { DEMO_NOW_STR } from "@/data/demoClock";
 import { relativeDay } from "@/lib/time";
@@ -16,7 +16,7 @@ import { Planet } from "@/components/areas/Planet";
 
 /** "Run a 5K next month" → a plan of small steps, previewed before anything is added. */
 export function NewGoalModal({ onClose, area: initialArea, text: initialText = "" }: { onClose: () => void; area?: Category; text?: string }) {
-  const { dispatch, derived } = useOrbit();
+  const { dispatch, derived, state } = useOrbit();
   const { notify, open } = useUI();
   const [text, setText] = useState(initialText);
   const [preview, setPreview] = useState(!!initialText);
@@ -24,7 +24,7 @@ export function NewGoalModal({ onClose, area: initialArea, text: initialText = "
   const [target, setTarget] = useState<string | undefined>();
   const [listening, setListening] = useState(false);
 
-  // The page's area is only a default for goals ORBIT can't place on its own.
+  // The page's area is only a default for goals Orbit can't place on its own.
   const goal = useMemo(() => {
     if (!preview || !text.trim()) return undefined;
     const g = buildGoal(text, derived.today, DEMO_NOW_STR, { area, target });
@@ -40,7 +40,7 @@ export function NewGoalModal({ onClose, area: initialArea, text: initialText = "
   };
 
   if (goal) {
-    const style = AREA_STYLE[goal.area];
+    const style = areaStyle(goal.area);
     return (
       <Modal
         title="Here's a plan"
@@ -62,7 +62,7 @@ export function NewGoalModal({ onClose, area: initialArea, text: initialText = "
         }
       >
         <div className="flex items-center gap-4">
-          <Planet area={goal.area} size={48} ring />
+          <Planet area={goal.area} size={12} className="mt-2.5 self-start" />
           <div className="min-w-0">
             <p className="font-display text-[22px] leading-snug">{goal.title}</p>
             <p className="text-[14.5px] text-ink-2">{goal.plan}</p>
@@ -76,22 +76,22 @@ export function NewGoalModal({ onClose, area: initialArea, text: initialText = "
           <div>
             <p className="text-[14px] text-ink-3">Part of life</p>
             <div className="mt-1 flex flex-wrap gap-1.5">
-              {AREA_ORDER.map((a) => (
+              {state.profile.areas.map((a) => (
                 <button
                   key={a}
                   type="button"
                   aria-pressed={goal.area === a}
                   onClick={() => setArea(a)}
-                  className={cn("inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-[13px]", goal.area === a ? `${AREA_STYLE[a].border} ${AREA_STYLE[a].soft} text-ink` : "border-line text-ink-3")}
+                  className={cn("inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-[13px]", goal.area === a ? `${areaStyle(a).border} ${areaStyle(a).soft} text-ink` : "border-line text-ink-3")}
                 >
-                  <span className={cn("h-2 w-2 rounded-full", AREA_STYLE[a].dot)} aria-hidden />
-                  {AREA_LABEL[a]}
+                  <span className={cn("h-2 w-2 rounded-full", areaStyle(a).dot)} aria-hidden />
+                  {areaLabel(a)}
                 </button>
               ))}
             </div>
           </div>
         </div>
-        <h3 className={cn("mb-2 mt-6 text-[12px] font-semibold uppercase tracking-[0.12em]", style.text)}>First steps</h3>
+        <h3 className={cn("mb-2 mt-6 text-[13.5px] font-semibold", style.text)}>First steps</h3>
         <ol className="space-y-1.5">
           {goal.steps.slice(0, 5).map((s) => (
             <li key={s.id} className="flex items-start gap-3 rounded-xl bg-sunken px-3 py-2.5">
@@ -103,7 +103,7 @@ export function NewGoalModal({ onClose, area: initialArea, text: initialText = "
             </li>
           ))}
         </ol>
-        {goal.steps.length > 5 && <p className="mt-2 text-[14px] text-ink-3">…and {goal.steps.length - 5} more, each one small. ORBIT adjusts if you miss a day.</p>}
+        {goal.steps.length > 5 && <p className="mt-2 text-[14px] text-ink-3">…and {goal.steps.length - 5} more, each one small. Orbit adjusts if you miss a day.</p>}
       </Modal>
     );
   }
@@ -118,7 +118,7 @@ export function NewGoalModal({ onClose, area: initialArea, text: initialText = "
         </Button>
       }
     >
-      <p className="text-[15px] text-ink-2">Say it the way you'd tell a friend. ORBIT turns it into small steps you can actually do.</p>
+      <p className="text-[15px] text-ink-2">Say it the way you'd tell a friend. Orbit turns it into small steps you can actually do.</p>
       <div className="relative mt-4">
         <label htmlFor="goal-text" className="sr-only">Your goal</label>
         <textarea
@@ -140,12 +140,12 @@ export function NewGoalModal({ onClose, area: initialArea, text: initialText = "
           type="button"
           onClick={speak}
           aria-label="Speak your goal"
-          className={cn("absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full", listening ? "animate-pulse-soft bg-accent text-navy" : "bg-sunken text-ink-2 hover:text-ink")}
+          className={cn("absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full", listening ? "animate-pulse-soft bg-accent text-on-primary" : "bg-sunken text-ink-2 hover:text-ink")}
         >
           <Mic size={18} aria-hidden />
         </button>
       </div>
-      <p className="mb-2 mt-5 text-[13px] font-semibold uppercase tracking-[0.12em] text-ink-3">Ideas</p>
+      <p className="mb-2 mt-5 text-[13.5px] font-semibold text-ink-3">Ideas</p>
       <div className="flex flex-wrap gap-2">
         {GOAL_EXAMPLES.map((g) => (
           <button key={g} type="button" onClick={() => { setText(g); setPreview(true); }} className="min-h-9 rounded-full border border-line-strong px-3.5 text-[14px] text-ink-2 hover:border-accent hover:text-ink">

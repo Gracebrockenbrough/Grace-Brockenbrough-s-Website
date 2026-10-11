@@ -111,7 +111,7 @@ export function ChangeModal({ id, onClose }: { id: string; onClose: () => void }
   };
   const ignore = () => {
     dispatch({ type: "DISMISS_CHANGE", changeId: change.id });
-    notify(confident ? "Kept the original date." : "Kept the original date. ORBIT will watch for an official update.", { undoable: true });
+    notify(confident ? "Kept the original date." : "Kept the original date. Orbit will watch for an official update.", { undoable: true });
     onClose();
   };
 
@@ -119,7 +119,7 @@ export function ChangeModal({ id, onClose }: { id: string; onClose: () => void }
     <Modal
       title={confident ? (change.entityType === "exam" ? "Exam moved" : "Due date moved") : "This may have moved"}
       onClose={onClose}
-      eyebrow={<span className="text-[13px] font-semibold uppercase tracking-wide text-attention">{course?.code ?? "Change"}</span>}
+      eyebrow={<span className="text-[13.5px] font-semibold text-attention">{course?.code ?? "Change"}</span>}
       footer={
         <div className="flex flex-wrap gap-2">
           {confident && change.entityType === "exam" ? (
@@ -151,13 +151,13 @@ export function ChangeModal({ id, onClose }: { id: string; onClose: () => void }
 
       <div className="mt-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
         <div className="flex-1 rounded-2xl border border-line bg-canvas p-4">
-          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-ink-3">Was</p>
+          <p className="text-[13.5px] font-semibold text-ink-3">Was</p>
           <p className="mt-1 text-[16px] text-ink-2 line-through decoration-ink-3/60">{describeWhen(change.previousValue)}</p>
         </div>
         <ArrowRight className="hidden shrink-0 text-ink-3 sm:block" size={20} aria-hidden />
         <ArrowDown className="mx-auto shrink-0 text-ink-3 sm:hidden" size={20} aria-hidden />
         <div className="flex-1 rounded-2xl border border-attention-line bg-attention-soft p-4">
-          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-attention">Now</p>
+          <p className="text-[13.5px] font-semibold text-attention">Now</p>
           <p className="mt-1 text-[16px] font-semibold text-ink">{describeWhen(change.newValue)}</p>
         </div>
       </div>

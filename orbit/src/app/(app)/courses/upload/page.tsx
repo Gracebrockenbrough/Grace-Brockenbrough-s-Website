@@ -101,12 +101,12 @@ function UploadInner() {
       {phase === "select" && (
         <div className="animate-rise-in">
           <h1 className="text-[28px] font-semibold tracking-tight md:text-[32px]">Upload a syllabus</h1>
-          <p className="mt-2 text-[16px] text-ink-2">ORBIT reads it, finds every assignment and exam, and asks you to confirm anything it isn&apos;t sure about.</p>
+          <p className="mt-2 text-[16px] text-ink-2">Orbit reads it, finds every assignment and exam, and asks you to confirm anything it isn&apos;t sure about.</p>
 
           <label className="mt-6 flex flex-wrap items-center gap-3 text-[15px] text-ink-2">
             Course
             <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="min-h-10 rounded-xl border border-line-strong bg-surface px-3 text-[15px] text-ink">
-              <option value="auto">Let ORBIT figure it out</option>
+              <option value="auto">Let Orbit figure it out</option>
               {state.courses.map((c) => (
                 <option key={c.id} value={c.id}>{c.code} · {c.name}</option>
               ))}
@@ -149,13 +149,13 @@ function UploadInner() {
           </div>
 
           <div className="mt-5 flex flex-col items-start gap-1 rounded-2xl bg-accent-soft/60 px-4 py-3.5 md:flex-row md:items-center md:justify-between">
-            <p className="text-[15px] text-ink-2">No syllabus handy? Try ORBIT with a sample.</p>
+            <p className="text-[15px] text-ink-2">No syllabus handy? Try Orbit with a sample.</p>
             <button type="button" onClick={() => process({ name: sampleSyllabusExtraction.fileName, size: 1 })} className="inline-flex min-h-10 items-center gap-1.5 text-[15px] font-semibold text-accent hover:underline">
               <Sparkles size={16} aria-hidden /> Use sample ARTH 202 syllabus
             </button>
           </div>
           <p className="mt-3 text-[13.5px] text-ink-3">
-            Prototype note: reading is simulated, so any file returns the sample results. Files named “blurry” show what happens when ORBIT can&apos;t read a page.
+            Prototype note: reading is simulated, so any file returns the sample results. Files named “blurry” show what happens when Orbit can&apos;t read a page.
           </p>
         </div>
       )}
@@ -167,7 +167,7 @@ function UploadInner() {
           <ol className="mt-6 space-y-2 text-left">
             {SYLLABUS_PROCESSING_STEPS.map((s, i) => (
               <li key={s} className={cn("flex items-center gap-2.5 text-[15px] transition-opacity", i > step ? "opacity-30" : "opacity-100")}>
-                <span className={cn("flex h-5 w-5 items-center justify-center rounded-full", i < step ? "bg-success text-navy" : "border-2 border-line-strong")} aria-hidden>
+                <span className={cn("flex h-5 w-5 items-center justify-center rounded-full", i < step ? "bg-success text-on-primary" : "border-2 border-line-strong")} aria-hidden>
                   {i < step && <Check size={12} strokeWidth={3} />}
                 </span>
                 {s.replace("…", "")}
@@ -217,7 +217,7 @@ function UploadInner() {
           {needsReview.length > 0 && (
             <section className="mt-8" aria-labelledby="needs-review">
               <h2 id="needs-review" className="text-[19px] font-semibold">Needs your review <span className="font-normal text-ink-3">{needsReview.length}</span></h2>
-              <p className="mt-1 text-[15px] text-ink-2">ORBIT won&apos;t add uncertain dates silently. Set a date, or keep them as “date unclear” and ORBIT will remind you.</p>
+              <p className="mt-1 text-[15px] text-ink-2">Orbit won&apos;t add uncertain dates silently. Set a date, or keep them as “date unclear” and Orbit will remind you.</p>
               <ul className="mt-3 space-y-2">
                 {needsReview.map((i) => (
                   <ReviewRow key={i.id} item={i} included={included.has(i.id)} editing={editing === i.id} onEdit={() => setEditing(i.id)}
@@ -229,7 +229,7 @@ function UploadInner() {
           )}
 
           <section className="mt-8" aria-labelledby="found">
-            <h2 id="found" className="text-[19px] font-semibold">ORBIT found <span className="font-normal text-ink-3">{confident.length}</span></h2>
+            <h2 id="found" className="text-[19px] font-semibold">Orbit found <span className="font-normal text-ink-3">{confident.length}</span></h2>
             <ul className="mt-3 space-y-2">
               {confident.map((i) => (
                 <ReviewRow key={i.id} item={i} included={included.has(i.id)} editing={editing === i.id} onEdit={() => setEditing(i.id)}
@@ -259,7 +259,7 @@ function UploadInner() {
             <Check size={30} strokeWidth={2.5} aria-hidden />
           </span>
           <h1 className="mt-5 text-[26px] font-semibold">{importedCount} dates added to {extraction.courseGuess.split(" · ")[0]}</h1>
-          <p className="mt-2 text-[16px] text-ink-2">They&apos;re on your calendar and in Open Loops as they get close. ORBIT will keep an eye out for changes.</p>
+          <p className="mt-2 text-[16px] text-ink-2">They&apos;re on your calendar and in Open Loops as they get close. Orbit will keep an eye out for changes.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-2">
             <Button variant="primary" onClick={() => router.push(`/courses/${extraction.courseId}`)}>View course</Button>
             <Button variant="secondary" onClick={() => router.push(fromOnboarding ? "/today" : "/calendar?view=month")}>

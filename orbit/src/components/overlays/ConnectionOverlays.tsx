@@ -60,7 +60,7 @@ export function ConnectionDrawer({ id, onClose }: { id: string; onClose: () => v
           </Button>
         ) : confirming ? (
           <div className="flex flex-wrap items-center gap-2">
-            <p className="w-full text-[14.5px] text-ink-2">Disconnect {source.name}? ORBIT will stop using everything it learned from it.</p>
+            <p className="w-full text-[14.5px] text-ink-2">Disconnect {source.name}? Orbit will stop using everything it learned from it.</p>
             <Button variant="danger" onClick={() => { set("available", `${source.name} disconnected.`); setConfirming(false); }}>
               Disconnect
             </Button>
@@ -69,7 +69,7 @@ export function ConnectionDrawer({ id, onClose }: { id: string; onClose: () => v
         ) : (
           <div className="flex flex-wrap gap-2">
             {status === "connected" ? (
-              <Button variant="secondary" onClick={() => set("paused", `${source.name} paused. ORBIT stopped reading it for now.`)}>
+              <Button variant="secondary" onClick={() => set("paused", `${source.name} paused. Orbit stopped reading it for now.`)}>
                 <Pause size={16} aria-hidden /> Pause
               </Button>
             ) : (
@@ -89,7 +89,7 @@ export function ConnectionDrawer({ id, onClose }: { id: string; onClose: () => v
         <p className="text-[15.5px] text-ink-2">{source.blurb}</p>
       </div>
 
-      <p className="mt-6 text-[15px] font-semibold">ORBIT uses {source.name} to notice:</p>
+      <p className="mt-6 text-[15px] font-semibold">Orbit uses {source.name} to notice:</p>
       <ul className="mt-2 space-y-1.5">
         {source.notices.map((n) => (
           <li key={n} className="flex items-center gap-2 text-[15.5px]">
@@ -104,7 +104,7 @@ export function ConnectionDrawer({ id, onClose }: { id: string; onClose: () => v
 
       {source.ignores && (
         <>
-          <p className="mt-6 text-[15px] font-semibold">What ORBIT usually ignores</p>
+          <p className="mt-6 text-[15px] font-semibold">What Orbit usually ignores</p>
           <p className="mt-1 text-[15px] text-ink-2">{source.ignores.join(" · ")}</p>
         </>
       )}

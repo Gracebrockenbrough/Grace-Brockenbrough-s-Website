@@ -63,7 +63,7 @@ export function classifyMessage(message: Message, prefs: Preferences): MessageCl
   const importance = importanceScore >= 60 ? "high" : importanceScore >= 30 ? "medium" : "low";
 
   if (isIgnored(message.sender, prefs)) {
-    return { category: "noise", importance: "low", urgency: "low", confidence: 0.99, importanceScore: 0, reason: "You asked ORBIT to ignore this source." };
+    return { category: "noise", importance: "low", urgency: "low", confidence: 0.99, importanceScore: 0, reason: "You asked Orbit to ignore this source." };
   }
   if (message.senderType === "promotional") {
     return { category: "noise", importance: "low", urgency: "low", confidence: 0.97, importanceScore, reason: "Promotional message." };

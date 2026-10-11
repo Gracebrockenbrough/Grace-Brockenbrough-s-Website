@@ -1,8 +1,8 @@
 import type { Category, ConnectedSource, Goal, Profile } from "@/types";
 
 /**
- * "Help ORBIT know you": the next few questions worth asking and the
- * connections worth suggesting, plus a simple measure of how well ORBIT
+ * "Help Orbit know you": the next few questions worth asking and the
+ * connections worth suggesting, plus a simple measure of how well Orbit
  * understands the user's life so far.
  */
 
@@ -11,18 +11,18 @@ export interface KnowQuestion {
   area: Category;
   question: string;
   options: string[];
-  /** What ORBIT does with the answer, in one line. */
+  /** What Orbit does with the answer, in one line. */
   why: string;
 }
 
 export const KNOW_QUESTIONS: KnowQuestion[] = [
-  { id: "focus", area: "school", question: "When do you focus best?", options: ["Morning", "Afternoon", "Night"], why: "ORBIT will suggest study time when you're sharpest." },
-  { id: "sleep", area: "wellness", question: "When do you usually go to sleep?", options: ["Before 11", "11 to midnight", "After midnight"], why: "ORBIT won't plan things too late." },
-  { id: "job", area: "work", question: "Do you work during the semester?", options: ["No", "On-campus job", "Part-time job", "Internship"], why: "ORBIT will protect your shifts and plan around them." },
-  { id: "move", area: "wellness", question: "How do you like to move?", options: ["Running", "Gym", "Classes", "Not much yet"], why: "ORBIT will suggest workouts that fit open time." },
-  { id: "home", area: "travel", question: "How do you get home for breaks?", options: ["Drive", "Fly", "Train or bus", "I stay on campus"], why: "ORBIT will remind you to book early." },
-  { id: "people", area: "social", question: "Who do you want to keep up with?", options: ["Family", "Friends from home", "Both"], why: "ORBIT will nudge you when it's been a while." },
-  { id: "money", area: "personal", question: "Do you keep a budget?", options: ["Yes", "Trying to", "Not really"], why: "ORBIT will watch for refunds and deposits you're owed." },
+  { id: "focus", area: "personal", question: "When do you focus best?", options: ["Morning", "Afternoon", "Night"], why: "Orbit will suggest study time when you're sharpest." },
+  { id: "sleep", area: "health", question: "When do you usually go to sleep?", options: ["Before 11", "11 to midnight", "After midnight"], why: "Orbit won't plan things too late." },
+  { id: "job", area: "work", question: "Do you work during the semester?", options: ["No", "On-campus job", "Part-time job", "Internship"], why: "Orbit will protect your shifts and plan around them." },
+  { id: "move", area: "health", question: "How do you like to move?", options: ["Running", "Gym", "Classes", "Not much yet"], why: "Orbit will suggest workouts that fit open time." },
+  { id: "home", area: "travel", question: "How do you get home for breaks?", options: ["Drive", "Fly", "Train or bus", "I stay on campus"], why: "Orbit will remind you to book early." },
+  { id: "people", area: "social", question: "Who do you want to keep up with?", options: ["Family", "Friends from home", "Both"], why: "Orbit will nudge you when it's been a while." },
+  { id: "money", area: "personal", question: "Do you keep a budget?", options: ["Yes", "Trying to", "Not really"], why: "Orbit will watch for refunds and deposits you're owed." },
 ];
 
 export interface ConnectSuggestion {
@@ -53,17 +53,17 @@ export function computeKnowYou(profile: Profile, sources: ConnectedSource[], goa
   const answered = Object.keys(profile.answers).length;
   const score = Math.min(
     100,
-    (profile.userType ? 10 : 0) +
-      (profile.hardest.length ? 5 : 0) +
+    (profile.lives.length ? 10 : 0) +
+      (profile.messy.length ? 5 : 0) +
       Math.min(30, connected * 6) +
       Math.min(30, answered * 5) +
       (goals.length ? 10 : 0) +
       (courseCount ? 10 : 0) +
       (profile.briefTime ? 5 : 0),
   );
-  const level = score >= 85 ? "ORBIT knows you well" : score >= 60 ? "Getting to know you" : score >= 35 ? "Just getting started" : "Barely acquainted";
+  const level = score >= 85 ? "Orbit knows you well" : score >= 60 ? "Getting to know you" : score >= 35 ? "Just getting started" : "Barely acquainted";
 
-  const areas = new Set(profile.areas);
+  const areas = new Set<Category>([...profile.areas, "personal"]);
   const questions = KNOW_QUESTIONS.filter((q) => !profile.answers[q.id] && areas.has(q.area));
 
   const connect = sources

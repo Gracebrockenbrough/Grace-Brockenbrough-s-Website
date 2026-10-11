@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarPlus, ExternalLink, Link2 } from "lucide-react";
-import { AREA_LABEL, AREA_STYLE } from "@/lib/areas";
+import { areaLabel, areaStyle } from "@/lib/areas";
 import { cn } from "@/lib/cn";
 import { addDays, addMinutesToTime, formatShortDate, relativeDay, startOfWeek } from "@/lib/time";
 import { appFor } from "@/lib/handoff";
@@ -10,7 +10,6 @@ import { useUI } from "@/store/UIProvider";
 import { usePlanBlock } from "@/store/useActions";
 import { Drawer } from "@/components/ui/Overlay";
 import { Button } from "@/components/ui/Button";
-import { Planet } from "@/components/areas/Planet";
 import { ProgressBar, StepCheck } from "@/components/goals/GoalCard";
 
 function weekLabel(weekStart: string, thisWeek: string): string {
@@ -34,7 +33,7 @@ export function GoalDrawer({ id, onClose }: { id: string; onClose: () => void })
     );
   }
   const { goal, progress } = entry;
-  const style = AREA_STYLE[goal.area];
+  const style = areaStyle(goal.area);
   const thisWeek = startOfWeek(derived.today);
   const weeks = new Map<string, typeof goal.steps>();
   for (const s of goal.steps) {
@@ -49,16 +48,16 @@ export function GoalDrawer({ id, onClose }: { id: string; onClose: () => void })
     <Drawer
       title={goal.title}
       onClose={onClose}
-      eyebrow={<span className={cn("text-[12px] font-semibold uppercase tracking-[0.12em]", style.text)}>{AREA_LABEL[goal.area]} goal · by {formatShortDate(goal.target)}</span>}
+      eyebrow={<span className={cn("text-[13.5px] font-semibold", style.text)}>{areaLabel(goal.area)} goal · by {formatShortDate(goal.target)}</span>}
       footer={
         <div className="flex flex-wrap items-center gap-2">
           {next && (
             <Button
               variant="primary"
               onClick={() => {
-                const start = goal.area === "wellness" ? "17:00" : "15:00";
+                const start = goal.area === "health" ? "17:00" : "15:00";
                 const end = addMinutesToTime(start, next.minutes ?? 30);
-                plan({ title: next.title, date: next.date, start, end, category: goal.area === "wellness" ? "personal" : "study" });
+                plan({ title: next.title, date: next.date, start, end, category: goal.area === "health" ? "personal" : "study" });
               }}
             >
               <CalendarPlus size={16} aria-hidden /> Put next step on my calendar
@@ -83,12 +82,7 @@ export function GoalDrawer({ id, onClose }: { id: string; onClose: () => void })
         </div>
       }
     >
-      <div className="flex items-center gap-4">
-        <Planet area={goal.area} size={52} ring glow />
-        <div className="min-w-0 flex-1">
-          <p className="text-[15px] text-ink-2">{goal.plan}</p>
-        </div>
-      </div>
+      <p className="text-[15px] text-ink-2">{goal.plan}</p>
       <div className="mt-5">
         <ProgressBar pct={progress.pct} color={style.hex} />
         <div className="mt-2 flex justify-between text-[14px] text-ink-3">
@@ -114,7 +108,7 @@ export function GoalDrawer({ id, onClose }: { id: string; onClose: () => void })
       <div className="mt-6 space-y-6">
         {[...weeks.entries()].map(([week, steps]) => (
           <section key={week} aria-label={weekLabel(week, thisWeek)}>
-            <h3 className={cn("mb-2 text-[12px] font-semibold uppercase tracking-[0.12em]", week === thisWeek ? style.text : "text-ink-3")}>{weekLabel(week, thisWeek)}</h3>
+            <h3 className={cn("mb-2 text-[13.5px] font-semibold", week === thisWeek ? style.text : "text-ink-3")}>{weekLabel(week, thisWeek)}</h3>
             <ul className="space-y-1">
               {steps.map((s) => {
                 const missed = !s.done && s.date < derived.today;

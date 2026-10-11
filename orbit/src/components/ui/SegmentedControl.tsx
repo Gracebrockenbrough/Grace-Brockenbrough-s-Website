@@ -77,11 +77,11 @@ export function FilterChips<T extends string>({
             onClick={() => onChange(o.value)}
             className={cn(
               "min-h-9 shrink-0 rounded-full border px-3.5 text-[14.5px] font-medium transition-colors",
-              selected ? "border-cream bg-cream text-navy" : "border-line-strong bg-surface text-ink-2 hover:text-ink",
+              selected ? "border-primary bg-primary text-on-primary" : "border-line-strong bg-surface text-ink-2 hover:text-ink",
             )}
           >
             {o.label}
-            {o.count !== undefined && <span className={cn("ml-1.5", selected ? "text-navy/60" : "text-ink-3")}>{o.count}</span>}
+            {o.count !== undefined && <span className={cn("ml-1.5", selected ? "text-on-primary/60" : "text-ink-3")}>{o.count}</span>}
           </button>
         );
       })}

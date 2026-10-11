@@ -2,7 +2,7 @@ import type { OpenLoop } from "@/types";
 
 /**
  * Stored Open Loops. Assignment deadlines and messages that need a reply are
- * turned into Open Loops automatically by the ORBIT engine, so they are not
+ * turned into Open Loops automatically by the Orbit engine, so they are not
  * duplicated here.
  */
 export const mockOpenLoops: OpenLoop[] = [
@@ -10,7 +10,7 @@ export const mockOpenLoops: OpenLoop[] = [
     id: "l-career",
     title: "Submit Summer Analyst application",
     description: "Career Center program application. Resume and one short answer are required.",
-    category: "work",
+    category: "career",
     source: { kind: "email", label: "Career Center email", ref: "m-career" },
     deadline: "2026-10-09T23:59",
     hardDeadline: true,
@@ -98,7 +98,7 @@ export const mockOpenLoops: OpenLoop[] = [
   },
   {
     id: "l-maya-slides",
-    title: "Maya's slides for the ORBIT prototype",
+    title: "Maya's slides for the Orbit prototype",
     description: "Maya is finishing the market slides. You need them to finalize the deck.",
     category: "school",
     source: { kind: "groupme", label: "BUS 304 Team GroupMe" },
@@ -115,9 +115,26 @@ export const mockOpenLoops: OpenLoop[] = [
     why: "You're waiting on Maya before you can finish the prototype deck.",
   },
   {
+    id: "l-harbor",
+    title: "Interview confirmation",
+    description: "Harbor Point said they'd confirm a first-round time by Monday.",
+    category: "career",
+    source: { kind: "email", label: "Harbor Point email" },
+    deadline: "2026-10-12T17:00",
+    hardDeadline: false,
+    consequence: "professional",
+    senderType: "employer",
+    requiresResponse: false,
+    waitingOn: "Harbor Point",
+    confidence: 0.9,
+    completed: false,
+    createdAt: "2026-10-07T15:00",
+    why: "Harbor Point said they'd confirm your interview time by Monday.",
+  },
+  {
     id: "l-dentist",
     title: "Schedule dentist cleaning",
-    category: "wellness",
+    category: "health",
     source: { kind: "manual", label: "Added by you" },
     hardDeadline: false,
     consequence: "low",
@@ -127,12 +144,12 @@ export const mockOpenLoops: OpenLoop[] = [
     confidence: 1,
     completed: false,
     createdAt: "2026-09-28T10:00",
-    why: "No deadline — ORBIT is keeping it for a quiet moment.",
+    why: "No deadline — Orbit is keeping it for a quiet moment.",
   },
   {
     id: "l-career-fair",
     title: "Register for Fall Career Fair",
-    category: "work",
+    category: "career",
     source: { kind: "email", label: "Career Center email" },
     deadline: "2026-10-07T23:59",
     hardDeadline: true,

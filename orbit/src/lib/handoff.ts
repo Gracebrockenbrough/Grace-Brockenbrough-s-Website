@@ -1,5 +1,5 @@
 /**
- * Buttons that hand off to another app with everything filled in. ORBIT opens
+ * Buttons that hand off to another app with everything filled in. Orbit opens
  * the app; the user reviews and sends, books, or saves it themselves.
  */
 

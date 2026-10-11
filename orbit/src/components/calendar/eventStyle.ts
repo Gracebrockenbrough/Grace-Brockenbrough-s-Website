@@ -9,7 +9,7 @@ import type { EventCategory } from "@/types";
  */
 export const EVENT_META: Record<EventCategory, { label: string; icon: typeof BookOpen; block: string; chip: string; dot: string }> = {
   class: { label: "Class", icon: BookOpen, block: "bg-academic-soft text-academic-ink border-academic", chip: "bg-academic-soft text-academic-ink", dot: "bg-academic" },
-  exam: { label: "Exam", icon: GraduationCap, block: "bg-academic text-navy border-academic-ink", chip: "bg-academic text-navy", dot: "bg-academic-ink" },
+  exam: { label: "Exam", icon: GraduationCap, block: "bg-academic text-on-primary border-academic-ink", chip: "bg-academic text-on-primary", dot: "bg-academic-ink" },
   study: { label: "Study", icon: NotebookPen, block: "bg-surface text-academic-ink border-academic border-dashed", chip: "bg-academic-soft text-academic-ink", dot: "bg-academic" },
   meeting: { label: "Meeting", icon: Users, block: "bg-meet-soft text-meet-ink border-meet", chip: "bg-meet-soft text-meet-ink", dot: "bg-meet" },
   appointment: { label: "Appointment", icon: Stethoscope, block: "bg-meet-soft text-meet-ink border-meet", chip: "bg-meet-soft text-meet-ink", dot: "bg-meet" },

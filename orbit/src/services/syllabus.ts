@@ -15,7 +15,7 @@ const SUPPORTED = /\.(pdf|png|jpe?g|heic|webp|docx?)$/i;
  */
 export function readSyllabus(file: { name: string; size: number; type?: string }, courses: Course[], targetCourseId?: string): SyllabusReadResult {
   if (!SUPPORTED.test(file.name) && !(file.type ?? "").startsWith("image/")) {
-    return { ok: false, reason: "unsupported", message: "ORBIT can read PDFs, Word documents, and photos of a syllabus. This file type isn't one of them." };
+    return { ok: false, reason: "unsupported", message: "Orbit can read PDFs, Word documents, and photos of a syllabus. This file type isn't one of them." };
   }
   if (file.size === 0 || /blurry|scan_unreadable/i.test(file.name)) {
     return { ok: false, reason: "unreadable", message: "I couldn't fully read this syllabus. You can try another copy or take a clearer photo." };

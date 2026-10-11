@@ -1,7 +1,7 @@
 import type { SyllabusExtraction } from "@/types";
 
 /**
- * What ORBIT "reads" from the sample ARTH 202 syllabus. In production this
+ * What Orbit "reads" from the sample ARTH 202 syllabus. In production this
  * would come from a document model; the review flow is identical.
  * 18 dates: 11 assignments, 2 exams, 1 presentation, 4 milestones.
  */

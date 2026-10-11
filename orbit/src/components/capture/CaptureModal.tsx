@@ -7,7 +7,7 @@ import type { CaptureInputKind, CaptureResult, Category } from "@/types";
 import { cn, uid } from "@/lib/cn";
 import { formatShortDate, formatTime, relativeDateTime } from "@/lib/time";
 import { DEMO_NOW_STR } from "@/data/demoClock";
-import { AREA_LABEL, AREA_ORDER, AREA_STYLE } from "@/lib/areas";
+import { areaLabel, areaStyle } from "@/lib/areas";
 import { areaForItem } from "@/services/areas";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
@@ -18,7 +18,7 @@ import { DEMO_CHAT_TEXT, DEMO_SCREENSHOT_TEXT, VOICE_EXAMPLES, processCaptureMan
 
 type Phase = "input" | "listening" | "reading" | "result" | "review" | "added";
 
-/** One thing ORBIT understood, waiting for the user's OK. */
+/** One thing Orbit understood, waiting for the user's OK. */
 interface ReviewItem {
   id: string;
   include: boolean;
@@ -35,7 +35,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
   const router = useRouter();
   const [text, setText] = useState("");
   const [phase, setPhase] = useState<Phase>("input");
-  const [readingLabel, setReadingLabel] = useState("ORBIT is reading…");
+  const [readingLabel, setReadingLabel] = useState("Orbit is reading…");
   const [transcript, setTranscript] = useState("");
   const [result, setResult] = useState<CaptureResult | null>(null);
   const [inputKind, setInputKind] = useState<CaptureInputKind>("text");
@@ -93,7 +93,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
       textRef.current?.focus();
       return;
     }
-    setReadingLabel("ORBIT is reading…");
+    setReadingLabel("Orbit is reading…");
     setPhase("reading");
     later(() => finish(processCaptureMany({ kind, text: value }, ctx), kind, value), 650);
   }
@@ -159,7 +159,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
       }
       case "ignore_source":
         dispatch({ type: "IGNORE_SOURCE", key: result.key, label: result.label });
-        notify(`ORBIT will ignore ${result.label}.`, { undoable: true });
+        notify(`Orbit will ignore ${result.label}.`, { undoable: true });
         break;
       case "syllabus":
         onClose();
@@ -185,7 +185,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
             }}
           >
             <label htmlFor="capture-input" className="sr-only">
-              What do you want ORBIT to remember?
+              What do you want Orbit to remember?
             </label>
             <div className="flex items-end gap-2 rounded-2xl border border-line-strong bg-canvas p-2 pl-4 focus-within:border-accent focus-within:bg-surface">
               <textarea
@@ -208,21 +208,21 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
                 Add
               </Button>
             </div>
-            <p className="mb-2 mt-5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-3">Or bring it in</p>
+            <p className="mb-2 mt-5 text-[13.5px] font-semibold text-ink-3">Or bring it in</p>
             <div className="grid grid-cols-4 gap-2">
               {[
-                { label: "Speak", hint: "Say it", icon: Mic, color: "text-wellness", onClick: startVoice },
-                { label: "Photo", hint: "Flyer, board", icon: Camera, color: "text-school", onClick: () => photoRef.current?.click() },
-                { label: "Screenshot", hint: "Chat, email", icon: Smartphone, color: "text-travel", onClick: () => shotRef.current?.click() },
-                { label: "File", hint: "Syllabus, PDF", icon: FileUp, color: "text-career", onClick: () => fileRef.current?.click() },
-              ].map(({ label, hint, icon: Icon, color, onClick }) => (
+                { label: "Speak", hint: "Say it", icon: Mic, onClick: startVoice },
+                { label: "Photo", hint: "Flyer, board", icon: Camera, onClick: () => photoRef.current?.click() },
+                { label: "Screenshot", hint: "Chat, email", icon: Smartphone, onClick: () => shotRef.current?.click() },
+                { label: "File", hint: "Syllabus, PDF", icon: FileUp, onClick: () => fileRef.current?.click() },
+              ].map(({ label, hint, icon: Icon, onClick }) => (
                 <button
                   key={label}
                   type="button"
                   onClick={onClick}
                   className="flex min-h-[84px] flex-col items-center justify-center gap-1 rounded-2xl border border-line bg-sunken/60 px-1 text-center hover:border-line-strong hover:bg-sunken"
                 >
-                  <Icon size={22} className={color} aria-hidden />
+                  <Icon size={22} className="text-ink-2" aria-hidden />
                   <span className="text-[14px] font-medium text-ink">{label}</span>
                   <span className="hidden text-[11.5px] leading-tight text-ink-3 sm:block">{hint}</span>
                 </button>
@@ -259,7 +259,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
 
       {phase === "listening" && (
         <div className="flex flex-col items-center py-8 text-center" aria-live="polite">
-          <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-accent text-navy">
+          <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-accent text-on-primary">
             <span className="absolute inset-0 animate-ping rounded-full bg-accent/30" aria-hidden />
             <Mic size={30} aria-hidden />
           </span>
@@ -285,8 +285,8 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success-soft text-success">
             <Check size={24} strokeWidth={2.5} aria-hidden />
           </span>
-          <p className="mt-3 text-[18px] font-semibold">Added {addedCount} {addedCount === 1 ? "thing" : "things"} to ORBIT</p>
-          <p className="mt-1 text-[15px] text-ink-2">ORBIT will bring them up when they matter.</p>
+          <p className="mt-3 text-[18px] font-semibold">Added {addedCount} {addedCount === 1 ? "thing" : "things"} to Orbit</p>
+          <p className="mt-1 text-[15px] text-ink-2">Orbit will bring them up when they matter.</p>
           <div className="mt-6 flex justify-center gap-2">
             <Button variant="primary" onClick={reset}>Add another</Button>
             <Button
@@ -413,9 +413,9 @@ function CaptureResultView({
             {result.loop.deadline
               ? `${formatShortDate(result.loop.deadline.split("T")[0])}${result.loop.deadline.endsWith("23:59") ? "" : ` · ${formatTime(result.loop.deadline.split("T")[1])}`}`
               : "No deadline"}{" "}
-            · {AREA_LABEL[result.loop.category]}
+            · {areaLabel(result.loop.category)}
           </p>
-          <p className="mt-2 text-[13.5px] text-ink-3">ORBIT added this to Open Loops and will bring it up when it matters.</p>
+          <p className="mt-2 text-[13.5px] text-ink-3">Orbit added this to Open Loops and will bring it up when it matters.</p>
         </div>
       )}
 
@@ -439,7 +439,7 @@ function CaptureResultView({
                 type="button"
                 aria-pressed={courseChoice === c.id}
                 onClick={() => setCourseChoice(c.id)}
-                className={cn("min-h-9 rounded-full border px-3.5 text-[14.5px] font-medium", courseChoice === c.id ? "border-cream bg-cream text-navy" : "border-line-strong text-ink-2")}
+                className={cn("min-h-9 rounded-full border px-3.5 text-[14.5px] font-medium", courseChoice === c.id ? "border-primary bg-primary text-on-primary" : "border-line-strong text-ink-2")}
               >
                 {c.code}
               </button>
@@ -451,7 +451,7 @@ function CaptureResultView({
   );
 }
 
-/** "Check before saving": every item ORBIT found, with anything unsure flagged. */
+/** "Check before saving": every item Orbit found, with anything unsure flagged. */
 function CaptureReview({
   items,
   setItems,
@@ -465,7 +465,8 @@ function CaptureReview({
   onCancel: () => void;
   onAdd: () => void;
 }) {
-  const { derived } = useOrbit();
+  const { derived, state } = useOrbit();
+  const profileAreas = state.profile.areas;
   const [editing, setEditing] = useState<string | null>(null);
   const chosen = items.filter((i) => i.include).length;
   const unsure = items.filter((i) => flag(i.result, simulatedImage)).length;
@@ -545,24 +546,24 @@ function CaptureReview({
                     <p className="text-[16px] font-medium">{title}</p>
                     <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-ink-3">
                       {area && r.type === "loop" ? (
-                        <label className={cn("relative inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-2 pr-1 text-[13px] font-medium", AREA_STYLE[area].border, AREA_STYLE[area].soft, AREA_STYLE[area].text)}>
-                          <span className={cn("h-2 w-2 rounded-full", AREA_STYLE[area].dot)} aria-hidden />
+                        <label className={cn("relative inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-2 pr-1 text-[13px] font-medium", areaStyle(area).border, areaStyle(area).soft, areaStyle(area).text)}>
+                          <span className={cn("h-2 w-2 rounded-full", areaStyle(area).dot)} aria-hidden />
                           <span className="sr-only">Part of life</span>
                           <select
                             value={area}
                             onChange={(e) => patch(id, (x) => (x.type === "loop" ? { ...x, loop: { ...x.loop, category: e.target.value as Category } } : x))}
                             className="cursor-pointer appearance-none bg-transparent pr-1 focus:outline-none"
                           >
-                            {AREA_ORDER.map((a) => (
-                              <option key={a} value={a} className="bg-surface text-ink">{AREA_LABEL[a]}</option>
+                            {[...new Set([...profileAreas, area])].map((a) => (
+                              <option key={a} value={a} className="bg-surface text-ink">{areaLabel(a)}</option>
                             ))}
                           </select>
                           <span aria-hidden>▾</span>
                         </label>
                       ) : area ? (
-                        <span className={cn("inline-flex items-center gap-1.5 text-[13px] font-medium", AREA_STYLE[area].text)}>
-                          <span className={cn("h-2 w-2 rounded-full", AREA_STYLE[area].dot)} aria-hidden />
-                          {AREA_LABEL[area]}
+                        <span className={cn("inline-flex items-center gap-1.5 text-[13px] font-medium", areaStyle(area).text)}>
+                          <span className={cn("h-2 w-2 rounded-full", areaStyle(area).dot)} aria-hidden />
+                          {areaLabel(area)}
                         </span>
                       ) : null}
                       <span>{meta}</span>
@@ -583,7 +584,7 @@ function CaptureReview({
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="ghost" onClick={onCancel}>Cancel</Button>
         <Button variant="primary" disabled={!chosen} onClick={onAdd}>
-          Add {chosen > 1 ? `${chosen} ` : ""}to ORBIT
+          Add {chosen > 1 ? `${chosen} ` : ""}to Orbit
         </Button>
       </div>
     </div>

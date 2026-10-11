@@ -9,7 +9,7 @@ import { buildCalendarItems } from "@/services/calendar";
 import { callSlots, findSlotsFor, nextStepFor } from "@/services/helpers";
 import { findLoop } from "./lookup";
 
-/** "Find time" and "Help me schedule": ORBIT finds the windows; you pick one. */
+/** "Find time" and "Help me schedule": Orbit finds the windows; you pick one. */
 export function FindTimeDrawer({ id, onClose }: { id: string; onClose: () => void }) {
   const { state, derived } = useOrbit();
   const plan = usePlanBlock();
@@ -26,7 +26,7 @@ export function FindTimeDrawer({ id, onClose }: { id: string; onClose: () => voi
     <Drawer title={scheduling ? "Good times to call" : `Find time for ${loop.title}`} onClose={onClose}>
       <p className="text-[15.5px] text-ink-2">
         {scheduling
-          ? "Short openings while offices are open. ORBIT won't book anything for you."
+          ? "Short openings while offices are open. Orbit won't book anything for you."
           : `About ${formatDuration(Math.min(Math.max(loop.effortMinutes ?? 60, 30), 120))}${loop.deadline ? `, before it's due ${relativeDateTime(loop.deadline, derived.today).toLowerCase()}` : ""}.`}
       </p>
       {slots.length ? (

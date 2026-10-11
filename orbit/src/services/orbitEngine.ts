@@ -1,5 +1,5 @@
 /**
- * ORBIT intelligence layer — the single entry point the UI uses.
+ * Orbit intelligence layer — the single entry point the UI uses.
  *
  * Everything here is deterministic and rule-based for the prototype. Each
  * function has a narrow, typed contract so a real model or backend service can
@@ -64,7 +64,7 @@ export interface OrbitDerived {
   upcomingItems: CalendarItem[];
   calendarSource: CalendarSource;
   classified: { message: Message; classification: MessageClassification }[];
-  /** Everything ORBIT noticed that isn't a normal task, ranked. */
+  /** Everything Orbit noticed that isn't a normal task, ranked. */
   noticed: NoticedItem[];
   tomorrowItems: CalendarItem[];
   learned: Learned;
@@ -174,7 +174,7 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
 
   const goals = state.goals.map((goal) => ({ goal, progress: goalProgress(goal, today) }));
   const study = studyProgress(state.exams, state.studyLog, today);
-  const areas = summarizeAreas({ loops, items: upcomingItems, goals: state.goals, study, courses: state.courses, today });
+  const areas = summarizeAreas({ areas: state.profile.areas, loops, items: upcomingItems, goals: state.goals, study, courses: state.courses, today });
   const knowYou = computeKnowYou(state.profile, state.sources, state.goals, state.courses.length);
 
   return {

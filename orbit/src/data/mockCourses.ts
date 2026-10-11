@@ -73,7 +73,7 @@ export const mockAssignments: Assignment[] = [
 
   // BUS 304
   { id: "a-bus-case", courseId: "bus304", title: "Case write-up: AI at Zillow", type: "paper", due: "2026-10-13T23:59", effort: "medium", completed: false, source: syllabus("BUS 304", "doc-bus-syllabus"), confidence: 0.93 },
-  { id: "a-bus-orbit", courseId: "bus304", title: "ORBIT Prototype", type: "project", due: "2026-10-16T11:30", effort: "large", completed: false, source: syllabus("BUS 304", "doc-bus-syllabus"), confidence: 0.97, note: "Team project · present in class" },
+  { id: "a-bus-orbit", courseId: "bus304", title: "Orbit Prototype", type: "project", due: "2026-10-16T11:30", effort: "large", completed: false, source: syllabus("BUS 304", "doc-bus-syllabus"), confidence: 0.97, note: "Team project · present in class" },
   { id: "a-bus-final", courseId: "bus304", title: "Final presentation", type: "presentation", due: "2026-12-03T11:30", effort: "large", completed: false, source: syllabus("BUS 304", "doc-bus-syllabus"), confidence: 0.92 },
 ];
 
@@ -95,7 +95,7 @@ export const mockDocuments: CourseDocument[] = [
   { id: "doc-acct-syllabus", courseId: "acct311", name: "ACCT311_Syllabus_Fall2026.pdf", kind: "syllabus", addedAt: "2026-09-02", pages: 9 },
   { id: "doc-fin-syllabus", courseId: "fin359", name: "FIN 359 Syllabus.pdf", kind: "syllabus", addedAt: "2026-09-02", pages: 7 },
   { id: "doc-bus-syllabus", courseId: "bus304", name: "BUS304 AI and Business — Syllabus.pdf", kind: "syllabus", addedAt: "2026-09-03", pages: 6 },
-  { id: "doc-bus-rubric", courseId: "bus304", name: "ORBIT prototype rubric.pdf", kind: "other", addedAt: "2026-09-29", pages: 2 },
+  { id: "doc-bus-rubric", courseId: "bus304", name: "Orbit prototype rubric.pdf", kind: "other", addedAt: "2026-09-29", pages: 2 },
 ];
 
 /** Academic breaks — no class meetings are generated on these dates. */

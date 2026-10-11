@@ -2,21 +2,21 @@ import type { AttentionKind, CalendarView, DemoTime, InteractionSignal, LearnedR
 import type { OrbitState } from "@/store/state";
 
 /**
- * ORBIT's personalization layer. Rule-based for the prototype: it reads the
+ * Orbit's personalization layer. Rule-based for the prototype: it reads the
  * user's behavior (signals) and returns small, predictable adjustments.
  *
  * Stable structure, adaptive content: nothing here moves navigation. It only
- * changes defaults, ordering within sections, and how loudly ORBIT speaks up.
+ * changes defaults, ordering within sections, and how loudly Orbit speaks up.
  * Every rule needs repeated behavior before it changes anything.
  */
 export interface Learned {
   /** Effective default view when Calendar opens. */
   calendarView: CalendarView;
-  /** Today shows ORBIT noticed before the schedule (mobile) and expands it a little more. */
+  /** Today shows Orbit noticed before the schedule (mobile) and expands it a little more. */
   noticedFirst: boolean;
-  /** How far ahead ORBIT suggests exam study time. */
+  /** How far ahead Orbit suggests exam study time. */
   prepHorizonDays: number;
-  /** Alert kinds the user keeps dismissing, so ORBIT quiets them. */
+  /** Alert kinds the user keeps dismissing, so Orbit quiets them. */
   quietedKinds: AttentionKind[];
   /** Small priority penalties for tasks the user keeps pushing back. */
   loopPenalty: Record<string, number>;
@@ -32,7 +32,7 @@ export interface Learned {
   askSuggestions: string[];
 }
 
-const BUILT_IN_CALENDAR_VIEW: CalendarView = "day";
+const BUILT_IN_CALENDAR_VIEW: CalendarView = "week";
 const VIEW_LABEL: Record<CalendarView, string> = { day: "Day", week: "Week", month: "Month" };
 
 const count = (signals: InteractionSignal[], f: (s: InteractionSignal) => boolean) => signals.filter(f).length;
@@ -67,7 +67,7 @@ export function computeLearned(state: OrbitState): Learned {
     routines.push({
       id: "calendar-view",
       pattern: `You usually plan in ${VIEW_LABEL[topView]} view.`,
-      effect: displayPrefs.calendarView === topView ? "Calendar opens there by default." : "ORBIT will offer to make it your default.",
+      effect: displayPrefs.calendarView === topView ? "Calendar opens there by default." : "Orbit will offer to make it your default.",
       confidence: topCount / views.length,
       lastObserved: views[views.length - 1].at,
     });
@@ -103,7 +103,7 @@ export function computeLearned(state: OrbitState): Learned {
       routines.push({
         id: `ignores:${sender}`,
         pattern: `You usually ignore ${sender}.`,
-        effect: muted ? "ORBIT hides its general announcements." : "ORBIT ranks it lower and may ask to hide it.",
+        effect: muted ? "Orbit hides its general announcements." : "Orbit ranks it lower and may ask to hide it.",
         confidence: Math.min(0.95, n * 0.3),
         lastObserved: last(signals, (s) => s.context?.sender === sender),
       });
@@ -143,7 +143,7 @@ export function computeLearned(state: OrbitState): Learned {
     routines.push({
       id: "works-early",
       pattern: `You usually finish big assignments about ${largeWorkLeadDays} days early.`,
-      effect: "ORBIT suggests work blocks earlier for large projects.",
+      effect: "Orbit suggests work blocks earlier for large projects.",
       confidence: 0.7,
       lastObserved: early[early.length - 1].at,
     });
@@ -164,7 +164,7 @@ export function computeLearned(state: OrbitState): Learned {
       routines.push({
         id: `quiet:${kind}`,
         pattern: `You often dismiss ${kind === "prep" ? "early study suggestions" : kind === "workload" ? "busy-week alerts" : "these alerts"}.`,
-        effect: "ORBIT shows fewer of them.",
+        effect: "Orbit shows fewer of them.",
         confidence: Math.min(0.9, n * 0.25),
         lastObserved: last(signals, (s) => s.context?.kind === k),
       });
@@ -181,24 +181,24 @@ export function computeLearned(state: OrbitState): Learned {
     if (n >= 2) {
       loopPenalty[id] = -8;
       const title = state.loops.find((l) => l.id === id)?.title;
-      routines.push({ id: `snooze:${id}`, pattern: `You keep pushing back “${title ?? "a task"}”.`, effect: "ORBIT ranks it a little lower.", confidence: 0.6, lastObserved: last(signals, (s) => s.context?.id === id) });
+      routines.push({ id: `snooze:${id}`, pattern: `You keep pushing back “${title ?? "a task"}”.`, effect: "Orbit ranks it a little lower.", confidence: 0.6, lastObserved: last(signals, (s) => s.context?.id === id) });
     }
   }
 
-  // ---- Where the user looks first on Today (5+ visits to ORBIT noticed) ------
+  // ---- Where the user looks first on Today (5+ visits to Orbit noticed) ------
   const recent = signals.filter((s) => s.itemType === "today").slice(-20);
   const noticedOpens = count(recent, (s) => s.context?.area === "noticed");
   const mattersOpens = count(recent, (s) => s.context?.area === "matters");
   const noticedFirst = displayPrefs.todayOrder === "noticed_first" || (noticedOpens >= 5 && noticedOpens > mattersOpens * 2);
   if (noticedFirst) {
-    routines.push({ id: "noticed-first", pattern: "You check what ORBIT noticed first.", effect: "Today shows it higher and expands it a bit more.", confidence: 0.7, lastObserved: last(signals, (s) => s.context?.area === "noticed") });
+    routines.push({ id: "noticed-first", pattern: "You check what Orbit noticed first.", effect: "Today shows it higher and expands it a bit more.", confidence: 0.7, lastObserved: last(signals, (s) => s.context?.area === "noticed") });
   }
 
   if (displayPrefs.startingPoint) {
     routines.unshift({
       id: "starting-point",
       pattern: `You said: “${displayPrefs.startingPoint.replace(/\.$/, "")}.”`,
-      effect: /new to AI/i.test(displayPrefs.startingPoint) ? "ORBIT keeps suggestions simple and shows examples." : "ORBIT uses this to decide where to start.",
+      effect: /new to AI/i.test(displayPrefs.startingPoint) ? "Orbit keeps suggestions simple and shows examples." : "Orbit uses this to decide where to start.",
       confidence: 1,
       lastObserved: "",
     });
@@ -219,7 +219,7 @@ export function computeLearned(state: OrbitState): Learned {
   };
 }
 
-/** Ask ORBIT suggestions: time of day first, then what the user actually asks. */
+/** Ask Orbit suggestions: time of day first, then what the user actually asks. */
 function askSuggestionsFor(time: DemoTime, signals: InteractionSignal[]): string[] {
   const asked = new Map<string, number>();
   signals.filter((s) => s.itemType === "ask").forEach((s) => asked.set(s.context?.q ?? "", (asked.get(s.context?.q ?? "") ?? 0) + 1));

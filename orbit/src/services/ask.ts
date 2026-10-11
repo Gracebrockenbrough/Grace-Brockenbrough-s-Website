@@ -17,6 +17,7 @@ import {
 } from "@/lib/time";
 import { buildCalendarItems, findGaps } from "./calendar";
 import { describeWhen } from "./changes";
+import { findSlotsFor } from "./helpers";
 
 /** Something the user can do straight from an answer. */
 export type AskAction =
@@ -58,7 +59,7 @@ function dueText(l: RankedLoop, today: string): string {
 }
 
 /**
- * Answers questions over the user's life using what ORBIT already knows.
+ * Answers questions over the user's life using what Orbit already knows.
  * Rule-based intent matching for the prototype; the contract (question in,
  * actionable answer out) is what a real model would implement.
  */
@@ -66,6 +67,8 @@ export function answerQuestion(question: string, state: OrbitState, d: OrbitDeri
   const q = question.toLowerCase();
   const { today } = d;
 
+  if (/^find .*(hour|time|minutes)|find time/.test(q)) return findTimeFor(q, d);
+  if (/time for everything|enough time|fit everything|too much (this|on my)/.test(q)) return capacity(d);
   if (/coming up|next (7|seven) days|look like this week|what'?s ahead/.test(q)) return comingUp(d);
   if (/forget|missing|slip|overlook/.test(q)) return forgetting(state, d);
   if (/unfinished|still open|left to do|tonight|this evening|do today|today\b.*(do|focus)|what should i (do|work)/.test(q) && !/free hour/.test(q)) return tonight(d);
@@ -318,4 +321,52 @@ function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(":").map(Number);
   const total = Math.min(h * 60 + m + minutes, 23 * 60 + 59);
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+/** "Find 2 hours for my finance problem set" → real open slots, one tap to add. */
+function findTimeFor(q: string, d: OrbitDerived): AskAnswer {
+  const words = q.replace(/^find\s+(\w+\s+)?(hours?|minutes|time)\s+(for\s+)?(my\s+)?/, "").split(/\s+/).filter((w) => w.length > 3);
+  const loop =
+    d.openLoops.find((l) => words.some((w) => l.title.toLowerCase().includes(w))) ?? d.priorities.find((l) => (l.effortMinutes ?? 0) >= 30) ?? d.openLoops[0];
+  if (!loop) return { intro: "There's nothing open that needs a block of time right now." };
+  const hours = Number(q.match(/(\d+(?:\.\d+)?)\s*hours?/)?.[1] ?? (/\btwo\b/.test(q) ? 2 : 0));
+  const want = hours ? hours * 60 : loop.effortMinutes ?? 60;
+  const slots = findSlotsFor({ ...loop, effortMinutes: Math.min(want, 120) }, d.upcomingItems, d.now, d.today, 3);
+  if (!slots.length) return { intro: `I couldn't find ${formatDuration(want)} before ${loop.title.toLowerCase()} is due. Want to look at what could move?`, actions: [{ kind: "open_loop", label: "Open it", loopId: loop.id }] };
+  return {
+    intro: `Here's when ${loop.title} fits${loop.deadline ? `, before it's due ${relativeDateTime(loop.deadline, d.today)}` : ""}:`,
+    items: slots.map((s) => `${relativeDay(s.date, d.today)} · ${formatTimeRange(s.start, s.end)}`),
+    actions: slots.slice(0, 2).map((s) => ({
+      kind: "add_block" as const,
+      label: `Add ${relativeDay(s.date, d.today).toLowerCase()} ${formatTime(s.start)}`,
+      title: loop.title,
+      date: s.date,
+      start: s.start,
+      end: s.end,
+      courseId: loop.courseId,
+      loopId: loop.id,
+    })),
+  };
+}
+
+/** "Do I actually have time for everything this week?" Work due vs. open time. */
+function capacity(d: OrbitDerived): AskAnswer {
+  const end = addDays(d.today, 6);
+  const due = d.openLoops.filter((l) => l.deadline && datePart(l.deadline) <= end && !l.waitingOn);
+  const need = due.reduce((sum, l) => sum + (l.effortMinutes ?? 30), 0);
+  let free = 0;
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(d.today, i);
+    free += findGaps(d.upcomingItems, day, { from: i === 0 ? "08:15" : undefined, dayStart: "09:00", dayEnd: "21:00", minMinutes: 45 }).reduce((s, g) => s + g.minutes, 0);
+  }
+  const ok = free >= need * 1.5;
+  const tight = due.filter((l) => datePart(l.deadline!) <= addDays(d.today, 1));
+  return {
+    intro: ok
+      ? `Yes. You have about ${formatDuration(need)} of work due this week and roughly ${formatDuration(Math.round(free / 60) * 60)} of open time.`
+      : `It's tight. About ${formatDuration(need)} of work is due this week and you have roughly ${formatDuration(Math.round(free / 60) * 60)} open.`,
+    items: tight.length ? tight.map((l) => `${l.title} — due ${relativeDateTime(l.deadline!, d.today)}`) : undefined,
+    outro: tight.length ? "These two days are the crunch. Everything else has room." : undefined,
+    actions: tight[0] ? [{ kind: "open_loop", label: `Start ${tight[0].title}`, loopId: tight[0].id }] : undefined,
+  };
 }

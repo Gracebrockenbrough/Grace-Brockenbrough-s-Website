@@ -1,82 +1,73 @@
 @import "tailwindcss";
 
 /*
- * ORBIT design tokens. Calm, warm neutrals; one indigo accent; amber for
- * attention; red only when something is genuinely critical.
+ * Orbit design tokens. Calm and quiet: warm cream in light mode, deep navy in
+ * dark mode, one indigo accent, and a muted color for each part of life.
+ * Phone-first: the app is laid out as a phone app at every width, and wide
+ * screens show it inside a device frame (see DeviceFrame).
  */
 @theme {
-  /* ORBIT night-sky palette: deep navy space, cream "paper" cards, soft planet colors. */
   --font-sans: "Figtree", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
 
-  --color-space: #0d1430;
-  --color-space-2: #171d47;
-  --color-canvas: #121941;
-  --color-surface: #1b2252;
-  --color-sunken: #242c60;
-  --color-line: #2b3468;
-  --color-line-strong: #3b4580;
+  /* sm/md never apply: the app keeps its phone layout. lg is for the demo frame only. */
+  --breakpoint-sm: 200rem;
+  --breakpoint-md: 200rem;
+  --breakpoint-lg: 64rem;
 
-  --color-cream: #f4efe6;
-  --color-cream-2: #e9e2d4;
-  --color-navy: #10163a;
-  --color-navy-2: #4a5079;
+  --color-canvas: #f7f4ee;
+  --color-surface: #ffffff;
+  --color-sunken: #f1ede4;
+  --color-line: #e8e2d7;
+  --color-line-strong: #d7d0c3;
+  --color-ink: #121a3a;
+  --color-ink-2: #4a5175;
+  --color-ink-3: #7b8099;
+  --color-primary: #121a3a;
+  --color-on-primary: #f7f4ee;
+  --color-primary-hover: #24305f;
+  --color-accent: #4b56c8;
+  --color-accent-strong: #333da6;
+  --color-accent-soft: #eceefb;
+  --color-accent-line: #c9ccf2;
+  --color-attention: #a86a12;
+  --color-attention-soft: #fbf1df;
+  --color-attention-line: #ebcf9e;
+  --color-critical: #c2412d;
+  --color-critical-soft: #fbe7e2;
+  --color-success: #2e8a5c;
+  --color-success-soft: #e3f3ea;
+  --color-academic: #5560cf;
+  --color-academic-soft: #eceefb;
+  --color-academic-ink: #2e3790;
+  --color-meet: #2f9c8a;
+  --color-meet-soft: #e2f4f0;
+  --color-meet-ink: #1d6155;
+  --color-personal: #8a8fa8;
+  --color-personal-soft: #f0efea;
+  --color-personal-ink: #444a66;
+  --color-social: #c9678a;
+  --color-social-soft: #fbe9ef;
+  --color-social-ink: #8e3355;
+  --color-due: #c9871f;
+  --color-due-soft: #fbf1df;
+  --color-due-ink: #7a4e0c;
 
-  --color-ink: #f4efe6;
-  --color-ink-2: #b9c0da;
-  --color-ink-3: #8f97bd;
+  /* Life areas: muted, the same in both themes. Used as dots, thin borders, and light tints. */
+  --color-school: #e0866e;
+  --color-work: #6f9bd8;
+  --color-career: #a28fe0;
+  --color-health: #5fbf9f;
+  --color-social-area: #d9ae4f;
+  --color-personal-area: #d4849f;
+  --color-travel: #7fb3d9;
+  --color-family: #a86f9a;
+  --color-money: #8db36a;
+  --color-home: #c69a6d;
+  --color-custom: #7fa8a8;
 
-  --color-accent: #8f9bff;
-  --color-accent-strong: #c3caff;
-  --color-accent-soft: #262f6a;
-  --color-accent-line: #3d48a3;
-
-  --color-attention: #f2b866;
-  --color-attention-soft: #3a3020;
-  --color-attention-line: #6b5428;
-
-  --color-critical: #ff8f7e;
-  --color-critical-soft: #43202c;
-
-  --color-success: #7fd6a0;
-  --color-success-soft: #1d3c37;
-
-  /* Calendar meaning, used everywhere an event appears. */
-  --color-academic: #8f9bff;
-  --color-academic-soft: #262f6a;
-  --color-academic-ink: #d3d8ff;
-  --color-meet: #5fcfbd;
-  --color-meet-soft: #173f45;
-  --color-meet-ink: #b6efe5;
-  --color-personal: #9aa1c4;
-  --color-personal-soft: #2a3160;
-  --color-personal-ink: #dde0ee;
-  --color-social: #f59bb9;
-  --color-social-soft: #47233f;
-  --color-social-ink: #ffd0df;
-  --color-due: #f2b866;
-  --color-due-soft: #3d3220;
-  --color-due-ink: #fbd99e;
-
-  /* Life areas: each planet has its own color. */
-  --color-school: #f08a6e;
-  --color-career: #b9a6ff;
-  --color-wellness: #6fd3c1;
-  --color-social-area: #f2c46d;
-  --color-travel: #7ec3f7;
-  --color-personal-area: #f59bb9;
-
-  --color-teal: #5fcfbd;
-  --color-teal-soft: #173f45;
-  --color-indigo: #8f9bff;
-  --color-indigo-soft: #262f6a;
-  --color-amber: #f2b866;
-  --color-amber-soft: #3a3020;
-  --color-rose: #f59bb9;
-  --color-rose-soft: #47233f;
-
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.18);
-  --shadow-raised: 0 12px 32px rgb(0 0 0 / 0.35), 0 2px 6px rgb(0 0 0 / 0.2);
+  --shadow-card: 0 1px 2px rgb(18 26 58 / 0.06);
+  --shadow-raised: 0 10px 30px rgb(18 26 58 / 0.1), 0 1px 3px rgb(18 26 58 / 0.06);
 
   --animate-fade-in: fade-in 180ms ease-out both;
   --animate-rise-in: rise-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -86,10 +77,101 @@
   --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
 }
 
+/* Dark mode: follows the system unless the user picked a theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-canvas: #0b122b;
+    --color-surface: #151f48;
+    --color-sunken: #1c2756;
+    --color-line: #232f61;
+    --color-line-strong: #334079;
+    --color-ink: #f5f0e6;
+    --color-ink-2: #b7bedb;
+    --color-ink-3: #878fb4;
+    --color-primary: #f5f0e6;
+    --color-on-primary: #0b122b;
+    --color-primary-hover: #e6dfd1;
+    --color-accent: #9aa5ff;
+    --color-accent-strong: #c9ceff;
+    --color-accent-soft: #212b62;
+    --color-accent-line: #3a458f;
+    --color-attention: #f2b866;
+    --color-attention-soft: #32291c;
+    --color-attention-line: #5e4a26;
+    --color-critical: #ff8f7e;
+    --color-critical-soft: #3d1e29;
+    --color-success: #7fd6a0;
+    --color-success-soft: #1b3936;
+    --color-academic: #9aa5ff;
+    --color-academic-soft: #222c63;
+    --color-academic-ink: #d6daff;
+    --color-meet: #5fcfbd;
+    --color-meet-soft: #163c44;
+    --color-meet-ink: #b6efe5;
+    --color-personal: #9aa1c4;
+    --color-personal-soft: #252d5b;
+    --color-personal-ink: #dde0ee;
+    --color-social: #f09ab8;
+    --color-social-soft: #41223e;
+    --color-social-ink: #ffd0df;
+    --color-due: #f2b866;
+    --color-due-soft: #3a2f1f;
+    --color-due-ink: #fbd99e;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.2);
+    --shadow-raised: 0 12px 32px rgb(0 0 0 / 0.35), 0 2px 6px rgb(0 0 0 / 0.2);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-canvas: #0b122b;
+  --color-surface: #151f48;
+  --color-sunken: #1c2756;
+  --color-line: #232f61;
+  --color-line-strong: #334079;
+  --color-ink: #f5f0e6;
+  --color-ink-2: #b7bedb;
+  --color-ink-3: #878fb4;
+  --color-primary: #f5f0e6;
+  --color-on-primary: #0b122b;
+  --color-primary-hover: #e6dfd1;
+  --color-accent: #9aa5ff;
+  --color-accent-strong: #c9ceff;
+  --color-accent-soft: #212b62;
+  --color-accent-line: #3a458f;
+  --color-attention: #f2b866;
+  --color-attention-soft: #32291c;
+  --color-attention-line: #5e4a26;
+  --color-critical: #ff8f7e;
+  --color-critical-soft: #3d1e29;
+  --color-success: #7fd6a0;
+  --color-success-soft: #1b3936;
+  --color-academic: #9aa5ff;
+  --color-academic-soft: #222c63;
+  --color-academic-ink: #d6daff;
+  --color-meet: #5fcfbd;
+  --color-meet-soft: #163c44;
+  --color-meet-ink: #b6efe5;
+  --color-personal: #9aa1c4;
+  --color-personal-soft: #252d5b;
+  --color-personal-ink: #dde0ee;
+  --color-social: #f09ab8;
+  --color-social-soft: #41223e;
+  --color-social-ink: #ffd0df;
+  --color-due: #f2b866;
+  --color-due-soft: #3a2f1f;
+  --color-due-ink: #fbd99e;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.2);
+  --shadow-raised: 0 12px 32px rgb(0 0 0 / 0.35), 0 2px 6px rgb(0 0 0 / 0.2);
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes drawer-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes drawer-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes orbit { to { transform: rotate(360deg); } }
 @keyframes pulse-soft { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
 @keyframes complete-out {
@@ -98,13 +180,12 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light dark;
 }
 
 html,
 body {
-  background: linear-gradient(180deg, var(--color-space) 0%, var(--color-space-2) 100%) fixed;
-  background-color: var(--color-space);
+  background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -124,27 +205,22 @@ body {
   }
 }
 
-/* Headlines use the serif display face, set light, like a printed almanac. */
+/* The serif is for a few warm moments (greetings, page titles). Everything functional is sans. */
 h1,
 .font-display {
   font-family: var(--font-display) !important;
   font-weight: 400 !important;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.01em;
 }
 
-/* Cream "paper" cards carry their own dark ink. */
+/* The one high-contrast card on a screen ("Right now"). Inverts with the theme. */
 .paper {
-  background: var(--color-cream);
-  color: var(--color-navy);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
 }
-.paper .text-ink { color: var(--color-navy); }
+.paper .text-ink { color: var(--color-on-primary); }
 .paper .text-ink-2,
-.paper .text-ink-3 { color: var(--color-navy-2); }
-
-input[type="date"],
-input[type="time"] {
-  color-scheme: dark;
-}
+.paper .text-ink-3 { color: color-mix(in srgb, var(--color-on-primary) 68%, transparent); }
 
 ::selection {
   background: var(--color-accent-soft);
@@ -164,6 +240,10 @@ input[type="time"] {
   }
 }
 
-/* Hide scrollbars on horizontal chip rows while keeping them scrollable. */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { scrollbar-width: none; }
+/* Hide scrollbars on horizontal chip rows and inside the demo phone while keeping them scrollable. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

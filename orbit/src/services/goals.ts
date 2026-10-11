@@ -32,15 +32,15 @@ export function parseGoal(text: string, today: string): ParsedGoal {
 
   const area: Category =
     kind === "run" || (kind === "habit" && /\b(sleep|meditate|stretch|yoga|gym|lift|workout|water)\b/.test(lower))
-      ? "wellness"
+      ? "health"
       : kind === "career"
-        ? "work"
+        ? "career"
         : kind === "study"
           ? "school"
           : kind === "save" || kind === "read"
             ? "personal"
             : kind === "habit"
-              ? "wellness"
+              ? "health"
               : /\b(friend|family|call|visit)\b/.test(lower)
                 ? "social"
                 : /\b(trip|travel|visit)\b/.test(lower)
@@ -150,7 +150,7 @@ function rhythmPlan(kind: GoalKind, title: string, today: string, target: string
     generic: { days: [2, 6], minutes: 30, step: (i) => (i === 0 ? "Decide what “done” looks like" : `30 minutes on: ${title.toLowerCase()}`), detail: "Small steps add up.", plan: `Two short sessions a week` },
   };
   const c = cfg[kind] ?? cfg.generic;
-  // Daily habits only plan the first three weeks; ORBIT adds more as you go.
+  // Daily habits only plan the first three weeks; Orbit adds more as you go.
   const end = kind === "habit" ? (diffDays(target, today) > 21 ? addDays(today, 22) : target) : addDays(target, 1);
   const dates = datesOn(addDays(today, 1), end, c.days);
   const steps = dates.map((date, i) => ({ id: stepId(), title: c.step(i), date, detail: c.detail, minutes: c.minutes, done: false }));

@@ -1,7 +1,7 @@
 import type { ExtractedFact } from "@/types";
 
 /**
- * Facts ORBIT extracted from incoming messages. The engine compares each fact
+ * Facts Orbit extracted from incoming messages. The engine compares each fact
  * with what it already knows and creates a DetectedChange when they differ.
  */
 export const mockFacts: ExtractedFact[] = [

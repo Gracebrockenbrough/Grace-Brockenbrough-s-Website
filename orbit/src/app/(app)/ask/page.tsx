@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { relativeDay } from "@/lib/time";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Check, Mic } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -47,6 +48,18 @@ export default function AskPage() {
   }
   // Personalized: time of day first, then what this person actually asks.
   const suggestions = derived.learned.askSuggestions;
+  // Questions written from the user's actual week, so it's obvious what Orbit can do.
+  const contextual = useMemo(() => {
+    const qs: string[] = [];
+    const exam = derived.study[0]?.exam ?? derived.upcomingItems.find((i) => i.kind === "exam");
+    if (exam?.date) qs.push(`When should I study for ${relativeDay(exam.date, derived.today)}'s exam?`);
+    qs.push(derived.changes.length ? "What changed since yesterday?" : "What am I forgetting?");
+    qs.push("Do I actually have time for everything this week?");
+    const big = derived.priorities.find((l) => (l.effortMinutes ?? 0) >= 45 && !l.requiresResponse);
+    if (big) qs.push(`Find 2 hours for my ${big.title.charAt(0).toLowerCase()}${big.title.slice(1)}`);
+    if (!qs.includes("What am I forgetting?")) qs.push("What am I forgetting?");
+    return qs.slice(0, 5);
+  }, [derived]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -90,7 +103,7 @@ export default function AskPage() {
         break;
       case "ignore_source":
         dispatch({ type: "IGNORE_SOURCE", key: action.key, label: action.sourceLabel });
-        notify(`ORBIT will ignore ${action.sourceLabel}.`, { undoable: true });
+        notify(`Orbit will ignore ${action.sourceLabel}.`, { undoable: true });
         break;
       case "navigate":
         router.push(action.href);
@@ -100,64 +113,66 @@ export default function AskPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-12rem)] flex-col">
-      <header className="mb-6">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-accent">Ask ORBIT</p>
-        <h1 className="text-[34px] leading-tight md:text-[40px]">Here&apos;s where things stand</h1>
+    <div className="flex min-h-[calc(var(--app-h)-11rem)] flex-col">
+      <header className="mb-5 px-1 pt-2">
+        <h1 className="text-[34px] leading-tight">{turns.length ? "Ask Orbit" : "Here’s where things stand"}</h1>
       </header>
 
       {turns.length === 0 ? (
-        <div className="flex-1">
+        <div className="flex-1 space-y-6">
           <RightNow />
+          <section aria-labelledby="try-asking">
+            <h2 id="try-asking" className="mb-2 px-1 text-[15px] font-semibold text-ink-2">Try asking</h2>
+            <ul className="divide-y divide-line rounded-2xl bg-surface shadow-card">
+              {(moreIdeas ? [...contextual, ...suggestions.filter((q) => !contextual.includes(q))] : contextual).map((q) => (
+                <li key={q}>
+                  <button type="button" onClick={() => ask(q)} className="flex min-h-12 w-full items-center px-4 py-2.5 text-left text-[15.5px] text-ink">
+                    {q}
+                  </button>
+                </li>
+              ))}
+              <li>
+                <button type="button" onClick={() => open({ type: "compose" })} className="flex min-h-12 w-full items-center px-4 py-2.5 text-left text-[15.5px] text-ink">
+                  Help me write a text or email
+                </button>
+              </li>
+            </ul>
+            {!moreIdeas && (
+              <button type="button" onClick={() => setMoreIdeas(true)} className="mt-1.5 min-h-9 px-1 text-[14.5px] font-medium text-accent">
+                More questions
+              </button>
+            )}
+          </section>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               ask(input);
             }}
-            className="flex items-center gap-2 rounded-2xl border border-line-strong bg-surface p-2 pl-5 shadow-raised focus-within:border-accent"
+            className="flex items-center gap-2 rounded-full border border-line-strong bg-surface p-1.5 pl-5 focus-within:border-accent"
           >
-            <label htmlFor="ask-first" className="sr-only">Ask ORBIT</label>
+            <label htmlFor="ask-first" className="sr-only">Ask Orbit</label>
             <input
               id="ask-first"
-              autoFocus
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="What am I forgetting this week?"
+              placeholder="Ask anything about your week"
               autoComplete="off"
-              className="min-h-12 flex-1 bg-transparent text-[18px] placeholder:text-ink-3 focus:outline-none focus-visible:outline-none"
+              className="min-h-11 min-w-0 flex-1 bg-transparent text-[16px] placeholder:text-ink-3 focus:outline-none focus-visible:outline-none"
             />
 <button type="button" aria-label="Speak (simulated)" onClick={speak} disabled={thinking || listening} className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-ink-2 hover:bg-sunken", listening && "animate-pulse-soft text-accent")}>
               <Mic size={19} aria-hidden />
             </button>
-            <button type="submit" aria-label="Ask" disabled={!input.trim()} className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-navy disabled:opacity-40">
+            <button type="submit" aria-label="Ask" disabled={!input.trim()} className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary disabled:opacity-40">
               <ArrowUp size={20} aria-hidden />
             </button>
           </form>
-          <ul className="mt-6 grid gap-2 sm:grid-cols-2">
-            {(moreIdeas ? suggestions : suggestions.slice(0, 4)).map((q) => (
-              <li key={q}>
-                <button
-                  type="button"
-                  onClick={() => ask(q)}
-                  className="flex min-h-12 w-full items-center rounded-2xl border border-line bg-surface px-4 text-left text-[15.5px] text-ink hover:border-accent-line hover:bg-accent-soft/40"
-                >
-                  {q}
-                </button>
-              </li>
-            ))}
-          </ul>
-          {!moreIdeas && (
-            <button type="button" onClick={() => setMoreIdeas(true)} className="mt-3 min-h-9 rounded-lg px-1 text-[14.5px] font-medium text-ink-2 hover:text-ink">
-              More ideas →
-            </button>
-          )}
         </div>
       ) : (
         <ol className="flex-1 space-y-6" aria-live="polite">
           {turns.map((t) => (
             <li key={t.id} className="space-y-3">
               <div className="flex justify-end">
-                <p className="max-w-[85%] rounded-2xl rounded-br-md bg-cream px-4 py-2.5 text-[15.5px] text-navy">{t.question}</p>
+                <p className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-[15.5px] text-on-primary">{t.question}</p>
               </div>
               <div className="flex gap-3">
                 <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink shadow-card" aria-hidden>
@@ -218,10 +233,10 @@ export default function AskPage() {
           e.preventDefault();
           ask(input);
         }}
-        className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] -mx-4 mt-8 bg-gradient-to-t from-canvas from-70% to-transparent px-4 pb-3 pt-6 md:bottom-0 md:mx-0 md:px-0 md:pb-6"
+        className="sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom))] -mx-5 mt-8 bg-gradient-to-t from-canvas from-70% to-transparent px-5 pb-3 pt-6 lg:bottom-[5rem]"
       >
         {turns.length > 0 && (
-          <div className="no-scrollbar -mx-4 mb-2 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
+          <div className="no-scrollbar -mx-5 mb-2 flex gap-2 overflow-x-auto px-5">
             {suggestions.filter((q) => !turns.some((t) => t.question === q)).slice(0, 3).map((q) => (
               <button key={q} type="button" onClick={() => ask(q)} className="min-h-9 shrink-0 rounded-full border border-line bg-surface px-3 text-[14px] text-ink-2 hover:text-ink">
                 {q}
@@ -229,21 +244,21 @@ export default function AskPage() {
             ))}
           </div>
         )}
-        <div className="flex items-center gap-2 rounded-2xl border border-line-strong bg-surface p-1.5 pl-4 shadow-raised md:mr-0 mr-16">
-          <label htmlFor="ask-input" className="sr-only">Ask ORBIT</label>
+        <div className="flex items-center gap-2 rounded-full border border-line-strong bg-surface p-1.5 pl-5">
+          <label htmlFor="ask-input" className="sr-only">Ask Orbit</label>
           <input
             id="ask-input"
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="What am I forgetting this week?"
+            placeholder="Ask anything about your week"
             className="min-h-10 flex-1 bg-transparent text-[16px] placeholder:text-ink-3 focus:outline-none focus-visible:outline-none"
             autoComplete="off"
           />
 <button type="button" aria-label="Speak (simulated)" onClick={speak} disabled={thinking || listening} className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-ink-2 hover:bg-sunken", listening && "animate-pulse-soft text-accent")}>
             <Mic size={19} aria-hidden />
           </button>
-          <button type="submit" aria-label="Ask" disabled={!input.trim() || thinking} className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-navy disabled:opacity-40">
+          <button type="submit" aria-label="Ask" disabled={!input.trim() || thinking} className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary disabled:opacity-40">
             <ArrowUp size={19} aria-hidden />
           </button>
         </div>

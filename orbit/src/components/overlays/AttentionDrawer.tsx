@@ -77,7 +77,7 @@ export function AttentionDrawer({ id, onClose }: { id: string; onClose: () => vo
           ))}
           {!prepSlots.length && <li className="text-ink-2">Your calendar is full before the exam. Try the Day view to find time.</li>}
         </ul>
-        <Button variant="ghost" className="mt-4" onClick={() => dismiss("Okay. ORBIT won't suggest study time for this exam.")}>
+        <Button variant="ghost" className="mt-4" onClick={() => dismiss("Okay. Orbit won't suggest study time for this exam.")}>
           I&apos;ve got it covered
         </Button>
       </Drawer>
@@ -89,7 +89,7 @@ export function AttentionDrawer({ id, onClose }: { id: string; onClose: () => vo
     const assignment = state.assignments.find((x) => x.id === conflict.itemIds[0]);
     return (
       <Drawer title="Add the missing date" onClose={onClose}>
-        <p className="text-[15px] text-ink-2">{conflict.summary} If you know it, add it here. Otherwise ORBIT will watch your email and Canvas for an announcement.</p>
+        <p className="text-[15px] text-ink-2">{conflict.summary} If you know it, add it here. Otherwise Orbit will watch your email and Canvas for an announcement.</p>
         <form
           className="mt-4 flex flex-wrap items-end gap-2"
           onSubmit={(e) => {
@@ -111,7 +111,7 @@ export function AttentionDrawer({ id, onClose }: { id: string; onClose: () => vo
           </label>
           <Button type="submit" variant="primary">Save date</Button>
         </form>
-        <Button variant="ghost" className="mt-4" onClick={() => dismiss("ORBIT will watch for an announcement.")}>
+        <Button variant="ghost" className="mt-4" onClick={() => dismiss("Orbit will watch for an announcement.")}>
           Watch for an announcement
         </Button>
       </Drawer>
@@ -131,7 +131,7 @@ export function AttentionDrawer({ id, onClose }: { id: string; onClose: () => vo
         ))}
       </ul>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href={`/calendar?view=week&date=${conflict.date}`} onClick={onClose} className="inline-flex min-h-10 items-center rounded-xl bg-accent px-4 text-[15px] font-medium text-navy hover:bg-accent-strong">
+        <Link href={`/calendar?view=week&date=${conflict.date}`} onClick={onClose} className="inline-flex min-h-10 items-center rounded-xl bg-accent px-4 text-[15px] font-medium text-on-primary hover:bg-accent-strong">
           See the week
         </Link>
         <Button variant="ghost" onClick={() => dismiss("Got it.")}>

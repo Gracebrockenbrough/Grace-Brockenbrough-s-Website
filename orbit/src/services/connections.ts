@@ -5,7 +5,7 @@ const CONNECTED_KINDS: SourceKind[] = ["calendar", "email", "canvas", "groupme",
 
 export const isActive = (s: ConnectedSource) => s.status === "connected";
 
-/** Kinds of information ORBIT should not use because nothing active provides them. */
+/** Kinds of information Orbit should not use because nothing active provides them. */
 export function hiddenKinds(sources: ConnectedSource[]): Set<string> {
   const active = new Set(sources.filter(isActive).map((s) => s.kind as string));
   return new Set(CONNECTED_KINDS.filter((k) => !active.has(k)));

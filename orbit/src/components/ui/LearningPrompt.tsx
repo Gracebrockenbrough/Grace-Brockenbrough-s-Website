@@ -5,7 +5,7 @@ import type { LearningPrompt as Prompt } from "@/types";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 
-/** An occasional, polite question when ORBIT has noticed a pattern. Never more than one at a time. */
+/** An occasional, polite question when Orbit has noticed a pattern. Never more than one at a time. */
 export function LearningPrompt({ prompt, onAccept }: { prompt: Prompt; onAccept?: () => void }) {
   const { dispatch } = useOrbit();
   const { notify } = useUI();

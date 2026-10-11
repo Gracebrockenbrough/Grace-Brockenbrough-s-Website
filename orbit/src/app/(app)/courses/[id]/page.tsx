@@ -28,7 +28,7 @@ function AssignmentRow({ a }: { a: Assignment }) {
         }}
         className={cn(
           "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2",
-          a.completed ? "border-success bg-success text-navy" : "border-line-strong text-transparent hover:border-success hover:text-success",
+          a.completed ? "border-success bg-success text-on-primary" : "border-line-strong text-transparent hover:border-success hover:text-success",
         )}
       >
         <Check size={14} strokeWidth={3} aria-hidden />
@@ -100,7 +100,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           <p className="flex-1 text-[15px]">
             <span className="font-semibold">{c.title.replace(`${course.code} `, "")} {c.confidence >= 0.8 ? "moved" : "may have moved"}</span>
           </p>
-          <button type="button" onClick={() => open({ type: "change", id: c.id })} className="min-h-9 rounded-xl bg-accent px-3 text-[14px] font-medium text-navy hover:bg-accent-strong">
+          <button type="button" onClick={() => open({ type: "change", id: c.id })} className="min-h-9 rounded-xl bg-accent px-3 text-[14px] font-medium text-on-primary hover:bg-accent-strong">
             Review
           </button>
         </div>
@@ -111,9 +111,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           <FileUp size={24} className="text-accent" aria-hidden />
           <div className="flex-1">
             <p className="font-semibold">No syllabus yet</p>
-            <p className="text-[15px] text-ink-2">Upload it and ORBIT will find every assignment and exam date for you to confirm.</p>
+            <p className="text-[15px] text-ink-2">Upload it and Orbit will find every assignment and exam date for you to confirm.</p>
           </div>
-          <Link href={`/courses/upload?course=${course.id}`} className="inline-flex min-h-10 items-center rounded-xl bg-accent px-4 text-[15px] font-medium text-navy hover:bg-accent-strong">
+          <Link href={`/courses/upload?course=${course.id}`} className="inline-flex min-h-10 items-center rounded-xl bg-accent px-4 text-[15px] font-medium text-on-primary hover:bg-accent-strong">
             Upload syllabus
           </Link>
         </div>
@@ -126,7 +126,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               <SectionHeader id="next-up" title="Next up" />
               <Card className="flex items-center gap-4 p-5">
                 <span className={cn("flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl", color.soft, color.text)}>
-                  <span className="text-[11px] font-semibold uppercase">{formatMonthDay(next.date).split(" ")[0]}</span>
+                  <span className="text-[11px] font-semibold">{formatMonthDay(next.date).split(" ")[0]}</span>
                   <span className="text-[18px] font-semibold leading-none">{formatMonthDay(next.date).split(" ")[1]}</span>
                 </span>
                 <div>
@@ -233,7 +233,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 <Mail size={15} aria-hidden /> {course.professorEmail}
               </a>
               <div className="mt-4">
-                <p className="text-[13px] font-semibold uppercase tracking-wide text-ink-3">Office hours</p>
+                <p className="text-[13.5px] font-semibold text-ink-3">Office hours</p>
                 <p className="mt-0.5 text-[15px]">{course.officeHours}</p>
                 {course.officeHoursSource && <SourceBadge source={course.officeHoursSource} className="mt-1" />}
               </div>

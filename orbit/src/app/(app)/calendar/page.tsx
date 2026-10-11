@@ -19,7 +19,7 @@ function CalendarInner() {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  // No view in the link? Use the one ORBIT learned this person prefers.
+  // No view in the link? Use the one Orbit learned this person prefers.
   const view = (["month", "week", "day"].includes(params.get("view") ?? "") ? params.get("view") : derived.learned.calendarView) as View;
   const prompt = derived.learned.prompts.find((p) => p.surface === "calendar");
 
@@ -63,9 +63,9 @@ function CalendarInner() {
           value={view}
           onChange={(v) => go(v, date)}
           options={[
-            { value: "month", label: "Month" },
-            { value: "week", label: "Week" },
             { value: "day", label: "Day" },
+            { value: "week", label: "Week" },
+            { value: "month", label: "Month" },
           ]}
         />
       </header>

@@ -17,7 +17,7 @@ import { SOURCE_KIND_LABEL } from "@/data/mockSources";
 import { TONES, toneDraft, type Tone } from "@/lib/drafts";
 import { gmailCompose, smsLink, APP_LINKS } from "@/lib/handoff";
 
-/** Needs Reply details. ORBIT drafts, the user decides — nothing is sent automatically. */
+/** Needs Reply details. Orbit drafts, the user decides — nothing is sent automatically. */
 export function MessageDrawer({ id, onClose, startDraft = false }: { id: string; onClose: () => void; startDraft?: boolean }) {
   const { state, derived, dispatch } = useOrbit();
   const { notify } = useUI();
@@ -94,9 +94,9 @@ export function MessageDrawer({ id, onClose, startDraft = false }: { id: string;
           )}
           <div className="ml-auto">
             <Menu
-              label="Teach ORBIT"
+              label="Teach Orbit"
               items={[
-                { section: "Teach ORBIT", label: "This is important", onSelect: () => feedback(message.id, "important") },
+                { section: "Teach Orbit", label: "This is important", onSelect: () => feedback(message.id, "important") },
                 { label: "Not important", onSelect: () => { feedback(message.id, "not_important"); onClose(); } },
                 { label: `Always ignore ${message.sender}`, tone: "danger", onSelect: () => { feedback(message.id, "ignore_source"); onClose(); } },
               ]}
@@ -117,14 +117,14 @@ export function MessageDrawer({ id, onClose, startDraft = false }: { id: string;
       <div className="mt-4 flex items-start gap-2 rounded-xl bg-accent-soft px-3 py-2.5 text-[14.5px]">
         <Info size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
         <p>
-          <span className="font-medium">Why ORBIT {needsReply ? "surfaced this" : "classified it this way"}: </span>
+          <span className="font-medium">Why Orbit {needsReply ? "surfaced this" : "classified it this way"}: </span>
           {needsReply ? replyWhy(message, derived.now) : c.reason}
         </p>
       </div>
 
       {showDraft && needsReply && (
         <div className="mt-5 animate-rise-in">
-          <p className="text-[14px] text-ink-2">ORBIT writes it; you check it and send it yourself from {message.channel}.</p>
+          <p className="text-[14px] text-ink-2">Orbit writes it; you check it and send it yourself from {message.channel}.</p>
           <div role="group" aria-label="Tone" className="mt-3 flex flex-wrap gap-1.5">
             {TONES.map((t) => (
               <button
@@ -167,7 +167,7 @@ export function MessageDrawer({ id, onClose, startDraft = false }: { id: string;
               variant="secondary"
               onClick={() => {
                 navigator.clipboard?.writeText(draft).catch(() => undefined);
-                notify("Draft copied. ORBIT never sends messages for you.");
+                notify("Draft copied. Orbit never sends messages for you.");
               }}
             >
               <Copy size={15} aria-hidden /> Copy draft

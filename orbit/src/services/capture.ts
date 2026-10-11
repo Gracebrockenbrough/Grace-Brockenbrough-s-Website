@@ -95,6 +95,9 @@ const IGNORE = /\bignore\s+(?:all\s+)?(?:emails?|messages?|texts?)?\s*(?:from\s+
 const SYLLABUS_FILE = /syllab/i;
 
 const WORK_WORDS = /\b(interview|application|recruiter|internship|resume|job|career|networking)\b/i;
+const JOB_WORDS = /\b(shift|manager|boss|client|coworker|standup|stand-up|invoice|quarterly|slack)\b/i;
+const HOME_WORDS = /\b(landlord|plumber|lease|repair|furniture|cleaning|apartment|roommate)\b/i;
+const BILL_WORDS = /\b(rent|bill|venmo|budget|taxes|refund|tuition|deposit)\b/i;
 const PERSONAL_WORDS = /\b(birthday|present|gift|dress|return|haircut|laundry|groceries|package|rent)\b/i;
 const FAMILY_WORDS = /\b(call|text|visit|facetime)\b.*\b(mom|dad|grandma|grandpa|sister|brother|family|aunt|uncle)\b/i;
 const WELLNESS_WORDS = /\b(gym|workout|work out|run|yoga|dentist|doctor|therapy|sleep|meditat\w*|lift|practice|swim|pilates)\b/i;
@@ -105,9 +108,13 @@ const MONEY_WORDS = /\b(return|refund|deposit|pay|bill|fee)\b/i;
 function categorize(text: string, courses: Course[]): { category: Category; courseId?: string; consequence: Consequence } {
   const course = matchCourse(text, courses);
   if (course) return { category: "school", courseId: course.id, consequence: "academic" };
-  if (WORK_WORDS.test(text)) return { category: "work", consequence: "professional" };
+  if (WORK_WORDS.test(text)) return { category: "career", consequence: "professional" };
+  if (JOB_WORDS.test(text)) return { category: "work", consequence: "professional" };
+  if (FAMILY_WORDS.test(text) && /\b(kid|kids|daughter|son|pickup|pick up|school run)\b/i.test(text)) return { category: "family", consequence: "social" };
+  if (HOME_WORDS.test(text)) return { category: "home", consequence: "low" };
+  if (BILL_WORDS.test(text)) return { category: "money", consequence: "financial" };
   if (TRAVEL_WORDS.test(text)) return { category: "travel", consequence: "travel" };
-  if (WELLNESS_WORDS.test(text)) return { category: "wellness", consequence: "low" };
+  if (WELLNESS_WORDS.test(text)) return { category: "health", consequence: "low" };
   if (SOCIAL_WORDS.test(text) || FAMILY_WORDS.test(text)) return { category: "social", consequence: "social" };
   if (PERSONAL_WORDS.test(text)) return { category: "personal", consequence: MONEY_WORDS.test(text) ? "financial" : "social" };
   if (/\b(class|exam|quiz|essay|paper|reading|professor|homework|problem set|study|slides|presentation|project)\b/i.test(text)) return { category: "school", consequence: "academic" };
@@ -193,13 +200,13 @@ const SOURCE_FOR: Record<CaptureInputKind, SourceKind> = {
 
 /**
  * Figure out what a capture means. The user never picks "task" vs "event" —
- * ORBIT decides, then either adds it (low risk) or asks first (calendar).
+ * Orbit decides, then either adds it (low risk) or asks first (calendar).
  */
 export function processCapture(input: CaptureInput, ctx: CaptureContext): CaptureResult {
   if (input.kind === "file") {
     const name = input.fileName ?? "document.pdf";
     if (SYLLABUS_FILE.test(name) || /pdf/i.test(input.fileType ?? name)) {
-      return { type: "syllabus", fileName: name, headline: "This looks like a syllabus.", detail: "ORBIT will route it to Courses and pull out the important dates for you to review." };
+      return { type: "syllabus", fileName: name, headline: "This looks like a syllabus.", detail: "Orbit will route it to Courses and pull out the important dates for you to review." };
     }
   }
 
@@ -215,7 +222,7 @@ export function processCapture(input: CaptureInput, ctx: CaptureContext): Captur
       type: "ignore_source",
       key: `sender:${resolved}`,
       label: resolved,
-      headline: `ORBIT will ignore ${resolved}.`,
+      headline: `Orbit will ignore ${resolved}.`,
       detail: "Messages from this source won't show up in Today. You can undo this in Settings.",
     };
   }
@@ -241,7 +248,7 @@ export function processCapture(input: CaptureInput, ctx: CaptureContext): Captur
       courseId: course?.id,
       value: value || text,
       headline: course ? `Office hours updated for ${course.code}` : "Which course is this for?",
-      detail: value ? `${value}${course ? ` · ${course.professor}` : ""}` : "ORBIT couldn't find a day or time.",
+      detail: value ? `${value}${course ? ` · ${course.professor}` : ""}` : "Orbit couldn't find a day or time.",
     };
   }
 
@@ -282,7 +289,7 @@ export function processCapture(input: CaptureInput, ctx: CaptureContext): Captur
     deadline,
     hardDeadline: /\b(due|deadline|by)\b/i.test(text),
     consequence,
-    senderType: category === "school" ? "school_system" : category === "work" ? "professional" : "family",
+    senderType: category === "school" ? "school_system" : category === "work" || category === "career" ? "professional" : "family",
     requiresResponse: /\b(email|reply|text|call|respond)\b/i.test(text),
     moneyAtRisk: MONEY_WORDS.test(text) ? 1 : undefined,
     courseId,
@@ -291,7 +298,7 @@ export function processCapture(input: CaptureInput, ctx: CaptureContext): Captur
     confidence: when.date ? 0.9 : 0.88,
     completed: false,
     createdAt: ctx.nowStr,
-    why: deadline ? `You told ORBIT about this, and it's due ${relativeDateTime(deadline, ctx.today).toLowerCase()}.` : "You told ORBIT about this.",
+    why: deadline ? `You told Orbit about this, and it's due ${relativeDateTime(deadline, ctx.today).toLowerCase()}.` : "You told Orbit about this.",
   };
   return {
     type: "loop",

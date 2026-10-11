@@ -2,24 +2,30 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, ArrowRight, CalendarClock, CalendarX2, FileQuestion, GitCompareArrows, Layers, MessageCircle, NotebookPen } from "lucide-react";
+import type { Category } from "@/types";
 import type { NoticedItem } from "@/services/attention";
 import { cn } from "@/lib/cn";
+import { areaLabel, areaStyle, BUILTIN_AREAS } from "@/lib/areas";
 import { useOrbit } from "@/store/OrbitProvider";
 import { usePlanBlock } from "@/store/useActions";
 import { useUI } from "@/store/UIProvider";
 
-const ICON: Record<NoticedItem["kind"], typeof GitCompareArrows> = {
-  change: GitCompareArrows,
-  possible_change: GitCompareArrows,
-  conflict: CalendarX2,
-  deadline: CalendarClock,
-  prep: NotebookPen,
-  missing_info: FileQuestion,
-  workload: Layers,
-  reply: MessageCircle,
-  opening: Sparkles,
+const KIND_LABEL: Record<NoticedItem["kind"], string> = {
+  change: "Changed",
+  possible_change: "Might change",
+  conflict: "Conflict",
+  deadline: "Deadline",
+  prep: "Coming up",
+  missing_info: "Missing info",
+  workload: "Busy week",
+  reply: "Waiting on you",
+  opening: "Open time",
 };
+
+function areaOf(item: NoticedItem): Category | undefined {
+  const label = item.eyebrow?.split(" · ")[1];
+  return BUILTIN_AREAS.find((a) => areaLabel(a) === label);
+}
 
 function useNoticedAction() {
   const { dispatch } = useOrbit();
@@ -42,42 +48,33 @@ function useNoticedAction() {
   };
 }
 
-/** The one card-worthy item: something changed or collides. */
-function NoticedCard({ item }: { item: NoticedItem }) {
+/** One thing Orbit noticed: what happened, what it affects, and the next step. */
+function NoticedRow({ item }: { item: NoticedItem }) {
   const act = useNoticedAction();
-  const Icon = ICON[item.kind];
-  const tone = item.kind === "conflict" ? "border-critical/20 bg-critical-soft/60" : "border-attention-line bg-attention-soft/70";
+  const area = areaOf(item);
+  const urgent = item.kind === "change" || item.kind === "conflict";
   return (
-    <li className={cn("flex items-center gap-3.5 rounded-2xl border p-4", tone)}>
-      <Icon size={20} className={item.kind === "conflict" ? "shrink-0 text-critical" : "shrink-0 text-attention"} aria-hidden />
+    <li className="flex items-center gap-3 px-4 py-3.5">
       <div className="min-w-0 flex-1">
-        {item.eyebrow && <p className="text-[12.5px] font-semibold uppercase tracking-wide text-ink-3">{item.eyebrow}</p>}
-        <p className="text-[16px] font-semibold text-ink">{item.title}</p>
-        <p className="truncate text-[14.5px] text-ink-2">{item.detail}</p>
+        <p className="flex items-center gap-1.5 text-[13px]">
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", area ? areaStyle(area).dot : "bg-ink-3")} aria-hidden />
+          <span className={cn("font-medium", item.kind === "conflict" ? "text-critical" : urgent ? "text-attention" : "text-ink-3")}>{KIND_LABEL[item.kind]}</span>
+        </p>
+        <p className="mt-0.5 text-[16px] font-semibold leading-snug text-ink">{item.title}</p>
+        {item.detail && <p className="text-[14px] leading-snug text-ink-2">{item.detail}</p>}
       </div>
-      <button type="button" onClick={() => act(item)} className="min-h-10 shrink-0 rounded-xl bg-cream px-4 text-[14.5px] font-medium text-navy hover:bg-cream-2">
+      <button
+        type="button"
+        onClick={() => act(item)}
+        className={cn("min-h-9 shrink-0 rounded-full px-4 text-[14px] font-medium", urgent ? "bg-primary text-on-primary hover:bg-primary-hover" : "bg-sunken text-ink hover:bg-line")}
+      >
         {item.action}
       </button>
     </li>
   );
 }
 
-function NoticedRow({ item }: { item: NoticedItem }) {
-  const act = useNoticedAction();
-  return (
-    <li>
-      <button type="button" onClick={() => act(item)} className="group flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-surface">
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15.5px] font-medium text-ink">{item.title}</span>
-          {item.detail && <span className="block truncate text-[14px] text-ink-3">{item.detail}</span>}
-        </span>
-        <span className="shrink-0 rounded-lg px-2 py-1 text-[14px] font-semibold text-accent group-hover:bg-accent-soft">{item.action}</span>
-      </button>
-    </li>
-  );
-}
-
-/** Everything that isn't a normal task, ranked by ORBIT. Shows a few; the rest is one tap away. */
+/** Everything that isn't a normal task, ranked. Shows a few; the rest is one tap away. */
 export function Noticed({ items, limit }: { items: NoticedItem[]; limit: number }) {
   const { dispatch } = useOrbit();
   const [expanded, setExpanded] = useState(false);
@@ -85,13 +82,15 @@ export function Noticed({ items, limit }: { items: NoticedItem[]; limit: number 
   const hidden = items.length - shown.length;
 
   if (!items.length) {
-    return <p className="rounded-2xl border border-dashed border-line-strong px-4 py-4 text-[15px] text-ink-2">Nothing unusual. ORBIT will tell you if something changes.</p>;
+    return <p className="rounded-2xl bg-surface px-4 py-4 text-[15px] text-ink-2 shadow-card">Nothing unusual. Orbit will tell you if something changes.</p>;
   }
 
   return (
     <div>
-      <ul className="space-y-1.5">
-        {shown.map((item) => (item.prominent ? <NoticedCard key={item.id} item={item} /> : <NoticedRow key={item.id} item={item} />))}
+      <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface shadow-card">
+        {shown.map((item) => (
+          <NoticedRow key={item.id} item={item} />
+        ))}
       </ul>
       {hidden > 0 && (
         <button
@@ -100,9 +99,9 @@ export function Noticed({ items, limit }: { items: NoticedItem[]; limit: number 
             setExpanded(true);
             dispatch({ type: "SIGNAL", signal: { itemType: "today", action: "expand", context: { area: "noticed" } } });
           }}
-          className="mt-1 inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-[14.5px] font-medium text-ink-2 hover:text-ink"
+          className="mt-1.5 inline-flex min-h-9 items-center rounded-lg px-1 text-[14.5px] font-medium text-accent"
         >
-          See {hidden} more <ArrowRight size={15} aria-hidden />
+          See everything ({hidden} more)
         </button>
       )}
     </div>

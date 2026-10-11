@@ -1,5 +1,4 @@
 import type { CalendarItem, Category, Course, Goal, RankedLoop } from "@/types";
-import { AREA_ORDER } from "@/lib/areas";
 import { relativeDay } from "@/lib/time";
 import { goalProgress, type GoalProgress, type StudyProgress } from "./goals";
 
@@ -17,9 +16,9 @@ export function areaForItem(item: CalendarItem, loops: RankedLoop[]): Category {
     case "study":
       return "school";
     case "meeting":
-      return /recruit|interview|career|coffee chat|analyst|internship/i.test(item.title) ? "work" : item.title.match(/advis|office hours|team|project/i) ? "school" : "work";
+      return /recruit|interview|career|coffee chat|analyst|internship/i.test(item.title) ? "career" : item.title.match(/advis|office hours|team|project/i) ? "school" : "work";
     case "appointment":
-      return "wellness";
+      return "health";
     case "travel":
       return "travel";
     case "social":
@@ -27,7 +26,7 @@ export function areaForItem(item: CalendarItem, loops: RankedLoop[]): Category {
     case "deadline":
       return "school";
     default:
-      return /run|gym|yoga|workout|walk|doctor|dentist|sleep|practice|swim|pilates|lift/i.test(item.title) ? "wellness" : "personal";
+      return /run|gym|yoga|workout|walk|doctor|dentist|sleep|practice|swim|pilates|lift/i.test(item.title) ? "health" : "personal";
   }
 }
 
@@ -40,13 +39,16 @@ export interface AreaSummary {
   courses: Course[];
   /** Open tasks + goal steps due today. */
   count: number;
-  /** One line, e.g. "Exam Monday · 2 due this week". */
+  /** Two or three words: "3 things", "On track", "2 upcoming", "Clear". */
   status: string;
+  /** A slightly longer line for the area page, e.g. "ACCT exam Monday · 2 due today". */
+  note: string;
   /** Something in this area needs attention soon. */
   hot: boolean;
 }
 
 export function summarizeAreas(input: {
+  areas: Category[];
   loops: RankedLoop[];
   items: CalendarItem[];
   goals: Goal[];
@@ -59,7 +61,7 @@ export function summarizeAreas(input: {
   weekEnd.setDate(weekEnd.getDate() + 7);
   const weekEndStr = weekEnd.toISOString().slice(0, 10);
 
-  return AREA_ORDER.map((area) => {
+  return input.areas.map((area) => {
     const loops = input.loops.filter((l) => l.category === area && l.status !== "done");
     const items = input.items.filter((i) => i.date <= weekEndStr && areaForItem(i, input.loops) === area);
     const goals = input.goals.filter((g) => g.area === area).map((goal) => ({ goal, progress: goalProgress(goal, today) }));
@@ -86,7 +88,14 @@ export function summarizeAreas(input: {
       study,
       courses,
       count: loops.length + stepsToday,
-      status: parts.slice(0, 2).join(" · "),
+      status: loops.length
+        ? `${loops.length} ${loops.length === 1 ? "thing" : "things"}`
+        : goals.length && goals.every((g) => !g.progress.missed.length)
+          ? "On track"
+          : items.length
+            ? `${items.length} upcoming`
+            : "Clear",
+      note: parts.slice(0, 2).join(" · "),
       hot: overdue > 0 || dueToday > 0 || !!exam,
     };
   });

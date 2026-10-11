@@ -18,7 +18,7 @@ interface Option {
 }
 
 /**
- * ORBIT recommends one plan instead of presenting equal choices.
+ * Orbit recommends one plan instead of presenting equal choices.
  * Real appointments never move; only flexible plans change, and only on confirm.
  */
 export function ConflictModal({ id, onClose }: { id: string; onClose: () => void }) {
@@ -75,7 +75,7 @@ export function ConflictModal({ id, onClose }: { id: string; onClose: () => void
   options.push({
     id: "ask",
     label: `Reschedule ${short(askTarget.title).toLowerCase()}`,
-    detail: "Ask for a new time yourself. ORBIT copies a short note you can send; nothing is sent for you.",
+    detail: "Ask for a new time yourself. Orbit copies a short note you can send; nothing is sent for you.",
     apply: () => {
       navigator.clipboard?.writeText(`Hi, I have a conflict on ${relativeDay(askTarget.date, derived.today)} at ${formatTime(askTarget.startTime)}. Would another time work? Thank you, Grace`).catch(() => undefined);
       resolve("Note copied. Both events stay until a new time is confirmed.", { type: "RESOLVE_CONFLICT", conflictId: conflict.id });
@@ -84,7 +84,7 @@ export function ConflictModal({ id, onClose }: { id: string; onClose: () => void
   options.push({
     id: "keep",
     label: "Keep both",
-    detail: "ORBIT won't flag this overlap again.",
+    detail: "Orbit won't flag this overlap again.",
     apply: () => resolve("Kept both.", { type: "DISMISS_CONFLICT", conflictId: conflict.id }),
   });
 
@@ -103,7 +103,7 @@ export function ConflictModal({ id, onClose }: { id: string; onClose: () => void
       </ul>
 
       <div className="mt-6 rounded-2xl border border-accent-line bg-accent-soft/50 p-4">
-        <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-accent-strong">
+        <p className="flex items-center gap-1.5 text-[13.5px] font-semibold text-accent-strong">
           <Sparkles size={14} aria-hidden /> Recommended
         </p>
         <p className="mt-1.5 text-[17px] font-semibold">{recommended.label}.</p>

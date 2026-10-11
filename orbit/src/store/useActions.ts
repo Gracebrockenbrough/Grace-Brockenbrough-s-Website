@@ -54,7 +54,7 @@ export function useLoopActions() {
       },
       setPriority(id: string, priority: PriorityLevel) {
         dispatch({ type: "SET_LOOP_PRIORITY", id, priority });
-        notify(`Priority set to ${priority}. ORBIT will remember this.`, { undoable: true });
+        notify(`Priority set to ${priority}. Orbit will remember this.`, { undoable: true });
       },
       reschedule(id: string, deadline: string) {
         dispatch({ type: "RESCHEDULE_LOOP", id, deadline });
@@ -71,7 +71,7 @@ export function useLoopActions() {
         } else {
           dispatch({ type: "MARK_LOOP_NOT_IMPORTANT", id: loop.id, sourceKey: `sender:${loop.source.label}` });
         }
-        notify("Got it. ORBIT will show fewer things like this.", { undoable: true });
+        notify("Got it. Orbit will show fewer things like this.", { undoable: true });
       },
     }),
     [dispatch, notify, find],
@@ -87,10 +87,10 @@ export function useMessageActions() {
       dispatch({ type: "MESSAGE_FEEDBACK", id, feedback });
       const copy: Record<MessageFeedback, string> = {
         not_important: `Got it. ${message?.sender ?? "This sender"} will matter less from now on.`,
-        important: `Got it. ORBIT will raise messages from ${message?.sender ?? "this sender"}.`,
+        important: `Got it. Orbit will raise messages from ${message?.sender ?? "this sender"}.`,
         replied: "Marked as replied.",
-        remind_later: "ORBIT will remind you tomorrow morning.",
-        ignore_source: `ORBIT will ignore ${message?.sender ?? "this source"}.`,
+        remind_later: "Orbit will remind you tomorrow morning.",
+        ignore_source: `Orbit will ignore ${message?.sender ?? "this source"}.`,
       };
       notify(copy[feedback], { undoable: true });
     },
@@ -111,7 +111,7 @@ export function usePlanBlock() {
         startTime: block.start,
         endTime: block.end,
         category: block.category ?? "study",
-        source: { kind: "orbit", label: "Planned with ORBIT" },
+        source: { kind: "orbit", label: "Planned with Orbit" },
         hardCommitment: false,
         confidence: 1,
         courseId: block.courseId,

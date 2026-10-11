@@ -64,7 +64,7 @@ export function MonthView({ date, onPickDay }: { date: string; onPickDay: (d: st
                       aria-label={`Open ${d}${dayItems.length ? `, ${dayItems.length} important items` : ""}`}
                       className={cn(
                         "flex h-7 w-7 items-center justify-center rounded-full text-[13.5px] font-medium",
-                        isToday ? "bg-accent text-navy" : inMonth ? "text-ink hover:bg-sunken" : "text-ink-3 hover:bg-sunken",
+                        isToday ? "bg-accent text-on-primary" : inMonth ? "text-ink hover:bg-sunken" : "text-ink-3 hover:bg-sunken",
                       )}
                     >
                       {parseDate(d).getDate()}

@@ -73,7 +73,7 @@ export function Drawer({ title, hideTitle, eyebrow, onClose, children, footer, c
         aria-labelledby={titleId}
         className={cn(
           "absolute flex flex-col bg-surface shadow-raised",
-          "inset-x-0 bottom-0 max-h-[88vh] animate-sheet-in rounded-t-3xl",
+          "inset-x-0 bottom-0 max-h-[92%] animate-sheet-in rounded-t-3xl",
           "md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[440px] md:animate-drawer-in md:rounded-none md:rounded-l-3xl",
           className,
         )}
@@ -82,7 +82,7 @@ export function Drawer({ title, hideTitle, eyebrow, onClose, children, footer, c
         <div className="flex items-start justify-between gap-3 px-6 pb-2 pt-4 md:pt-6">
           <div className="min-w-0">
             {eyebrow && <div className="mb-1">{eyebrow}</div>}
-            <h2 id={titleId} className={cn("font-display text-[24px] leading-snug tracking-tight", hideTitle && "sr-only")}>
+            <h2 id={titleId} className={cn("text-[20px] font-semibold leading-snug tracking-tight", hideTitle && "sr-only")}>
               {title}
             </h2>
           </div>
@@ -91,7 +91,7 @@ export function Drawer({ title, hideTitle, eyebrow, onClose, children, footer, c
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">{children}</div>
-        {footer && <div className="border-t border-line px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>}
+        {footer && <div className="border-t border-line px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:pb-7">{footer}</div>}
       </div>
     </div>
   );
@@ -110,14 +110,14 @@ export function Modal({ title, hideTitle, eyebrow, onClose, children, footer, cl
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "relative flex max-h-[92vh] w-full animate-sheet-in flex-col rounded-t-3xl bg-surface shadow-raised md:max-w-lg md:rounded-3xl",
+          "relative flex max-h-[94%] w-full animate-sheet-in flex-col rounded-t-3xl bg-surface shadow-raised md:max-w-lg md:rounded-3xl",
           className,
         )}
       >
         <div className="flex items-start justify-between gap-3 px-6 pb-2 pt-6">
           <div className="min-w-0">
             {eyebrow && <div className="mb-1">{eyebrow}</div>}
-            <h2 id={titleId} className={cn("font-display text-[24px] leading-snug tracking-tight", hideTitle && "sr-only")}>
+            <h2 id={titleId} className={cn("text-[20px] font-semibold leading-snug tracking-tight", hideTitle && "sr-only")}>
               {title}
             </h2>
           </div>
@@ -126,7 +126,7 @@ export function Modal({ title, hideTitle, eyebrow, onClose, children, footer, cl
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">{children}</div>
-        {footer && <div className="border-t border-line px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>}
+        {footer && <div className="border-t border-line px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:pb-7">{footer}</div>}
       </div>
     </div>
   );

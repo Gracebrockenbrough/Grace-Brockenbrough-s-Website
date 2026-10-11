@@ -37,7 +37,7 @@ export function EventDrawer({ id, onClose }: { id: string; onClose: () => void }
     <Drawer
       title={title}
       onClose={onClose}
-      eyebrow={<span className="text-[13px] font-semibold uppercase tracking-wide text-ink-3">{meta.label}</span>}
+      eyebrow={<span className="text-[13.5px] font-semibold text-ink-3">{meta.label}</span>}
       footer={
         <div className="flex flex-wrap gap-2">
           {course && (
@@ -125,7 +125,7 @@ export function EventDrawer({ id, onClose }: { id: string; onClose: () => void }
       {item.hardCommitment && (
         <p className="mt-5 flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[14px] text-ink-2">
           <Lock size={15} className="mt-0.5 shrink-0" aria-hidden />
-          This is a real commitment. ORBIT will never move or cancel it without asking you first.
+          This is a real commitment. Orbit will never move or cancel it without asking you first.
         </p>
       )}
     </Drawer>

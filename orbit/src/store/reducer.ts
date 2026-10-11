@@ -36,6 +36,7 @@ export type MessageFeedback = "not_important" | "important" | "replied" | "remin
 export type OrbitAction =
   | { type: "HYDRATE"; state: OrbitState }
   | { type: "RESET_DEMO" }
+  | { type: "RESTART_ONBOARDING" }
   | { type: "COMPLETE_ONBOARDING" }
   | { type: "SET_BRIEF_SEEN"; seen: boolean }
   // Open Loops
@@ -133,7 +134,7 @@ function adjust(map: Record<string, number>, key: string, delta: number): Record
 export const senderKey = (sender: string) => `sender:${sender}`;
 export const typeKey = (type: SenderType) => `type:${type}`;
 
-/** Actions that teach ORBIT something are recorded as signals automatically. */
+/** Actions that teach Orbit something are recorded as signals automatically. */
 function signalFor(state: OrbitState, action: OrbitAction): Omit<InteractionSignal, "id" | "at"> | undefined {
   switch (action.type) {
     case "COMPLETE_LOOP":
@@ -173,7 +174,9 @@ function baseReducer(state: OrbitState, action: OrbitAction): OrbitState {
     case "HYDRATE":
       return action.state;
     case "RESET_DEMO":
-      return { ...createInitialState(), onboarded: true, briefSeen: false, demoTime: state.demoTime };
+      return { ...createInitialState(), onboarded: true, briefSeen: false, demoTime: state.demoTime, displayPrefs: { theme: state.displayPrefs.theme } };
+    case "RESTART_ONBOARDING":
+      return { ...createInitialState(), displayPrefs: { theme: state.displayPrefs.theme } };
     case "COMPLETE_ONBOARDING":
       return { ...state, onboarded: true };
     case "SET_BRIEF_SEEN":

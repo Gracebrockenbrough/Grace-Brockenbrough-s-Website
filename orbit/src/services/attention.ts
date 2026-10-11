@@ -24,7 +24,7 @@ interface AttentionInput {
   prefs: Preferences;
   today: string;
   now: Date;
-  /** Kinds the user keeps dismissing; ORBIT turns them down. */
+  /** Kinds the user keeps dismissing; Orbit turns them down. */
   quieted?: AttentionKind[];
 }
 
@@ -39,7 +39,7 @@ function whenShort(v: { date?: string; startTime?: string }): string {
 
 /**
  * Exceptions only: changes, conflicts, deadlines that could slip, and gaps in
- * what ORBIT knows. Copy is deliberately short; details live behind a tap.
+ * what Orbit knows. Copy is deliberately short; details live behind a tap.
  */
 export function buildAttention(input: AttentionInput): AttentionItem[] {
   const { changes, conflicts, loops, priorities, courses, dismissed, prefs, today } = input;
@@ -57,7 +57,7 @@ export function buildAttention(input: AttentionInput): AttentionItem[] {
       body: `${whenShort(c.newValue)} instead of ${whenShort(c.previousValue)}${c.impact?.match(/removes (\d+)/) ? ` · ${c.impact.match(/removes (\d+)/)![1]} fewer study days` : ""}`,
       why: confident
         ? `${c.source.label} gives a new date that doesn't match your calendar.`
-        : `A classmate mentioned it in ${c.source.label}. Your professor hasn't confirmed it, so ORBIT hasn't changed anything.`,
+        : `A classmate mentioned it in ${c.source.label}. Your professor hasn't confirmed it, so Orbit hasn't changed anything.`,
       weight: confident ? 95 : 55,
       refId: c.id,
     });
@@ -110,7 +110,7 @@ export function buildAttention(input: AttentionInput): AttentionItem[] {
         label: "Missing date",
         title: `${m?.[1] ?? "An item"} has no date`,
         body: c.summary.match(/The (\S+ \S+)/)?.[1] ?? "",
-        why: "ORBIT can't plan around something without a date. It will watch for an announcement.",
+        why: "Orbit can't plan around something without a date. It will watch for an announcement.",
         weight: 28,
         refId: c.id,
       });
@@ -144,7 +144,7 @@ export function buildAttention(input: AttentionInput): AttentionItem[] {
 }
 
 // ---------------------------------------------------------------------------
-// ORBIT noticed — one list for everything that isn't a normal task
+// Orbit noticed — one list for everything that isn't a normal task
 // ---------------------------------------------------------------------------
 
 export type NoticedTarget =
@@ -233,7 +233,7 @@ export function buildOpening(items: CalendarItem[], today: string, dismissed: st
     why: "Nothing is planned tomorrow evening, and there is no workout on your calendar for the next two days.",
     weight: 40,
     prominent: false,
-    eyebrow: "Opening · Wellness",
+    eyebrow: "Opening · Health",
   };
 }
 

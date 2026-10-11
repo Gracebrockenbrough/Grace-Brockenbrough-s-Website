@@ -28,7 +28,7 @@ const SOURCE_ICON: Record<SourceKind, typeof Mail> = {
   orbit: Sparkles,
 };
 
-/** Where ORBIT learned something. Subtle by design. */
+/** Where Orbit learned something. Subtle by design. */
 export function SourceBadge({ source, prefix = true, className }: { source: Source; prefix?: boolean; className?: string }) {
   const Icon = SOURCE_ICON[source.kind] ?? BookOpen;
   return (

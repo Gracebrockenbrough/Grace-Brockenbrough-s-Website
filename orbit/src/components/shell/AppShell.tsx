@@ -8,7 +8,7 @@ import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { cn } from "@/lib/cn";
 import { Logo, OrbitMark } from "./Logo";
-import { MORE_ITEMS, NAV_ITEMS } from "./nav";
+import { NAV_ITEMS } from "./nav";
 import { OverlayHost } from "@/components/overlays/OverlayHost";
 import { Toaster } from "@/components/ui/Toaster";
 
@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (hydrated && !state.onboarded) router.replace("/onboarding");
   }, [hydrated, state.onboarded, router]);
 
-  // The Morning Brief appears the first time ORBIT is opened in the morning.
+  // The Morning Brief appears the first time Orbit is opened in the morning.
   useEffect(() => {
     if (hydrated && state.onboarded && !state.briefSeen && state.notificationSettings.morningBrief && pathname === "/today" && !overlay) {
       open({ type: "brief" });
@@ -54,105 +54,41 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (!hydrated || !state.onboarded) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-ink-3" aria-busy="true">
+      <div className="flex min-h-[var(--app-h)] items-center justify-center text-ink-3" aria-busy="true">
         <OrbitMark size={36} spinning className="text-ink" />
-        <span className="sr-only">Loading ORBIT</span>
+        <span className="sr-only">Loading Orbit</span>
       </div>
     );
   }
 
+  const tabs = [NAV_ITEMS[0], NAV_ITEMS[1], null, NAV_ITEMS[2], NAV_ITEMS[3]];
+
   return (
-    <div className="min-h-screen">
+    <div className="mx-auto min-h-[var(--app-h)] max-w-[560px]">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-xl focus:bg-surface focus:px-4 focus:py-2 focus:shadow-raised">
         Skip to content
       </a>
 
-      {/* Desktop navigation rail */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[232px] flex-col border-r border-line/60 bg-space/70 px-4 py-6 backdrop-blur md:flex">
-        <Link href="/today" className="mb-8 px-2" aria-label="ORBIT home">
+      <header className="sticky top-0 z-30 flex items-center justify-between bg-canvas/85 px-5 py-2.5 backdrop-blur-lg">
+        <Link href="/today" aria-label="Orbit home">
           <Logo />
         </Link>
-        <button
-          type="button"
-          onClick={() => open({ type: "capture" })}
-          className="mb-6 flex min-h-11 items-center gap-2 rounded-xl bg-cream px-4 text-[15px] font-medium text-navy shadow-card transition-colors hover:bg-cream-2"
+        <Link
+          href="/settings"
+          aria-label="Profile and settings"
+          aria-current={isActive(pathname, "/settings") ? "page" : undefined}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-sunken text-[14px] font-semibold text-ink-2"
         >
-          <Plus size={18} aria-hidden />
-          Add anything
-        </button>
-        <nav aria-label="Main" className="flex flex-col gap-1">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const active = isActive(pathname, href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-medium transition-colors",
-                  active ? "bg-surface text-ink shadow-card" : "text-ink-2 hover:bg-sunken hover:text-ink",
-                )}
-              >
-                <Icon size={19} aria-hidden className={active ? "text-accent" : undefined} />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <p className="mb-1 mt-8 px-3 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-3">More</p>
-        <nav aria-label="More" className="flex flex-col gap-0.5">
-          {MORE_ITEMS.map(({ href, label, icon: Icon }) => {
-            const active = isActive(pathname, href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn("flex min-h-10 items-center gap-3 rounded-xl px-3 text-[14.5px] transition-colors", active ? "bg-surface text-ink" : "text-ink-3 hover:bg-sunken hover:text-ink")}
-              >
-                <Icon size={17} aria-hidden />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="mt-auto">
-          <Link
-            href="/settings"
-            aria-current={isActive(pathname, "/settings") ? "page" : undefined}
-            className={cn(
-              "flex min-h-12 items-center gap-3 rounded-xl px-3 transition-colors",
-              isActive(pathname, "/settings") ? "bg-surface shadow-card" : "hover:bg-sunken",
-            )}
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft text-[14px] font-semibold text-accent-strong" aria-hidden>
-              {state.user.name[0]}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[14.5px] font-medium text-ink">{state.user.fullName}</span>
-            </span>
-          </Link>
-        </div>
-      </aside>
-
-      {/* Mobile header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line/50 bg-space/80 px-4 py-3 backdrop-blur-lg md:hidden">
-        <Link href="/today" aria-label="ORBIT home">
-          <Logo />
-        </Link>
-        <Link href="/settings" aria-label="Profile" className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-[14px] font-semibold text-accent-strong">
           {state.user.name[0]}
         </Link>
       </header>
 
-      <main id="main" className="md:pl-[232px]">
-        <div className="mx-auto w-full max-w-[1080px] px-4 pb-32 pt-5 md:px-10 md:pb-16 md:pt-10">{children}</div>
-      </main>
+      <main id="main" className="px-5 pb-32 pt-3">{children}</main>
 
-      {/* Mobile tab bar: Today · Orbit · Add · Calendar · Ask */}
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line/70 bg-space/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden">
-        <ul className="grid grid-cols-5 items-end">
-          {[NAV_ITEMS[0], NAV_ITEMS[1], null, NAV_ITEMS[2], NAV_ITEMS[3]].map((item) => {
+      {/* Today · Orbit · Add · Calendar · Ask */}
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-canvas/92 pb-[max(env(safe-area-inset-bottom),0px)] backdrop-blur-lg lg:pb-5">
+        <ul className="mx-auto grid max-w-[560px] grid-cols-5 items-center">
+          {tabs.map((item) => {
             if (!item) {
               return (
                 <li key="add" className="flex justify-center">
@@ -160,9 +96,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                     type="button"
                     onClick={() => open({ type: "capture" })}
                     aria-label="Add anything"
-                    className="-mt-5 mb-1.5 flex h-14 w-14 items-center justify-center rounded-full bg-cream text-navy shadow-[0_0_24px_rgba(244,239,230,0.35)] transition-transform active:scale-95"
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-on-primary shadow-raised transition-transform active:scale-95"
                   >
-                    <Plus size={26} aria-hidden />
+                    <Plus size={24} aria-hidden />
                   </button>
                 </li>
               );
@@ -174,9 +110,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11.5px] font-medium", active ? "text-cream" : "text-ink-3")}
+                  className={cn("flex min-h-[58px] flex-col items-center justify-center gap-0.5 text-[11.5px] font-medium", active ? "text-ink" : "text-ink-3")}
                 >
-                  <Icon size={21} aria-hidden className={active ? "text-accent" : undefined} />
+                  <Icon size={21} strokeWidth={active ? 2.2 : 1.8} aria-hidden />
                   {short}
                 </Link>
               </li>

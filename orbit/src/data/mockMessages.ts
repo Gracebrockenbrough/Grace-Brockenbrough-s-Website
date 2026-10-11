@@ -1,7 +1,7 @@
 import type { Message } from "@/types";
 
 /**
- * Incoming messages across channels. ORBIT is not an email client: it reads
+ * Incoming messages across channels. Orbit is not an email client: it reads
  * these, classifies them, and only surfaces what actually needs Grace.
  */
 export const mockMessages: Message[] = [

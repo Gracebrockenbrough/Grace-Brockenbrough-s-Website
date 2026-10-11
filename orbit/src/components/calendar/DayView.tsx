@@ -5,7 +5,7 @@ import { useOrbit } from "@/store/OrbitProvider";
 import { buildCalendarItems, suggestFreeTime } from "@/services/calendar";
 import { TimeGrid } from "./TimeGrid";
 
-/** Planning view: a real time grid. Open time is empty space; ORBIT only marks it when it has an idea. */
+/** Planning view: a real time grid. Open time is empty space; Orbit only marks it when it has an idea. */
 export function DayView({ date }: { date: string }) {
   const { state, derived } = useOrbit();
   const items = buildCalendarItems(derived.calendarSource, date, date);

@@ -9,7 +9,7 @@ import { useUI } from "@/store/UIProvider";
 import { Drawer } from "@/components/ui/Overlay";
 import { Button } from "@/components/ui/Button";
 
-/** "Help me write…" for texts and emails. ORBIT drafts it; you send it from your own app. */
+/** "Help me write…" for texts and emails. Orbit drafts it; you send it from your own app. */
 export function ComposeDrawer({ onClose, kind: initialKind = "text", to: initialTo = "", about: initialAbout = "" }: { onClose: () => void; kind?: "text" | "email"; to?: string; about?: string }) {
   const { notify } = useUI();
   const [kind, setKind] = useState<"text" | "email">(initialKind);
@@ -56,7 +56,7 @@ export function ComposeDrawer({ onClose, kind: initialKind = "text", to: initial
         )
       }
     >
-      <p className="text-[14.5px] text-ink-2">ORBIT writes a draft. You check it, then send it yourself. ORBIT never sends anything for you.</p>
+      <p className="text-[14.5px] text-ink-2">Orbit writes a draft. You check it, then send it yourself. Orbit never sends anything for you.</p>
 
       <div role="group" aria-label="Message type" className="mt-4 grid grid-cols-2 gap-2">
         {(["text", "email"] as const).map((k) => (
@@ -94,7 +94,7 @@ export function ComposeDrawer({ onClose, kind: initialKind = "text", to: initial
 
       {!draft && (
         <>
-          <p className="mb-2 mt-5 text-[13px] font-semibold uppercase tracking-[0.12em] text-ink-3">Start from</p>
+          <p className="mb-2 mt-5 text-[13.5px] font-semibold text-ink-3">Start from</p>
           <div className="flex flex-wrap gap-2">
             {COMPOSE_IDEAS.map((i) => (
               <button

@@ -8,7 +8,7 @@ import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 
 /** Moons fill in as you study: "Studied 2 of 5 days." */
-export function Moons({ filled, total, size = 22, color = "#f4efe6" }: { filled: number; total: number; size?: number; color?: string }) {
+export function Moons({ filled, total, size = 22 }: { filled: number; total: number; size?: number }) {
   return (
     <span className="inline-flex items-center gap-1.5" role="img" aria-label={`${filled} of ${total}`}>
       {Array.from({ length: total }, (_, i) => {
@@ -16,18 +16,13 @@ export function Moons({ filled, total, size = 22, color = "#f4efe6" }: { filled:
         return (
           <span
             key={i}
-            className={cn("relative inline-block rounded-full transition-all duration-300", on ? "scale-100" : "scale-90")}
-            style={{
-              width: size,
-              height: size,
-              background: on ? `radial-gradient(circle at 35% 30%, #fffdf7 0%, ${color} 55%, #cfc4ad 100%)` : "transparent",
-              boxShadow: on ? `0 0 10px ${color}66` : `inset 0 0 0 2px #3b4580`,
-            }}
+            className={cn("relative inline-block overflow-hidden rounded-full transition-colors duration-300", on ? "bg-primary" : "border-2 border-line-strong")}
+            style={{ width: size, height: size }}
           >
             {on && (
               <>
-                <span className="absolute rounded-full bg-black/10" style={{ width: size * 0.22, height: size * 0.22, left: size * 0.52, top: size * 0.22 }} />
-                <span className="absolute rounded-full bg-black/10" style={{ width: size * 0.14, height: size * 0.14, left: size * 0.26, top: size * 0.56 }} />
+                <span className="absolute rounded-full bg-canvas/20" style={{ width: size * 0.24, height: size * 0.24, left: size * 0.52, top: size * 0.2 }} />
+                <span className="absolute rounded-full bg-canvas/20" style={{ width: size * 0.16, height: size * 0.16, left: size * 0.24, top: size * 0.56 }} />
               </>
             )}
           </span>
@@ -46,7 +41,7 @@ export function StudyMoons({ study, compact = false }: { study: StudyProgress; c
     notify(studiedToday ? "Removed today's study session." : `Nice. ${Math.min(target, studied.length + 1)} of ${target} study days for ${exam.title}.`, { undoable: true });
   };
   return (
-    <div className={cn("rounded-2xl border border-line bg-surface", compact ? "p-4" : "p-5")}>
+    <div className={cn("rounded-2xl bg-surface shadow-card", compact ? "p-4" : "p-5")}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[16px] font-semibold">{exam.title}</p>
@@ -69,7 +64,7 @@ export function StudyMoons({ study, compact = false }: { study: StudyProgress; c
           studiedToday ? "border-success bg-success-soft text-success" : "border-line-strong text-ink hover:bg-sunken",
         )}
       >
-        <span className={cn("flex h-4 w-4 items-center justify-center rounded-full border", studiedToday ? "border-success bg-success text-navy" : "border-ink-3")}>
+        <span className={cn("flex h-4 w-4 items-center justify-center rounded-full border", studiedToday ? "border-success bg-success text-canvas" : "border-ink-3")}>
           {studiedToday && <Check size={11} strokeWidth={3} aria-hidden />}
         </span>
         {studiedToday ? "Studied today" : "I studied today"}

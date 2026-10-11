@@ -16,7 +16,7 @@ export function findCalendarItem(id: string, state: OrbitState, derived: OrbitDe
   return buildCalendarItems(derived.calendarSource, date, date).find((i) => i.id === id);
 }
 
-/** Loops outside ORBIT's active window (e.g. an assignment in December) still open in details. */
+/** Loops outside Orbit's active window (e.g. an assignment in December) still open in details. */
 export function findLoop(id: string, state: OrbitState, derived: OrbitDerived): RankedLoop | undefined {
   const found = derived.loops.find((l) => l.id === id);
   if (found) return found;
@@ -24,7 +24,7 @@ export function findLoop(id: string, state: OrbitState, derived: OrbitDerived): 
     const a = state.assignments.find((x) => x.id === id.slice(4));
     if (!a) return undefined;
     const loop = loopFromAssignment(a, state.courses.find((c) => c.id === a.courseId), "2026-09-02T09:00");
-    return { ...loop, priorityScore: 0, priority: "low", status: a.completed ? "done" : "later", snoozed: false, derivedFrom: "assignment", why: "It's on your syllabus. ORBIT will bring it up as it gets closer." };
+    return { ...loop, priorityScore: 0, priority: "low", status: a.completed ? "done" : "later", snoozed: false, derivedFrom: "assignment", why: "It's on your syllabus. Orbit will bring it up as it gets closer." };
   }
   return undefined;
 }

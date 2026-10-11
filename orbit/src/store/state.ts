@@ -30,10 +30,10 @@ import { mockSignals } from "@/data/mockSignals";
 import { defaultProfile, mockGoals, mockStudyLog } from "@/data/mockGoals";
 import { defaultNotificationSettings, defaultPreferences, mockUser } from "@/data/mockUser";
 
-export const STATE_VERSION = 5;
+export const STATE_VERSION = 6;
 
 /**
- * Everything ORBIT knows. Components never read mock files directly — they read
+ * Everything Orbit knows. Components never read mock files directly — they read
  * this state (as if it came from a backend) and derived views from the engine.
  */
 export interface OrbitState {
@@ -59,17 +59,17 @@ export interface OrbitState {
   notificationSettings: NotificationSettings;
   sources: ConnectedSource[];
   captures: Capture[];
-  /** Behavior ORBIT learns from. Capped; oldest dropped first. */
+  /** Behavior Orbit learns from. Capped; oldest dropped first. */
   signals: InteractionSignal[];
   displayPrefs: DisplayPreference;
-  /** Answers to occasional learning questions, so ORBIT doesn't ask twice. */
+  /** Answers to occasional learning questions, so Orbit doesn't ask twice. */
   promptsAnswered: Record<string, "yes" | "no">;
   /** Prototype only: which part of Friday the demo shows. */
   demoTime: DemoTime;
   goals: Goal[];
   /** Exam id → dates the user studied for it. */
   studyLog: Record<string, string[]>;
-  /** Background answers from onboarding and "Help ORBIT know you". */
+  /** Background answers from onboarding and "Help Orbit know you". */
   profile: Profile;
 }
 

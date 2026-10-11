@@ -1,5 +1,5 @@
 /**
- * Suggested replies ORBIT drafts. ORBIT never sends anything on its own —
+ * Suggested replies Orbit drafts. Orbit never sends anything on its own —
  * the user copies or edits the draft and marks the message as replied.
  */
 export const mockReplyDrafts: Record<string, { draft: string; followUp?: { title: string; date: string; startTime: string; endTime: string; location?: string; note: string } }> = {

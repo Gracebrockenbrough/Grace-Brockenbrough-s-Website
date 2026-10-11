@@ -1,5 +1,5 @@
 /**
- * Template drafting for texts and emails. ORBIT writes; the user copies or
+ * Template drafting for texts and emails. Orbit writes; the user copies or
  * opens their own app and sends it themselves.
  */
 
@@ -62,6 +62,16 @@ export function composeDraft({ kind, to, about }: { kind: "text" | "email"; to: 
     return {
       subject: "Thank you",
       body: `${hello}\n\nThank you so much for ${what.startsWith("the") || what.startsWith("your") ? what : `the ${what}`}. I really appreciated your advice and it helped me think about next steps. I'd love to stay in touch.${sign}`,
+    };
+  }
+  if (/follow(ing)? up|nudge/.test(lower)) {
+    const what = lower.replace(/^.*?(follow(ing)? up|nudge)( on| about)?\s*/, "") || "this";
+    return {
+      subject: `Following up: ${what}`,
+      body:
+        kind === "email"
+          ? `${hello}\n\nI wanted to follow up on ${what}. Is there anything you need from me in the meantime? Thanks so much.${sign}`
+          : `${hello} Just checking on ${what} — no rush, just want to make sure I'm ready. Thanks!`,
     };
   }
   if (/check in|checking in|how are you/.test(lower)) return { subject: "Checking in", body: `${hello} Was just thinking about you. How's your week going? Miss you!${sign}` };

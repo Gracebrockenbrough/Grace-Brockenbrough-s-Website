@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, RotateCcw, X } from "lucide-react";
-import type { DemoTime, NotificationSettings } from "@/types";
+import type { DemoTime, Involvement, NotificationSettings } from "@/types";
+
+const INVOLVEMENT_NOTE: Record<Involvement, string> = {
+  quiet: "Orbit only speaks up when something important needs attention.",
+  helpful: "Orbit surfaces what matters and suggests what to do.",
+  proactive: "Orbit plans ahead, finds time, and keeps things moving.",
+};
 import { cn } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
@@ -38,13 +44,13 @@ const NOTIFICATIONS: { key: keyof NotificationSettings; label: string; descripti
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section aria-label={title}>
-      <h2 className="mb-2 text-[13px] font-semibold uppercase tracking-wider text-ink-3">{title}</h2>
+      <h2 className="mb-2 text-[13.5px] font-semiboldr text-ink-3">{title}</h2>
       {children}
     </section>
   );
 }
 
-/** Profile: connections first, then notifications, what ORBIT learned, and account. */
+/** Profile: connections first, then notifications, what Orbit learned, and account. */
 export default function SettingsPage() {
   const { state, derived, dispatch } = useOrbit();
   const { notify, open } = useUI();
@@ -66,20 +72,50 @@ export default function SettingsPage() {
 
       <KnowYouCard />
 
-      {(state.profile.userType || state.profile.hardest.length > 0) && (
-        <Section title="What ORBIT knows about you">
+      <Section title="How involved should Orbit be?">
+        <SegmentedControl<Involvement>
+          label="How involved should Orbit be?"
+          value={state.profile.involvement}
+          onChange={(v) => {
+            dispatch({ type: "SET_PROFILE", patch: { involvement: v } });
+            notify(INVOLVEMENT_NOTE[v]);
+          }}
+          options={[
+            { value: "quiet", label: "Quiet" },
+            { value: "helpful", label: "Helpful" },
+            { value: "proactive", label: "Proactive" },
+          ]}
+        />
+        <p className="mt-2 text-[14px] text-ink-3">{INVOLVEMENT_NOTE[state.profile.involvement]}</p>
+      </Section>
+
+      <Section title="Appearance">
+        <SegmentedControl<"system" | "light" | "dark">
+          label="Appearance"
+          value={state.displayPrefs.theme ?? "system"}
+          onChange={(t) => dispatch({ type: "SET_DISPLAY_PREF", patch: { theme: t } })}
+          options={[
+            { value: "system", label: "Automatic" },
+            { value: "light", label: "Light" },
+            { value: "dark", label: "Dark" },
+          ]}
+        />
+      </Section>
+
+      {(state.profile.lives.length > 0 || state.profile.messy.length > 0) && (
+        <Section title="What Orbit knows about your life">
           <ul className="flex flex-wrap gap-2">
-            {[state.profile.userType, ...state.profile.roles, ...state.profile.hardest.map((h) => `Hard: ${h.toLowerCase()}`), ...Object.values(state.profile.answers), state.profile.briefTime && `Brief at ${state.profile.briefTime}`]
-              .filter(Boolean)
+            {[...state.profile.lives, state.profile.otherLife, ...state.profile.messy, state.profile.days, ...Object.values(state.profile.answers)]
+              .filter((t): t is string => !!t)
               .map((t) => (
-                <li key={t as string} className="rounded-full bg-sunken px-3 py-1 text-[14px] text-ink-2">{t}</li>
+                <li key={t} className="rounded-full bg-sunken px-3 py-1 text-[14px] text-ink-2">{t}</li>
               ))}
           </ul>
         </Section>
       )}
 
       <Link href="/settings/connections" className="group block rounded-2xl border border-line bg-surface p-5 shadow-card hover:shadow-raised">
-        <p className="text-[17px] font-semibold">ORBIT is connected to {connected.length} {connected.length === 1 ? "place" : "places"}</p>
+        <p className="text-[17px] font-semibold">Orbit is connected to {connected.length} {connected.length === 1 ? "place" : "places"}</p>
         <p className="mt-0.5 text-[15px] text-ink-2">{connected.map((s) => s.name.replace("Google ", "")).join(" · ") || "Nothing yet"}</p>
         <p className="mt-3 inline-flex items-center gap-1 text-[15px] font-medium text-accent">
           Manage connections <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
@@ -92,10 +128,10 @@ export default function SettingsPage() {
             <Toggle key={n.key} label={n.label} description={n.description} checked={state.notificationSettings[n.key]} onChange={(v) => dispatch({ type: "SET_NOTIFICATION", key: n.key, value: v })} />
           ))}
         </div>
-        <p className="mt-2 text-[14px] text-ink-3">Everything else stays quietly inside ORBIT.</p>
+        <p className="mt-2 text-[14px] text-ink-3">Everything else stays quietly inside Orbit.</p>
       </Section>
 
-      <Section title="ORBIT preferences">
+      <Section title="Orbit preferences">
         {derived.learned.prompts.filter((p) => p.surface === "today").map((p) => (
           <div key={p.id} className="mb-3">
             <LearningPrompt prompt={p} />
@@ -111,7 +147,7 @@ export default function SettingsPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-[15px] text-ink-2">Nothing yet. ORBIT learns quietly from what you open, finish, snooze, and dismiss.</p>
+          <p className="text-[15px] text-ink-2">Nothing yet. Orbit learns quietly from what you open, finish, snooze, and dismiss.</p>
         )}
         {state.preferences.ignoredSources.length > 0 && (
           <div className="mt-4">
@@ -125,7 +161,7 @@ export default function SettingsPage() {
                     aria-label={`Show ${s.label} again`}
                     onClick={() => {
                       dispatch({ type: "UNIGNORE_SOURCE", key: s.key });
-                      notify(`ORBIT will show ${s.label} again.`, { undoable: true });
+                      notify(`Orbit will show ${s.label} again.`, { undoable: true });
                     }}
                     className="flex h-7 w-7 items-center justify-center rounded-full text-ink-3 hover:bg-line hover:text-ink"
                   >
@@ -136,8 +172,8 @@ export default function SettingsPage() {
             </ul>
           </div>
         )}
-        <Button size="sm" variant="ghost" className="mt-3 -ml-3" onClick={() => { dispatch({ type: "RESET_LEARNING" }); notify("ORBIT will start learning from scratch.", { undoable: true }); }}>
-          Reset what ORBIT learned
+        <Button size="sm" variant="ghost" className="mt-3 -ml-3" onClick={() => { dispatch({ type: "RESET_LEARNING" }); notify("Orbit will start learning from scratch.", { undoable: true }); }}>
+          Reset what Orbit learned
         </Button>
       </Section>
 

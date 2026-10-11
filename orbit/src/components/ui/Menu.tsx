@@ -77,7 +77,7 @@ export function Menu({ items, label = "More options", trigger, align = "right" }
         >
           {items.map((item, i) => (
             <div key={item.label}>
-              {item.section && <div className="px-4 pb-1 pt-2 text-[12.5px] font-medium uppercase tracking-wide text-ink-3">{item.section}</div>}
+              {item.section && <div className="px-4 pb-1 pt-2 text-[13.5px] font-medium text-ink-3">{item.section}</div>}
               <button
                 ref={(el) => {
                   itemRefs.current[i] = el;

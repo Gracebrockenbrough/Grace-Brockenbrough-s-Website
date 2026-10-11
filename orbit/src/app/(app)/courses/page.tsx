@@ -12,9 +12,9 @@ export default function CoursesPage() {
     <div>
       <PageHeader
         title="Courses"
-        subtitle="Fall 2026 · ORBIT keeps every syllabus date, exam, and professor in one place."
+        subtitle="Fall 2026 · Orbit keeps every syllabus date, exam, and professor in one place."
         action={
-          <Link href="/courses/upload" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-4 text-[15px] font-medium text-navy shadow-card hover:bg-accent-strong">
+          <Link href="/courses/upload" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-4 text-[15px] font-medium text-on-primary shadow-card hover:bg-accent-strong">
             <FileUp size={17} aria-hidden /> Upload syllabus
           </Link>
         }
@@ -29,7 +29,7 @@ export default function CoursesPage() {
         <EmptyState
           icon={<BookOpen size={28} />}
           title="No courses yet"
-          body="Upload a syllabus and ORBIT can build your course schedule automatically."
+          body="Upload a syllabus and Orbit can build your course schedule automatically."
           action={<Link href="/courses/upload" className="text-accent hover:underline">Upload a syllabus</Link>}
         />
       )}

@@ -1,7 +1,7 @@
 import type { ConnectedSource } from "@/types";
 
 /**
- * The places ORBIT can connect to. Integrations are simulated in this
+ * The places Orbit can connect to. Integrations are simulated in this
  * prototype; the copy describes what a real connection would do.
  */
 export const mockSources: ConnectedSource[] = [
@@ -14,7 +14,7 @@ export const mockSources: ConnectedSource[] = [
     hasDemoData: true,
     blurb: "Know where you need to be.",
     notices: ["Classes, meetings, and plans", "Open time in your day", "Events that overlap"],
-    promise: "ORBIT will never move or cancel an event without asking you.",
+    promise: "Orbit will never move or cancel an event without asking you.",
   },
   {
     id: "src-gmail",
@@ -26,7 +26,7 @@ export const mockSources: ConnectedSource[] = [
     blurb: "Notice deadlines and important requests.",
     notices: ["Important requests", "Deadlines", "Messages that may need a reply", "Schedule changes"],
     ignores: ["Promotions", "Newsletters", "Low-priority mass emails"],
-    promise: "ORBIT organizes this information. It will not send emails for you.",
+    promise: "Orbit organizes this information. It will not send emails for you.",
   },
   {
     id: "src-canvas",
@@ -38,7 +38,7 @@ export const mockSources: ConnectedSource[] = [
     blurb: "Track assignments, exams, and course changes.",
     notices: ["Assignments and due dates", "Exams", "Announcements that change a date"],
     ignores: ["Discussion replies", "Routine course reminders"],
-    promise: "ORBIT reads your courses. It will never submit anything for you.",
+    promise: "Orbit reads your courses. It will never submit anything for you.",
   },
   {
     id: "src-groupme",
@@ -50,7 +50,7 @@ export const mockSources: ConnectedSource[] = [
     blurb: "Catch important class updates without treating every message as important.",
     notices: ["Possible date changes from classmates", "Plans that involve you"],
     ignores: ["Jokes and chatter", "Club announcements you usually skip"],
-    promise: "ORBIT will never post or reply in a group for you.",
+    promise: "Orbit will never post or reply in a group for you.",
   },
   {
     id: "src-messages",
@@ -62,7 +62,7 @@ export const mockSources: ConnectedSource[] = [
     blurb: "See when family or friends are waiting on you.",
     notices: ["Direct questions", "Plans with dates and times"],
     ignores: ["Group chatter", "Verification codes"],
-    promise: "ORBIT only reads conversations you choose to share. It will not text anyone.",
+    promise: "Orbit only reads conversations you choose to share. It will not text anyone.",
   },
   {
     id: "src-apple-cal",
@@ -72,7 +72,7 @@ export const mockSources: ConnectedSource[] = [
     group: "more",
     blurb: "Bring in events from your iPhone calendar.",
     notices: ["Events and appointments", "Open time in your day"],
-    promise: "ORBIT will never move or cancel an event without asking you.",
+    promise: "Orbit will never move or cancel an event without asking you.",
   },
   {
     id: "src-outlook",
@@ -83,7 +83,7 @@ export const mockSources: ConnectedSource[] = [
     blurb: "Notice requests in a school or work inbox.",
     notices: ["Important requests", "Deadlines", "Meeting changes"],
     ignores: ["Promotions", "Newsletters"],
-    promise: "ORBIT organizes this information. It will not send emails for you.",
+    promise: "Orbit organizes this information. It will not send emails for you.",
   },
   {
     id: "src-drive",
@@ -93,7 +93,7 @@ export const mockSources: ConnectedSource[] = [
     group: "more",
     blurb: "Find syllabi and forms you've already saved.",
     notices: ["Syllabi", "Forms with deadlines"],
-    promise: "ORBIT only reads files. It will not edit or share them.",
+    promise: "Orbit only reads files. It will not edit or share them.",
   },
   {
     id: "src-reminders",
@@ -103,18 +103,18 @@ export const mockSources: ConnectedSource[] = [
     group: "more",
     blurb: "Bring your existing to-dos into one place.",
     notices: ["Reminders with dates", "Lists you check often"],
-    promise: "ORBIT won't delete or change your reminders.",
+    promise: "Orbit won't delete or change your reminders.",
   },
-  { id: "src-strava", name: "Strava", kind: "health", status: "available", group: "more", blurb: "Log runs toward your goals automatically.", notices: ["Runs and workouts", "Progress toward a race"], promise: "ORBIT only reads workouts. It will never post for you." },
-  { id: "src-health", name: "Apple Health", kind: "health", status: "available", group: "more", blurb: "Sleep and activity, so plans fit your energy.", notices: ["Sleep", "Steps and workouts"], promise: "ORBIT only reads what you allow. Nothing is shared." },
-  { id: "src-spotify", name: "Spotify", kind: "music", status: "available", group: "other", blurb: "Focus and running playlists when you start a block.", notices: ["Playlists you use to focus or run"], promise: "ORBIT will never play or change anything without you." },
-  { id: "src-venmo", name: "Venmo", kind: "money", status: "available", group: "other", blurb: "Notice requests you still owe.", notices: ["Payment requests", "Splits you haven't settled"], promise: "ORBIT will never send or request money." },
-  { id: "src-outlook-cal", name: "Outlook Calendar", kind: "calendar", status: "available", group: "other", blurb: "Events from a school or work calendar.", notices: ["Meetings", "Open time"], promise: "ORBIT will never move or cancel an event without asking you." },
-  { id: "src-blackboard", name: "Blackboard", kind: "canvas", status: "available", group: "other", blurb: "Assignments and exams from Blackboard.", notices: ["Assignments", "Exams"], promise: "ORBIT will never submit anything for you." },
-  { id: "src-moodle", name: "Moodle", kind: "canvas", status: "available", group: "other", blurb: "Assignments and exams from Moodle.", notices: ["Assignments", "Exams"], promise: "ORBIT will never submit anything for you." },
-  { id: "src-slack", name: "Slack", kind: "groupme", status: "available", group: "other", blurb: "Requests from teams and clubs.", notices: ["Direct requests", "Deadlines in channels"], ignores: ["General chatter"], promise: "ORBIT will never post for you." },
-  { id: "src-notes", name: "Apple Notes", kind: "notes", status: "available", group: "other", blurb: "Dates hidden in your notes.", notices: ["Dates and deadlines in notes"], promise: "ORBIT only reads notes you share." },
-  { id: "src-dropbox", name: "Dropbox", kind: "drive", status: "available", group: "other", blurb: "Course files and forms.", notices: ["Syllabi", "Forms with deadlines"], promise: "ORBIT only reads files. It will not edit or share them." },
+  { id: "src-strava", name: "Strava", kind: "health", status: "available", group: "more", blurb: "Log runs toward your goals automatically.", notices: ["Runs and workouts", "Progress toward a race"], promise: "Orbit only reads workouts. It will never post for you." },
+  { id: "src-health", name: "Apple Health", kind: "health", status: "available", group: "more", blurb: "Sleep and activity, so plans fit your energy.", notices: ["Sleep", "Steps and workouts"], promise: "Orbit only reads what you allow. Nothing is shared." },
+  { id: "src-spotify", name: "Spotify", kind: "music", status: "available", group: "other", blurb: "Focus and running playlists when you start a block.", notices: ["Playlists you use to focus or run"], promise: "Orbit will never play or change anything without you." },
+  { id: "src-venmo", name: "Venmo", kind: "money", status: "available", group: "other", blurb: "Notice requests you still owe.", notices: ["Payment requests", "Splits you haven't settled"], promise: "Orbit will never send or request money." },
+  { id: "src-outlook-cal", name: "Outlook Calendar", kind: "calendar", status: "available", group: "other", blurb: "Events from a school or work calendar.", notices: ["Meetings", "Open time"], promise: "Orbit will never move or cancel an event without asking you." },
+  { id: "src-blackboard", name: "Blackboard", kind: "canvas", status: "available", group: "other", blurb: "Assignments and exams from Blackboard.", notices: ["Assignments", "Exams"], promise: "Orbit will never submit anything for you." },
+  { id: "src-moodle", name: "Moodle", kind: "canvas", status: "available", group: "other", blurb: "Assignments and exams from Moodle.", notices: ["Assignments", "Exams"], promise: "Orbit will never submit anything for you." },
+  { id: "src-slack", name: "Slack", kind: "groupme", status: "available", group: "other", blurb: "Requests from teams and clubs.", notices: ["Direct requests", "Deadlines in channels"], ignores: ["General chatter"], promise: "Orbit will never post for you." },
+  { id: "src-notes", name: "Apple Notes", kind: "notes", status: "available", group: "other", blurb: "Dates hidden in your notes.", notices: ["Dates and deadlines in notes"], promise: "Orbit only reads notes you share." },
+  { id: "src-dropbox", name: "Dropbox", kind: "drive", status: "available", group: "other", blurb: "Course files and forms.", notices: ["Syllabi", "Forms with deadlines"], promise: "Orbit only reads files. It will not edit or share them." },
 ];
 
 export const SOURCE_KIND_LABEL: Record<string, string> = {
@@ -127,5 +127,5 @@ export const SOURCE_KIND_LABEL: Record<string, string> = {
   manual: "Added by you",
   screenshot: "Screenshot",
   voice: "Voice capture",
-  orbit: "ORBIT suggestion",
+  orbit: "Orbit suggestion",
 };

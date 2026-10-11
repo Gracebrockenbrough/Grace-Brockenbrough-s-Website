@@ -3,7 +3,7 @@ import { hiddenKinds } from "./connections";
 import { diffDays, datePart, formatShortDate, formatTime, timePart } from "@/lib/time";
 
 /**
- * Compare newly extracted facts with what ORBIT already knows. When a material
+ * Compare newly extracted facts with what Orbit already knows. When a material
  * field (date/time) differs, create a DetectedChange. High-impact changes are
  * never applied silently — they always require approval.
  */
