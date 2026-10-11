@@ -8,7 +8,7 @@ import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { cn } from "@/lib/cn";
 import { Logo, OrbitMark } from "./Logo";
-import { NAV_ITEMS } from "./nav";
+import { MORE_ITEMS, NAV_ITEMS } from "./nav";
 import { OverlayHost } from "@/components/overlays/OverlayHost";
 import { Toaster } from "@/components/ui/Toaster";
 
@@ -68,14 +68,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       {/* Desktop navigation rail */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[232px] flex-col border-r border-line bg-canvas px-4 py-6 md:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[232px] flex-col border-r border-line/60 bg-space/70 px-4 py-6 backdrop-blur md:flex">
         <Link href="/today" className="mb-8 px-2" aria-label="ORBIT home">
           <Logo />
         </Link>
         <button
           type="button"
           onClick={() => open({ type: "capture" })}
-          className="mb-6 flex min-h-11 items-center gap-2 rounded-xl bg-ink px-4 text-[15px] font-medium text-white shadow-card transition-colors hover:bg-ink/90"
+          className="mb-6 flex min-h-11 items-center gap-2 rounded-xl bg-cream px-4 text-[15px] font-medium text-navy shadow-card transition-colors hover:bg-cream-2"
         >
           <Plus size={18} aria-hidden />
           Add anything
@@ -94,6 +94,23 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               >
                 <Icon size={19} aria-hidden className={active ? "text-accent" : undefined} />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+        <p className="mb-1 mt-8 px-3 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-3">More</p>
+        <nav aria-label="More" className="flex flex-col gap-0.5">
+          {MORE_ITEMS.map(({ href, label, icon: Icon }) => {
+            const active = isActive(pathname, href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={cn("flex min-h-10 items-center gap-3 rounded-xl px-3 text-[14.5px] transition-colors", active ? "bg-surface text-ink" : "text-ink-3 hover:bg-sunken hover:text-ink")}
+              >
+                <Icon size={17} aria-hidden />
                 {label}
               </Link>
             );
@@ -119,7 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line/70 bg-canvas/90 px-4 py-3 backdrop-blur md:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line/50 bg-space/80 px-4 py-3 backdrop-blur-lg md:hidden">
         <Link href="/today" aria-label="ORBIT home">
           <Logo />
         </Link>
@@ -132,19 +149,34 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto w-full max-w-[1080px] px-4 pb-32 pt-5 md:px-10 md:pb-16 md:pt-10">{children}</div>
       </main>
 
-      {/* Mobile bottom navigation */}
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        <ul className="grid grid-cols-5">
-          {NAV_ITEMS.map(({ href, short, icon: Icon }) => {
+      {/* Mobile tab bar: Today · Orbit · Add · Calendar · Ask */}
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line/70 bg-space/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden">
+        <ul className="grid grid-cols-5 items-end">
+          {[NAV_ITEMS[0], NAV_ITEMS[1], null, NAV_ITEMS[2], NAV_ITEMS[3]].map((item) => {
+            if (!item) {
+              return (
+                <li key="add" className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => open({ type: "capture" })}
+                    aria-label="Add anything"
+                    className="-mt-5 mb-1.5 flex h-14 w-14 items-center justify-center rounded-full bg-cream text-navy shadow-[0_0_24px_rgba(244,239,230,0.35)] transition-transform active:scale-95"
+                  >
+                    <Plus size={26} aria-hidden />
+                  </button>
+                </li>
+              );
+            }
+            const { href, short, icon: Icon } = item;
             const active = isActive(pathname, href);
             return (
               <li key={href}>
                 <Link
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 text-[12px] font-medium", active ? "text-accent" : "text-ink-3")}
+                  className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11.5px] font-medium", active ? "text-cream" : "text-ink-3")}
                 >
-                  <Icon size={21} aria-hidden />
+                  <Icon size={21} aria-hidden className={active ? "text-accent" : undefined} />
                   {short}
                 </Link>
               </li>
@@ -152,16 +184,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </ul>
       </nav>
-
-      {/* Persistent capture button on mobile */}
-      <button
-        type="button"
-        onClick={() => open({ type: "capture" })}
-        aria-label="Add anything"
-        className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-ink text-white shadow-raised transition-transform active:scale-95 md:hidden"
-      >
-        <Plus size={26} aria-hidden />
-      </button>
 
       <OverlayHost />
       <Toaster />

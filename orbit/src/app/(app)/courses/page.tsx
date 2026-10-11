@@ -14,7 +14,7 @@ export default function CoursesPage() {
         title="Courses"
         subtitle="Fall 2026 · ORBIT keeps every syllabus date, exam, and professor in one place."
         action={
-          <Link href="/courses/upload" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-4 text-[15px] font-medium text-white shadow-card hover:bg-accent-strong">
+          <Link href="/courses/upload" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-4 text-[15px] font-medium text-navy shadow-card hover:bg-accent-strong">
             <FileUp size={17} aria-hidden /> Upload syllabus
           </Link>
         }

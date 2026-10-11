@@ -6,6 +6,7 @@
  * replace its body without touching components.
  */
 import type {
+  Goal,
   AttentionItem,
   CalendarItem,
   Conflict,
@@ -33,6 +34,9 @@ import {
 import { buildAttention, buildComingUp, buildNoticed, buildOpening, createMorningBrief, type ComingUpGroup, type NoticedItem } from "./attention";
 import { computeLearned, type Learned } from "./learning";
 import { hiddenKinds } from "./connections";
+import { goalProgress, studyProgress, type GoalProgress, type StudyProgress } from "./goals";
+import { summarizeAreas, type AreaSummary } from "./areas";
+import { computeKnowYou, type KnowYou } from "./knowYou";
 
 export { calculatePriority, buildRankedLoops, selectPriorities } from "./priority";
 export { classifyMessage, requiresReply } from "./messages";
@@ -64,6 +68,10 @@ export interface OrbitDerived {
   noticed: NoticedItem[];
   tomorrowItems: CalendarItem[];
   learned: Learned;
+  goals: { goal: Goal; progress: GoalProgress }[];
+  study: StudyProgress[];
+  areas: AreaSummary[];
+  knowYou: KnowYou;
 }
 
 export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
@@ -164,7 +172,16 @@ export function computeDerived(state: OrbitState, now: Date): OrbitDerived {
     today,
   });
 
+  const goals = state.goals.map((goal) => ({ goal, progress: goalProgress(goal, today) }));
+  const study = studyProgress(state.exams, state.studyLog, today);
+  const areas = summarizeAreas({ loops, items: upcomingItems, goals: state.goals, study, courses: state.courses, today });
+  const knowYou = computeKnowYou(state.profile, state.sources, state.goals, state.courses.length);
+
   return {
+    goals,
+    study,
+    areas,
+    knowYou,
     now,
     today,
     loops,

@@ -5,12 +5,73 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import type { CalendarItem, DemoTime } from "@/types";
 import { cn } from "@/lib/cn";
 import { formatLongDate, formatTime, toMinutes, toTimeStr } from "@/lib/time";
+
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { TaskRow } from "@/components/loops/TaskRow";
 import { Noticed } from "@/components/today/Noticed";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { EVENT_META } from "@/components/calendar/eventStyle";
+import { StepCheck } from "@/components/goals/GoalCard";
+import { Moons } from "@/components/goals/StudyMoons";
+import { AREA_STYLE } from "@/lib/areas";
+import { addDays, relativeDay } from "@/lib/time";
+
+/** Goal steps for today (or tomorrow) and the closest exam's study moons. */
+function Progress() {
+  const { derived, dispatch } = useOrbit();
+  const { open, notify } = useUI();
+  const { today } = derived;
+  const steps = derived.goals
+    .map(({ goal, progress }) => {
+      const step = progress.today ?? goal.steps.find((s) => s.date === addDays(today, 1) && !s.done) ?? progress.next;
+      return step ? { goal, step } : undefined;
+    })
+    .filter((x): x is NonNullable<typeof x> => !!x)
+    .slice(0, 2);
+  const study = derived.study[0];
+  if (!steps.length && !study) return null;
+  return (
+    <ul className="space-y-2">
+      {study && (
+        <li className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={study.studiedToday}
+            aria-label={study.studiedToday ? "Studied today" : `I studied for ${study.exam.title} today`}
+            onClick={() => {
+              dispatch({ type: "TOGGLE_STUDY_DAY", examId: study.exam.id, date: today });
+              notify(study.studiedToday ? "Removed today's session." : "Logged. Another moon filled in.", { undoable: true });
+            }}
+            className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2", study.studiedToday ? "border-success bg-success text-navy" : "border-line-strong hover:border-success")}
+          >
+            {study.studiedToday && <CheckCircle2 size={14} aria-hidden />}
+          </button>
+          <Link href="/orbit/school" className="min-w-0 flex-1">
+            <span className="block truncate text-[15.5px] font-medium">Study for {study.exam.title.replace(/^([A-Z]+ \d+).*/, "$1")}</span>
+            <span className="block text-[13.5px] text-ink-3">
+              Studied {Math.min(study.studied.length, study.target)}/{study.target} days · exam {relativeDay(study.exam.date!, today).toLowerCase()}
+            </span>
+          </Link>
+          <span className="hidden sm:block"><Moons filled={Math.min(study.studied.length, study.target)} total={study.target} size={16} /></span>
+        </li>
+      )}
+      {steps.map(({ goal, step }) => (
+        <li key={step.id} className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+          <StepCheck goalId={goal.id} stepId={step.id} done={step.done} label={step.title} />
+          <button type="button" onClick={() => open({ type: "goal", id: goal.id })} className="min-w-0 flex-1 text-left">
+            <span className="block truncate text-[15.5px] font-medium">{step.title}</span>
+            <span className="flex items-center gap-1.5 text-[13.5px] text-ink-3">
+              <span className={cn("h-2 w-2 rounded-full", AREA_STYLE[goal.area].dot)} aria-hidden />
+              <span className="truncate">{relativeDay(step.date, today)} · {goal.title}</span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /** Same structure all day; the words and emphasis shift with the time. */
 const CONTEXT: Record<DemoTime, { matters: string; headline: (n: number) => string; empty: string }> = {
@@ -24,7 +85,7 @@ function Section({ title, action, children, className }: { title: string; action
   return (
     <section aria-labelledby={id} className={className}>
       <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h2 id={id} className="text-[19px] font-semibold tracking-tight">{title}</h2>
+        <h2 id={id} className="text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-3">{title}</h2>
         {action}
       </div>
       {children}
@@ -85,7 +146,7 @@ export default function TodayPage() {
   const whatMatters = (
     <Section title={ctx.matters} action={<SeeAll href="/loops">See all tasks</SeeAll>}>
       {matters.length ? (
-        <ul className="-mx-2">
+        <ul className="rounded-3xl border border-line bg-surface/70 p-2">
           {matters.map((l) => (
             <TaskRow key={l.id} loop={l} area="matters" />
           ))}
@@ -106,17 +167,22 @@ export default function TodayPage() {
     </Section>
   );
 
+  const progressSection = (
+    <Section title="Goals & studying" action={<SeeAll href="/orbit">Orbit</SeeAll>}>
+      <Progress />
+    </Section>
+  );
   return (
     <div className="space-y-10">
       <header>
-        <h1 className="text-[30px] font-semibold leading-tight tracking-tight md:text-[34px]">
+        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-accent">{formatLongDate(today)}</p>
+        <h1 className="mt-1 text-[34px] leading-tight md:text-[42px]">
           {greeting}, {state.user.name}
         </h1>
-        <p className="mt-1 text-[15.5px] text-ink-3">{formatLongDate(today)}</p>
-        <p className="mt-3 flex flex-wrap items-baseline gap-x-4 text-[17px] text-ink-2">
+        <p className="mt-2 flex flex-wrap items-baseline gap-x-4 text-[17px] text-ink-2">
           {ctx.headline(matters.length)}
           {state.demoTime === "morning" && (
-            <button type="button" onClick={() => open({ type: "brief" })} className="text-[14.5px] text-ink-3 underline-offset-4 hover:text-ink hover:underline">
+            <button type="button" onClick={() => open({ type: "brief" })} className="text-[14.5px] text-accent underline-offset-4 hover:underline">
               Morning brief
             </button>
           )}
@@ -128,6 +194,7 @@ export default function TodayPage() {
         <div className="space-y-10">
           {learned.noticedFirst ? noticedSection(2) : whatMatters}
           {learned.noticedFirst ? whatMatters : noticedSection(2)}
+          {progressSection}
         </div>
         <Section title={scheduleLabel} action={<SeeAll href={`/calendar?view=day&date=${scheduleItems[0]?.date ?? today}`}>Open day</SeeAll>}>
           <div className="overflow-hidden rounded-2xl border border-line bg-surface">
@@ -154,6 +221,7 @@ export default function TodayPage() {
           </div>
         </Section>
         {!learned.noticedFirst && noticedSection(1)}
+        {progressSection}
       </div>
     </div>
   );

@@ -38,7 +38,7 @@ export type ConnectionStatus = "connected" | "paused" | "available";
 export interface ConnectedSource {
   id: ID;
   name: string;
-  kind: SourceKind | "drive" | "reminders" | "notes";
+  kind: SourceKind | "drive" | "reminders" | "notes" | "health" | "music" | "money";
   status: ConnectionStatus;
   /** One line shown on onboarding cards, e.g. "Know where you need to be." */
   blurb: string;
@@ -509,4 +509,46 @@ export interface SyllabusExtraction {
   pages: number;
   items: SyllabusItem[];
   officeHours?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Goals, study progress, and what ORBIT knows about you
+// ---------------------------------------------------------------------------
+
+export type GoalKind = "run" | "study" | "read" | "save" | "habit" | "career" | "generic";
+
+/** One small, achievable step toward a goal. */
+export interface GoalStep {
+  id: ID;
+  title: string;
+  date: string;
+  detail?: string;
+  minutes?: number;
+  done: boolean;
+}
+
+/** A longer goal ORBIT breaks into steps over time. */
+export interface Goal {
+  id: ID;
+  title: string;
+  area: Category;
+  kind: GoalKind;
+  /** Target date (YYYY-MM-DD). */
+  target: string;
+  createdAt: string;
+  /** Plain-language summary of the plan, e.g. "3 runs a week, building to 5K". */
+  plan: string;
+  steps: GoalStep[];
+}
+
+/** Answers to the background questions asked during onboarding. */
+export interface Profile {
+  userType?: string;
+  roles: string[];
+  areas: Category[];
+  hardest: string[];
+  briefTime?: string;
+  sleep?: string;
+  /** Short answers to "Help ORBIT know you" questions, by question id. */
+  answers: Record<string, string>;
 }

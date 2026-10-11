@@ -156,7 +156,7 @@ export function TimeGrid({
                         <button
                           type="button"
                           onClick={() => plan({ title: s.planTitle, date: s.date, start: s.start, end: s.planEnd, courseId: s.courseId, loopId: s.loopId })}
-                          className="shrink-0 rounded-md bg-accent px-2 py-0.5 text-[12px] font-semibold text-white hover:bg-accent-strong"
+                          className="shrink-0 rounded-md bg-accent px-2 py-0.5 text-[12px] font-semibold text-navy hover:bg-accent-strong"
                         >
                           Plan
                         </button>

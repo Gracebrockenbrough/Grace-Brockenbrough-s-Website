@@ -167,7 +167,7 @@ function UploadInner() {
           <ol className="mt-6 space-y-2 text-left">
             {SYLLABUS_PROCESSING_STEPS.map((s, i) => (
               <li key={s} className={cn("flex items-center gap-2.5 text-[15px] transition-opacity", i > step ? "opacity-30" : "opacity-100")}>
-                <span className={cn("flex h-5 w-5 items-center justify-center rounded-full", i < step ? "bg-success text-white" : "border-2 border-line-strong")} aria-hidden>
+                <span className={cn("flex h-5 w-5 items-center justify-center rounded-full", i < step ? "bg-success text-navy" : "border-2 border-line-strong")} aria-hidden>
                   {i < step && <Check size={12} strokeWidth={3} />}
                 </span>
                 {s.replace("…", "")}

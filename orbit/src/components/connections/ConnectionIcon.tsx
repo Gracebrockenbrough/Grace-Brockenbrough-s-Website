@@ -1,4 +1,4 @@
-import { CalendarDays, GraduationCap, HardDrive, ListChecks, Mail, MessageCircle, MessagesSquare, StickyNote } from "lucide-react";
+import { Activity, CalendarDays, DollarSign, Music, GraduationCap, HardDrive, ListChecks, Mail, MessageCircle, MessagesSquare, StickyNote } from "lucide-react";
 import type { ConnectedSource } from "@/types";
 import { cn } from "@/lib/cn";
 
@@ -11,6 +11,9 @@ const ICON: Record<string, typeof Mail> = {
   drive: HardDrive,
   reminders: ListChecks,
   notes: StickyNote,
+  health: Activity,
+  music: Music,
+  money: DollarSign,
 };
 
 export function ConnectionIcon({ source, size = 40 }: { source: ConnectedSource; size?: number }) {

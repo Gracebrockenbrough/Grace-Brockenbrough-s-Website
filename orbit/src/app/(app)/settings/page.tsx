@@ -10,6 +10,7 @@ import { useUI } from "@/store/UIProvider";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { LearningPrompt } from "@/components/ui/LearningPrompt";
+import { KnowYouCard } from "@/components/areas/KnowYouCard";
 
 function Toggle({ checked, onChange, label, description }: { checked: boolean; onChange: (v: boolean) => void; label: string; description: string }) {
   return (
@@ -58,10 +59,24 @@ export default function SettingsPage() {
           {state.user.name[0]}
         </span>
         <div>
-          <h1 className="text-[26px] font-semibold tracking-tight">{state.user.fullName}</h1>
+          <h1 className="text-[30px] leading-tight">{state.user.fullName}</h1>
           <p className="text-[15px] text-ink-2">{state.user.school} · {state.user.year}</p>
         </div>
       </header>
+
+      <KnowYouCard />
+
+      {(state.profile.userType || state.profile.hardest.length > 0) && (
+        <Section title="What ORBIT knows about you">
+          <ul className="flex flex-wrap gap-2">
+            {[state.profile.userType, ...state.profile.roles, ...state.profile.hardest.map((h) => `Hard: ${h.toLowerCase()}`), ...Object.values(state.profile.answers), state.profile.briefTime && `Brief at ${state.profile.briefTime}`]
+              .filter(Boolean)
+              .map((t) => (
+                <li key={t as string} className="rounded-full bg-sunken px-3 py-1 text-[14px] text-ink-2">{t}</li>
+              ))}
+          </ul>
+        </Section>
+      )}
 
       <Link href="/settings/connections" className="group block rounded-2xl border border-line bg-surface p-5 shadow-card hover:shadow-raised">
         <p className="text-[17px] font-semibold">ORBIT is connected to {connected.length} {connected.length === 1 ? "place" : "places"}</p>

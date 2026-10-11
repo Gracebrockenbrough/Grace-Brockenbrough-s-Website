@@ -28,7 +28,7 @@ function AssignmentRow({ a }: { a: Assignment }) {
         }}
         className={cn(
           "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2",
-          a.completed ? "border-success bg-success text-white" : "border-line-strong text-transparent hover:border-success hover:text-success",
+          a.completed ? "border-success bg-success text-navy" : "border-line-strong text-transparent hover:border-success hover:text-success",
         )}
       >
         <Check size={14} strokeWidth={3} aria-hidden />
@@ -100,7 +100,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           <p className="flex-1 text-[15px]">
             <span className="font-semibold">{c.title.replace(`${course.code} `, "")} {c.confidence >= 0.8 ? "moved" : "may have moved"}</span>
           </p>
-          <button type="button" onClick={() => open({ type: "change", id: c.id })} className="min-h-9 rounded-xl bg-accent px-3 text-[14px] font-medium text-white hover:bg-accent-strong">
+          <button type="button" onClick={() => open({ type: "change", id: c.id })} className="min-h-9 rounded-xl bg-accent px-3 text-[14px] font-medium text-navy hover:bg-accent-strong">
             Review
           </button>
         </div>
@@ -113,7 +113,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             <p className="font-semibold">No syllabus yet</p>
             <p className="text-[15px] text-ink-2">Upload it and ORBIT will find every assignment and exam date for you to confirm.</p>
           </div>
-          <Link href={`/courses/upload?course=${course.id}`} className="inline-flex min-h-10 items-center rounded-xl bg-accent px-4 text-[15px] font-medium text-white hover:bg-accent-strong">
+          <Link href={`/courses/upload?course=${course.id}`} className="inline-flex min-h-10 items-center rounded-xl bg-accent px-4 text-[15px] font-medium text-navy hover:bg-accent-strong">
             Upload syllabus
           </Link>
         </div>

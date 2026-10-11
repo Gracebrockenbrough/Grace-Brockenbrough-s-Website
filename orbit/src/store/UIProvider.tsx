@@ -14,7 +14,10 @@ export type Overlay =
   | { type: "capture"; initialMode?: "type" | "speak" | "photo" | "screenshot" | "file" }
   | { type: "brief" }
   | { type: "connect"; id: string }
-  | { type: "connection"; id: string };
+  | { type: "connection"; id: string }
+  | { type: "goal"; id: string }
+  | { type: "newGoal"; area?: import("@/types").Category; text?: string }
+  | { type: "compose"; kind?: "text" | "email"; to?: string; about?: string };
 
 export interface Toast {
   id: number;

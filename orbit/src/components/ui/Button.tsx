@@ -10,7 +10,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-accent text-white hover:bg-accent-strong shadow-card",
+  primary: "bg-cream text-navy hover:bg-cream-2 shadow-card",
   secondary: "bg-surface text-ink border border-line-strong hover:bg-sunken",
   ghost: "text-ink-2 hover:bg-sunken hover:text-ink",
   subtle: "bg-sunken text-ink hover:bg-line",

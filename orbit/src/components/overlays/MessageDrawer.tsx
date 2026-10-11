@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Info } from "lucide-react";
+import { Copy, ExternalLink, Info } from "lucide-react";
 import { formatLongDate, formatTime, datePart, timePart, formatTimeRange, formatShortDate } from "@/lib/time";
 import { uid } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
@@ -14,33 +14,10 @@ import { Pill } from "@/components/ui/Badges";
 import { MESSAGE_CLASS_LABEL, SENDER_LABEL, classifyMessage, replyWhy } from "@/services/messages";
 import { mockReplyDrafts } from "@/data/mockReplyDrafts";
 import { SOURCE_KIND_LABEL } from "@/data/mockSources";
+import { TONES, toneDraft, type Tone } from "@/lib/drafts";
+import { gmailCompose, smsLink, APP_LINKS } from "@/lib/handoff";
 
 /** Needs Reply details. ORBIT drafts, the user decides — nothing is sent automatically. */
-const TONES = ["Friendly", "Casual", "Formal", "Brief", "Apologetic"] as const;
-type Tone = (typeof TONES)[number];
-
-/** Rewrites ORBIT's suggested reply in a different tone. The user still sends it. */
-function toneDraft(base: string, tone: Tone): string {
-  const lines = base.split("\n");
-  const greeting = /^(hi|hey|hello|dear)\b/i.test(lines[0]) ? lines[0].replace(/,$/, "") : "";
-  const name = greeting.replace(/^(hi|hey|hello|dear)\s*/i, "");
-  const signIdx = lines.findIndex((l) => /^(best|thank you|thanks|love|cheers)/i.test(l.trim()));
-  const body = lines.slice(greeting ? 1 : 0, signIdx >= 0 ? signIdx : undefined).join("\n").trim();
-  const firstSentence = body.split(/(?<=[.!?])\s/)[0];
-  switch (tone) {
-    case "Friendly":
-      return base;
-    case "Casual":
-      return `${name ? `Hey ${name}! ` : ""}${body}`;
-    case "Formal":
-      return `${name ? `Dear ${name},\n\n` : ""}${body}\n\nBest regards,\nGrace Brockenbrough`;
-    case "Brief":
-      return `${firstSentence}${name ? "\n\nThanks,\nGrace" : ""}`;
-    case "Apologetic":
-      return `${greeting ? `${greeting},\n\n` : ""}Sorry for the slow reply! ${body}${signIdx >= 0 ? `\n\n${lines.slice(signIdx).join("\n")}` : ""}`;
-  }
-}
-
 export function MessageDrawer({ id, onClose, startDraft = false }: { id: string; onClose: () => void; startDraft?: boolean }) {
   const { state, derived, dispatch } = useOrbit();
   const { notify } = useUI();
@@ -195,6 +172,27 @@ export function MessageDrawer({ id, onClose, startDraft = false }: { id: string;
             >
               <Copy size={15} aria-hidden /> Copy draft
             </Button>
+            {(() => {
+              const handoff =
+                message.source === "email"
+                  ? { label: "Open in Gmail", href: gmailCompose({ subject: `Re: ${message.subject ?? ""}`, body: draft }) }
+                  : message.source === "text"
+                    ? { label: "Open in Messages", href: smsLink(draft) }
+                    : message.source === "groupme"
+                      ? { label: "Open GroupMe", href: APP_LINKS.groupme.href }
+                      : undefined;
+              return handoff ? (
+                <a
+                  href={handoff.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => navigator.clipboard?.writeText(draft).catch(() => undefined)}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-3 text-sm font-medium hover:bg-sunken"
+                >
+                  <ExternalLink size={15} aria-hidden /> {handoff.label}
+                </a>
+              ) : null;
+            })()}
             <Button size="sm" variant="primary" onClick={markReplied}>
               I sent it — mark replied
             </Button>

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Mail, Pencil } from "lucide-react";
+import { ExternalLink, Mail, Pencil, PenLine } from "lucide-react";
+import { appFor } from "@/lib/handoff";
 import type { LoopStatus, PriorityLevel } from "@/types";
 import { datePart, formatLongDate, formatTime, relativeDateTime, timePart } from "@/lib/time";
 import { useOrbit } from "@/store/OrbitProvider";
@@ -42,6 +43,10 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
   const editable = loop.derivedFrom === "loop";
   const done = loop.status === "done";
   const step = nextStepFor(loop);
+  const app = appFor(loop.title, loop.source.kind);
+  // "Call Dad", "Text Maya", "Email the recruiter" → ORBIT can draft it.
+  const who = loop.title.match(/^(?:[Cc]all|[Tt]ext|[Ee]mail|[Mm]essage|[Ss]end|[Tt]ell)\s+([A-Z][a-z]+)/)?.[1];
+  const writeTo = who && !loop.messageId ? { kind: /^email/i.test(loop.title) ? ("email" as const) : ("text" as const), to: who } : undefined;
 
   return (
     <Drawer
@@ -111,14 +116,24 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
         </div>
       )}
 
-      {step && !done && (
-        <Button
-          variant="secondary"
-          className="mb-5"
-          onClick={() => open(step.kind === "draft" ? { type: "message", id: loop.messageId!, draft: true } : { type: "findTime", id: loop.id })}
-        >
-          {step.label}
-        </Button>
+      {!done && (step || app || writeTo) && (
+        <div className="mb-5 flex flex-wrap gap-2">
+          {step && (
+            <Button variant="secondary" onClick={() => open(step.kind === "draft" ? { type: "message", id: loop.messageId!, draft: true } : { type: "findTime", id: loop.id })}>
+              {step.label}
+            </Button>
+          )}
+          {writeTo && step?.kind !== "draft" && (
+            <Button variant="secondary" onClick={() => open({ type: "compose", kind: writeTo.kind, to: writeTo.to, about: loop.title })}>
+              <PenLine size={15} aria-hidden /> Help me write it
+            </Button>
+          )}
+          {app && (
+            <a href={app.href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line-strong px-4 text-[15px] font-medium hover:bg-sunken">
+              <ExternalLink size={15} aria-hidden /> Open {app.label}
+            </a>
+          )}
+        </div>
       )}
 
       {rescheduling && (
@@ -137,7 +152,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
               { label: "Monday", value: "2026-10-12" },
               { label: "Next week", value: "2026-10-16" },
             ].map((q) => (
-              <button key={q.label} type="button" onClick={() => setDate(q.value)} className={`min-h-9 rounded-full border px-3 text-[14px] ${date === q.value ? "border-ink bg-ink text-white" : "border-line-strong"}`}>
+              <button key={q.label} type="button" onClick={() => setDate(q.value)} className={`min-h-9 rounded-full border px-3 text-[14px] ${date === q.value ? "border-cream bg-cream text-navy" : "border-line-strong"}`}>
                 {q.label}
               </button>
             ))}

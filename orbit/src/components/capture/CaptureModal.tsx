@@ -2,18 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Camera, Check, CircleDot, FileUp, Mic, Undo2 } from "lucide-react";
-import type { CaptureInputKind, CaptureResult } from "@/types";
+import { CalendarPlus, Camera, Check, CircleDot, FileUp, Mic, Smartphone, Target, Undo2 } from "lucide-react";
+import type { CaptureInputKind, CaptureResult, Category } from "@/types";
 import { cn, uid } from "@/lib/cn";
 import { formatShortDate, formatTime, relativeDateTime } from "@/lib/time";
 import { DEMO_NOW_STR } from "@/data/demoClock";
-import { AREA_LABEL } from "@/lib/areas";
+import { AREA_LABEL, AREA_ORDER, AREA_STYLE } from "@/lib/areas";
+import { areaForItem } from "@/services/areas";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
 import { Modal } from "@/components/ui/Overlay";
 import { Button } from "@/components/ui/Button";
 import { OrbitMark } from "@/components/shell/Logo";
-import { DEMO_SCREENSHOT_TEXT, VOICE_EXAMPLES, processCaptureMany } from "@/services/capture";
+import { DEMO_CHAT_TEXT, DEMO_SCREENSHOT_TEXT, VOICE_EXAMPLES, processCaptureMany } from "@/services/capture";
 
 type Phase = "input" | "listening" | "reading" | "result" | "review" | "added";
 
@@ -46,6 +47,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
   const textRef = useRef<HTMLTextAreaElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const shotRef = useRef<HTMLInputElement>(null);
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
@@ -109,12 +111,14 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
     }, 900 + phrase.split(" ").length * 170);
   }
 
+  /** Image reading is simulated: a photo reads as a concert flyer, a screenshot as a group chat. */
   function readImage(kind: "photo" | "screenshot", simulated = true) {
+    const sample = kind === "photo" ? DEMO_SCREENSHOT_TEXT : DEMO_CHAT_TEXT;
     setSimulatedImage(simulated);
     setPhase("reading");
-    setReadingLabel("Reading your screenshot…");
-    later(() => setReadingLabel("Found a date and a time…"), 700);
-    later(() => finish(processCaptureMany({ kind, text: DEMO_SCREENSHOT_TEXT }, ctx), kind, DEMO_SCREENSHOT_TEXT), 1400);
+    setReadingLabel(kind === "photo" ? "Reading your photo…" : "Reading your screenshot…");
+    later(() => setReadingLabel(kind === "photo" ? "Found a date and a time…" : "Found a few things in this chat…"), 700);
+    later(() => finish(processCaptureMany({ kind, text: sample }, ctx), kind, sample), 1400);
   }
 
   function readFile(file: File) {
@@ -204,26 +208,41 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
                 Add
               </Button>
             </div>
-            <div className="mt-3 flex gap-2">
+            <p className="mb-2 mt-5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-3">Or bring it in</p>
+            <div className="grid grid-cols-4 gap-2">
               {[
-                { label: "Speak", icon: Mic, onClick: startVoice },
-                { label: "Photo", icon: Camera, onClick: () => photoRef.current?.click() },
-                { label: "File", icon: FileUp, onClick: () => fileRef.current?.click() },
-              ].map(({ label, icon: Icon, onClick }) => (
+                { label: "Speak", hint: "Say it", icon: Mic, color: "text-wellness", onClick: startVoice },
+                { label: "Photo", hint: "Flyer, board", icon: Camera, color: "text-school", onClick: () => photoRef.current?.click() },
+                { label: "Screenshot", hint: "Chat, email", icon: Smartphone, color: "text-travel", onClick: () => shotRef.current?.click() },
+                { label: "File", hint: "Syllabus, PDF", icon: FileUp, color: "text-career", onClick: () => fileRef.current?.click() },
+              ].map(({ label, hint, icon: Icon, color, onClick }) => (
                 <button
                   key={label}
                   type="button"
                   onClick={onClick}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-line px-3.5 text-[14.5px] font-medium text-ink-2 hover:border-line-strong hover:text-ink"
+                  className="flex min-h-[84px] flex-col items-center justify-center gap-1 rounded-2xl border border-line bg-sunken/60 px-1 text-center hover:border-line-strong hover:bg-sunken"
                 >
-                  <Icon size={17} aria-hidden />
-                  {label}
+                  <Icon size={22} className={color} aria-hidden />
+                  <span className="text-[14px] font-medium text-ink">{label}</span>
+                  <span className="hidden text-[11.5px] leading-tight text-ink-3 sm:block">{hint}</span>
                 </button>
               ))}
             </div>
-            {/* Photo covers camera and screenshots; File covers syllabi and documents. */}
-            <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && readImage("photo")} />
+            {/* Photo opens the camera on phones; Screenshot and File open the library. */}
+            <input ref={photoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && readImage("photo")} />
+            <input ref={shotRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && readImage("screenshot")} />
             <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,image/*" className="hidden" onChange={(e) => e.target.files?.[0] && readFile(e.target.files[0])} />
+            <button
+              type="button"
+              onClick={() => open({ type: "newGoal" })}
+              className="mt-2 flex w-full items-center gap-3 rounded-2xl border border-dashed border-line-strong px-4 py-3 text-left hover:border-accent"
+            >
+              <Target size={20} className="shrink-0 text-accent" aria-hidden />
+              <span>
+                <span className="block text-[15px] font-medium">Set a goal instead</span>
+                <span className="block text-[13px] text-ink-3">“Run a 5K next month” becomes a plan you can check off.</span>
+              </span>
+            </button>
             <div className="mt-6 space-y-1">
               {EXAMPLES.map((ex) => (
                 <button key={ex} type="button" onClick={() => submitText(ex)} className="block rounded-lg px-1 py-1 text-left text-[15px] text-ink-3 hover:text-ink">
@@ -231,7 +250,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
                 </button>
               ))}
               <button type="button" onClick={() => readImage("screenshot")} className="block rounded-lg px-1 py-1 text-left text-[14px] text-ink-3 hover:text-ink">
-                Or try a sample concert screenshot
+                Try a sample group-chat screenshot
               </button>
             </div>
           </form>
@@ -240,7 +259,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
 
       {phase === "listening" && (
         <div className="flex flex-col items-center py-8 text-center" aria-live="polite">
-          <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-accent text-white">
+          <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-accent text-navy">
             <span className="absolute inset-0 animate-ping rounded-full bg-accent/30" aria-hidden />
             <Mic size={30} aria-hidden />
           </span>
@@ -420,7 +439,7 @@ function CaptureResultView({
                 type="button"
                 aria-pressed={courseChoice === c.id}
                 onClick={() => setCourseChoice(c.id)}
-                className={cn("min-h-9 rounded-full border px-3.5 text-[14.5px] font-medium", courseChoice === c.id ? "border-ink bg-ink text-white" : "border-line-strong text-ink-2")}
+                className={cn("min-h-9 rounded-full border px-3.5 text-[14.5px] font-medium", courseChoice === c.id ? "border-cream bg-cream text-navy" : "border-line-strong text-ink-2")}
               >
                 {c.code}
               </button>
@@ -478,10 +497,12 @@ function CaptureReview({
           const date = r.type === "loop" ? r.loop.deadline?.split("T")[0] : r.type === "event" ? r.event.date : undefined;
           const meta =
             r.type === "loop"
-              ? [r.loop.deadline ? `Due ${relativeDateTime(r.loop.deadline, derived.today)}` : "No date", AREA_LABEL[r.loop.category]].join(" · ")
+              ? r.loop.deadline ? `Due ${relativeDateTime(r.loop.deadline, derived.today)}` : "No date"
               : r.type === "event"
                 ? `${formatShortDate(r.event.date)} · ${formatTime(r.event.startTime)} · Calendar`
                 : "Completes an existing task";
+          const area: Category | undefined =
+            r.type === "loop" ? r.loop.category : r.type === "event" ? areaForItem({ ...r.event, kind: "event", refId: r.event.id }, derived.loops) : undefined;
           return (
             <li key={id} className="flex items-start gap-3 py-3">
               <input
@@ -522,7 +543,30 @@ function CaptureReview({
                 ) : (
                   <>
                     <p className="text-[16px] font-medium">{title}</p>
-                    <p className="text-[14px] text-ink-3">{meta}</p>
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-ink-3">
+                      {area && r.type === "loop" ? (
+                        <label className={cn("relative inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-2 pr-1 text-[13px] font-medium", AREA_STYLE[area].border, AREA_STYLE[area].soft, AREA_STYLE[area].text)}>
+                          <span className={cn("h-2 w-2 rounded-full", AREA_STYLE[area].dot)} aria-hidden />
+                          <span className="sr-only">Part of life</span>
+                          <select
+                            value={area}
+                            onChange={(e) => patch(id, (x) => (x.type === "loop" ? { ...x, loop: { ...x.loop, category: e.target.value as Category } } : x))}
+                            className="cursor-pointer appearance-none bg-transparent pr-1 focus:outline-none"
+                          >
+                            {AREA_ORDER.map((a) => (
+                              <option key={a} value={a} className="bg-surface text-ink">{AREA_LABEL[a]}</option>
+                            ))}
+                          </select>
+                          <span aria-hidden>▾</span>
+                        </label>
+                      ) : area ? (
+                        <span className={cn("inline-flex items-center gap-1.5 text-[13px] font-medium", AREA_STYLE[area].text)}>
+                          <span className={cn("h-2 w-2 rounded-full", AREA_STYLE[area].dot)} aria-hidden />
+                          {AREA_LABEL[area]}
+                        </span>
+                      ) : null}
+                      <span>{meta}</span>
+                    </p>
                   </>
                 )}
                 {note && <p className="mt-1 text-[14px] text-due-ink">Check this: {note}</p>}

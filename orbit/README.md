@@ -28,6 +28,18 @@ To start over, use **Settings → Reset demo** or clear site data.
 
 ## How it's organized for the user
 
+The app uses a night-sky design: a navy background, cream highlights, a Fraunces serif for headlines, and one planet color for each part of life. School is coral, Career is lavender, Wellness is teal, Social is gold, Travel is sky blue, and Personal is pink. Tasks, goals, and calendar items carry their area's color everywhere.
+
+Navigation is **Today · Orbit · ＋ · Calendar · Ask**. On a phone, ＋ ("Add anything") sits in the middle of the tab bar.
+
+- **Onboarding** is 12 short, optional steps. It asks what kind of student you are, where you're starting from, which parts of life ORBIT should watch, what's hardest right now, and how your days usually go. It also offers to start a first goal, connect accounts, add classes, and pick a morning brief time.
+- **Orbit** shows every part of life as a planet around "Today", each with a count and a one-line status. Switch to **All together** for one color-coded list of the week. Tap a planet for its own page with study progress, goals, tasks, and what's coming up. Planet tabs across the top move between areas.
+- **Goals:** type or say a goal ("Run a 5K next month", "Save $400 by December", "Land a summer internship") and ORBIT builds a plan of small, checkable steps. A 5K becomes three runs a week that build from run/walk to race day. Today shows the next step, and the goal drawer shows the full plan week by week, with streaks and missed steps.
+- **Study moons:** each upcoming exam shows "Studied 1/5 days" as five moons. Check off "I studied today" and another moon fills in.
+- **Add anything** accepts typing, speaking, a photo, a screenshot, or a file. One input can hold several things. A sample group-chat screenshot becomes three items: school, wellness, and travel. Each item is tagged with an area you can change, and nothing is saved until you press Add.
+- **Ask ORBIT** opens with an answer already: the most important thing right now, your next free time, and three ways to use it, each one tap to add to the calendar.
+- **Help me write** drafts texts and emails in five tones. ORBIT copies the draft or opens Gmail or Messages with it filled in, and you send it yourself. Task and event details link to the app where the work happens: Canvas, Handshake, LinkedIn, Strava, Maps, or Google Calendar.
+- **Help ORBIT know you** (on Orbit and Profile) asks one quick question at a time and suggests connections that fit your goals. Strava, for example, can check off runs. A meter shows how well ORBIT knows you.
 - **Today** has three layers: *What matters* (three rows), the day as a visual schedule, and *ORBIT noticed* (changes, conflicts, people waiting, deadlines at risk) ranked into one short list. Details open in a drawer.
 - **Calendar** uses one color meaning everywhere: classes indigo, meetings teal, personal neutral, social coral, deadlines amber, and red only for a real conflict. Day and Week are true time grids, and deadlines sit as markers above them.
 - **Tasks** (Open Loops) are plain rows: status, title, one detail.
@@ -44,6 +56,7 @@ You can also try Capture (the + button, or ⌘K / Ctrl+K, or `c`). Type, speak (
 
 - Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, lucide-react. No other runtime dependencies.
 - **`src/data/`** holds the mock data, structured so real integrations can replace it.
+- **`src/services/goals.ts`** turns goals into step plans and tracks study progress. **`areas.ts`** groups everything by part of life, and **`knowYou.ts`** picks the next question and connection to suggest.
 - **`src/services/orbitEngine.ts`** is the rule-based intelligence layer: `calculatePriority`, `classifyMessage`, `requiresReply`, `detectChanges`, `detectConflicts`, `suggestFreeTime`, `createMorningBrief`, `processCapture`, `answerQuestion`. Each function has a narrow, typed contract so a model or backend can replace its body.
 - **`src/store/`** has one reducer for all state, with undo history and `localStorage` persistence.
 - **`src/components/`** is organized by feature: today, loops, calendar, courses, capture, overlays, and shared ui.

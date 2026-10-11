@@ -9,11 +9,13 @@ import type {
   DisplayPreference,
   InteractionSignal,
   Exam,
+  Goal,
   LoopMeta,
   LoopStatus,
   NotificationSettings,
   OpenLoop,
   PriorityLevel,
+  Profile,
   SenderType,
 } from "@/types";
 import { createInitialState, type OrbitState } from "./state";
@@ -95,7 +97,14 @@ export type OrbitAction =
   | { type: "SIGNAL"; signal: Omit<InteractionSignal, "id" | "at"> }
   | { type: "SET_DISPLAY_PREF"; patch: Partial<DisplayPreference> }
   | { type: "ANSWER_PROMPT"; id: string; answer: "yes" | "no" }
-  | { type: "SET_DEMO_TIME"; time: DemoTime };
+  | { type: "SET_DEMO_TIME"; time: DemoTime }
+  // Goals, study progress, profile
+  | { type: "ADD_GOAL"; goal: Goal }
+  | { type: "REMOVE_GOAL"; id: string }
+  | { type: "TOGGLE_GOAL_STEP"; goalId: string; stepId: string }
+  | { type: "TOGGLE_STUDY_DAY"; examId: string; date: string }
+  | { type: "SET_PROFILE"; patch: Partial<Profile> }
+  | { type: "ANSWER_PROFILE"; id: string; answer: string };
 
 function updateMeta(state: OrbitState, id: string, patch: Partial<LoopMeta>): OrbitState {
   return { ...state, loopMeta: { ...state.loopMeta, [id]: { ...state.loopMeta[id], ...patch } } };
@@ -403,5 +412,26 @@ function baseReducer(state: OrbitState, action: OrbitAction): OrbitState {
       return { ...state, promptsAnswered: { ...state.promptsAnswered, [action.id]: action.answer } };
     case "SET_DEMO_TIME":
       return { ...state, demoTime: action.time, briefSeen: action.time !== "morning" ? true : state.briefSeen };
+
+    case "ADD_GOAL":
+      return { ...state, goals: [action.goal, ...state.goals] };
+    case "REMOVE_GOAL":
+      return { ...state, goals: state.goals.filter((g) => g.id !== action.id) };
+    case "TOGGLE_GOAL_STEP":
+      return {
+        ...state,
+        goals: state.goals.map((g) =>
+          g.id === action.goalId ? { ...g, steps: g.steps.map((s) => (s.id === action.stepId ? { ...s, done: !s.done } : s)) } : g,
+        ),
+      };
+    case "TOGGLE_STUDY_DAY": {
+      const days = state.studyLog[action.examId] ?? [];
+      const next = days.includes(action.date) ? days.filter((d) => d !== action.date) : [...days, action.date];
+      return { ...state, studyLog: { ...state.studyLog, [action.examId]: next } };
+    }
+    case "SET_PROFILE":
+      return { ...state, profile: { ...state.profile, ...action.patch } };
+    case "ANSWER_PROFILE":
+      return { ...state, profile: { ...state.profile, answers: { ...state.profile.answers, [action.id]: action.answer } } };
   }
 }

@@ -55,7 +55,7 @@ function NoticedCard({ item }: { item: NoticedItem }) {
         <p className="text-[16px] font-semibold text-ink">{item.title}</p>
         <p className="truncate text-[14.5px] text-ink-2">{item.detail}</p>
       </div>
-      <button type="button" onClick={() => act(item)} className="min-h-10 shrink-0 rounded-xl bg-ink px-4 text-[14.5px] font-medium text-white hover:bg-ink/85">
+      <button type="button" onClick={() => act(item)} className="min-h-10 shrink-0 rounded-xl bg-cream px-4 text-[14.5px] font-medium text-navy hover:bg-cream-2">
         {item.action}
       </button>
     </li>

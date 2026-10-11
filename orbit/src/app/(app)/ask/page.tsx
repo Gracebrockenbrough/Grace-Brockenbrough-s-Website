@@ -9,6 +9,7 @@ import { useUI } from "@/store/UIProvider";
 import { useLoopActions, usePlanBlock, SNOOZE_OPTIONS } from "@/store/useActions";
 import { answerQuestion, type AskAction, type AskAnswer } from "@/services/ask";
 import { OrbitMark } from "@/components/shell/Logo";
+import { RightNow } from "@/components/ask/RightNow";
 
 interface Turn {
   id: number;
@@ -101,12 +102,13 @@ export default function AskPage() {
   return (
     <div className="flex min-h-[calc(100vh-12rem)] flex-col">
       <header className="mb-6">
-        <h1 className="text-[28px] font-semibold tracking-tight md:text-[32px]">Ask ORBIT</h1>
-        <p className="mt-1 text-[15.5px] text-ink-2">Ask about your schedule, classes, tasks, and messages.</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-accent">Ask ORBIT</p>
+        <h1 className="text-[34px] leading-tight md:text-[40px]">Here&apos;s where things stand</h1>
       </header>
 
       {turns.length === 0 ? (
         <div className="flex-1">
+          <RightNow />
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -127,7 +129,7 @@ export default function AskPage() {
 <button type="button" aria-label="Speak (simulated)" onClick={speak} disabled={thinking || listening} className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-ink-2 hover:bg-sunken", listening && "animate-pulse-soft text-accent")}>
               <Mic size={19} aria-hidden />
             </button>
-            <button type="submit" aria-label="Ask" disabled={!input.trim()} className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-40">
+            <button type="submit" aria-label="Ask" disabled={!input.trim()} className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-navy disabled:opacity-40">
               <ArrowUp size={20} aria-hidden />
             </button>
           </form>
@@ -155,7 +157,7 @@ export default function AskPage() {
           {turns.map((t) => (
             <li key={t.id} className="space-y-3">
               <div className="flex justify-end">
-                <p className="max-w-[85%] rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-[15.5px] text-white">{t.question}</p>
+                <p className="max-w-[85%] rounded-2xl rounded-br-md bg-cream px-4 py-2.5 text-[15.5px] text-navy">{t.question}</p>
               </div>
               <div className="flex gap-3">
                 <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink shadow-card" aria-hidden>
@@ -241,7 +243,7 @@ export default function AskPage() {
 <button type="button" aria-label="Speak (simulated)" onClick={speak} disabled={thinking || listening} className={cn("flex h-10 w-10 items-center justify-center rounded-xl text-ink-2 hover:bg-sunken", listening && "animate-pulse-soft text-accent")}>
             <Mic size={19} aria-hidden />
           </button>
-          <button type="submit" aria-label="Ask" disabled={!input.trim() || thinking} className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-40">
+          <button type="submit" aria-label="Ask" disabled={!input.trim() || thinking} className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-navy disabled:opacity-40">
             <ArrowUp size={19} aria-hidden />
           </button>
         </div>

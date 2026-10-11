@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { GitCompareArrows, Lock } from "lucide-react";
+import { CalendarPlus, ExternalLink, GitCompareArrows, Lock, MapPin } from "lucide-react";
+import { googleCalendarLink, mapsLink } from "@/lib/handoff";
 import { formatLongDate, formatTimeRange } from "@/lib/time";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
@@ -104,6 +105,23 @@ export function EventDrawer({ id, onClose }: { id: string; onClose: () => void }
           </div>
         </DetailRow>
       </dl>
+      <div className="mt-5 flex flex-wrap gap-2">
+        {item.location && (
+          <a href={mapsLink(item.location)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line-strong px-3.5 text-[14.5px] font-medium hover:bg-sunken">
+            <MapPin size={15} aria-hidden /> Directions
+          </a>
+        )}
+        {item.source.kind !== "calendar" && (
+          <a
+            href={googleCalendarLink({ title: item.title, date: item.date, start: item.startTime, end: item.endTime, location: item.location })}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line-strong px-3.5 text-[14.5px] font-medium hover:bg-sunken"
+          >
+            <CalendarPlus size={15} aria-hidden /> Add to Google Calendar <ExternalLink size={13} aria-hidden />
+          </a>
+        )}
+      </div>
       {item.hardCommitment && (
         <p className="mt-5 flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[14px] text-ink-2">
           <Lock size={15} className="mt-0.5 shrink-0" aria-hidden />

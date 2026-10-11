@@ -65,7 +65,7 @@ export function Drawer({ title, hideTitle, eyebrow, onClose, children, footer, c
   const titleId = useId();
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 animate-fade-in bg-ink/25" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 animate-fade-in bg-black/55" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
         role="dialog"
@@ -82,7 +82,7 @@ export function Drawer({ title, hideTitle, eyebrow, onClose, children, footer, c
         <div className="flex items-start justify-between gap-3 px-6 pb-2 pt-4 md:pt-6">
           <div className="min-w-0">
             {eyebrow && <div className="mb-1">{eyebrow}</div>}
-            <h2 id={titleId} className={cn("text-[22px] font-semibold leading-snug tracking-tight", hideTitle && "sr-only")}>
+            <h2 id={titleId} className={cn("font-display text-[24px] leading-snug tracking-tight", hideTitle && "sr-only")}>
               {title}
             </h2>
           </div>
@@ -103,7 +103,7 @@ export function Modal({ title, hideTitle, eyebrow, onClose, children, footer, cl
   const titleId = useId();
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
-      <div className="absolute inset-0 animate-fade-in bg-ink/30" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 animate-fade-in bg-black/55" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
         role="dialog"
@@ -117,7 +117,7 @@ export function Modal({ title, hideTitle, eyebrow, onClose, children, footer, cl
         <div className="flex items-start justify-between gap-3 px-6 pb-2 pt-6">
           <div className="min-w-0">
             {eyebrow && <div className="mb-1">{eyebrow}</div>}
-            <h2 id={titleId} className={cn("text-[22px] font-semibold leading-snug tracking-tight", hideTitle && "sr-only")}>
+            <h2 id={titleId} className={cn("font-display text-[24px] leading-snug tracking-tight", hideTitle && "sr-only")}>
               {title}
             </h2>
           </div>

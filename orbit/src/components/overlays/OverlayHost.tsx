@@ -13,6 +13,9 @@ import { CaptureModal } from "@/components/capture/CaptureModal";
 import { MorningBrief } from "@/components/today/MorningBrief";
 import { ConnectModal, ConnectionDrawer } from "./ConnectionOverlays";
 import { FindTimeDrawer } from "./FindTimeDrawer";
+import { GoalDrawer } from "./GoalDrawer";
+import { NewGoalModal } from "./NewGoalModal";
+import { ComposeDrawer } from "./ComposeDrawer";
 
 /** One overlay at a time. Opening another replaces the current one. */
 export function OverlayHost() {
@@ -49,5 +52,11 @@ export function OverlayHost() {
       return <ConnectModal key={key} id={overlay.id} onClose={close} />;
     case "connection":
       return <ConnectionDrawer key={key} id={overlay.id} onClose={close} />;
+    case "goal":
+      return <GoalDrawer key={key} id={overlay.id} onClose={close} />;
+    case "newGoal":
+      return <NewGoalModal key={key} area={overlay.area} text={overlay.text} onClose={close} />;
+    case "compose":
+      return <ComposeDrawer key={key} kind={overlay.kind} to={overlay.to} about={overlay.about} onClose={close} />;
   }
 }

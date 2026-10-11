@@ -131,7 +131,7 @@ export function AttentionDrawer({ id, onClose }: { id: string; onClose: () => vo
         ))}
       </ul>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href={`/calendar?view=week&date=${conflict.date}`} onClick={onClose} className="inline-flex min-h-10 items-center rounded-xl bg-accent px-4 text-[15px] font-medium text-white hover:bg-accent-strong">
+        <Link href={`/calendar?view=week&date=${conflict.date}`} onClick={onClose} className="inline-flex min-h-10 items-center rounded-xl bg-accent px-4 text-[15px] font-medium text-navy hover:bg-accent-strong">
           See the week
         </Link>
         <Button variant="ghost" onClick={() => dismiss("Got it.")}>

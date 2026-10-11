@@ -11,6 +11,8 @@ import type {
   CourseMilestone,
   Exam,
   ExtractedFact,
+  Goal,
+  Profile,
   LoopMeta,
   Message,
   NotificationSettings,
@@ -25,9 +27,10 @@ import { mockMessages } from "@/data/mockMessages";
 import { mockFacts } from "@/data/mockChanges";
 import { mockSources } from "@/data/mockSources";
 import { mockSignals } from "@/data/mockSignals";
+import { defaultProfile, mockGoals, mockStudyLog } from "@/data/mockGoals";
 import { defaultNotificationSettings, defaultPreferences, mockUser } from "@/data/mockUser";
 
-export const STATE_VERSION = 4;
+export const STATE_VERSION = 5;
 
 /**
  * Everything ORBIT knows. Components never read mock files directly — they read
@@ -63,6 +66,11 @@ export interface OrbitState {
   promptsAnswered: Record<string, "yes" | "no">;
   /** Prototype only: which part of Friday the demo shows. */
   demoTime: DemoTime;
+  goals: Goal[];
+  /** Exam id → dates the user studied for it. */
+  studyLog: Record<string, string[]>;
+  /** Background answers from onboarding and "Help ORBIT know you". */
+  profile: Profile;
 }
 
 export function createInitialState(): OrbitState {
@@ -93,5 +101,8 @@ export function createInitialState(): OrbitState {
     displayPrefs: {},
     promptsAnswered: {},
     demoTime: "morning" as DemoTime,
+    goals: mockGoals,
+    studyLog: mockStudyLog,
+    profile: defaultProfile,
   });
 }

@@ -21,7 +21,7 @@ export function DoneCircle({ loop, onComplete, size = "md" }: { loop: RankedLoop
       className={cn(
         "group flex shrink-0 items-center justify-center rounded-full border-2 transition-colors",
         size === "lg" ? "h-7 w-7" : "h-6 w-6",
-        done ? "border-success bg-success text-white" : "border-line-strong text-transparent hover:border-success hover:text-success",
+        done ? "border-success bg-success text-navy" : "border-line-strong text-transparent hover:border-success hover:text-success",
       )}
     >
       <Check size={size === "lg" ? 16 : 14} strokeWidth={3} aria-hidden />

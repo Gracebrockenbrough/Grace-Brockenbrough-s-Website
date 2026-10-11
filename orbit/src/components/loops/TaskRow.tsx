@@ -10,6 +10,7 @@ import { SNOOZE_OPTIONS, useLoopActions } from "@/store/useActions";
 import { Menu } from "@/components/ui/Menu";
 import { DoneCircle, useCompleting } from "./LoopControls";
 import { nextStepFor } from "@/services/helpers";
+import { AREA_LABEL, AREA_STYLE } from "@/lib/areas";
 
 /** One short detail: "Due 5 PM", "Closes tonight", "Reply by tomorrow", "Waiting on Maya". */
 export function taskDetail(loop: RankedLoop, now: Date): string {
@@ -58,7 +59,12 @@ export function TaskRow({ loop, area, emphasizeToday = true, showStep = false }:
         className="min-w-0 flex-1 text-left"
       >
         <span className={cn("block truncate text-[16px] font-medium leading-snug", done ? "text-ink-3 line-through" : "text-ink")}>{loop.title}</span>
-        <span className={cn("block text-[14px]", urgent ? "text-due-ink" : "text-ink-3")}>{detail}</span>
+        <span className="flex items-center gap-1.5 text-[14px]">
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", AREA_STYLE[loop.category].dot)} aria-hidden />
+          <span className={cn("shrink-0", AREA_STYLE[loop.category].text)}>{AREA_LABEL[loop.category]}</span>
+          <span className="text-ink-3" aria-hidden>·</span>
+          <span className={cn("truncate", urgent ? "text-due-ink" : "text-ink-3")}>{detail}</span>
+        </span>
       </button>
       {step && (
         <button

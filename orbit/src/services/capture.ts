@@ -95,8 +95,9 @@ const IGNORE = /\bignore\s+(?:all\s+)?(?:emails?|messages?|texts?)?\s*(?:from\s+
 const SYLLABUS_FILE = /syllab/i;
 
 const WORK_WORDS = /\b(interview|application|recruiter|internship|resume|job|career|networking)\b/i;
-const PERSONAL_WORDS = /\b(mom|dad|birthday|present|gift|dress|return|haircut|laundry|groceries|package|rent)\b/i;
-const WELLNESS_WORDS = /\b(gym|workout|work out|run|yoga|dentist|doctor|therapy|sleep|meditat\w*|lift)\b/i;
+const PERSONAL_WORDS = /\b(birthday|present|gift|dress|return|haircut|laundry|groceries|package|rent)\b/i;
+const FAMILY_WORDS = /\b(call|text|visit|facetime)\b.*\b(mom|dad|grandma|grandpa|sister|brother|family|aunt|uncle)\b/i;
+const WELLNESS_WORDS = /\b(gym|workout|work out|run|yoga|dentist|doctor|therapy|sleep|meditat\w*|lift|practice|swim|pilates)\b/i;
 const SOCIAL_WORDS = /\b(dinner|lunch|brunch|coffee|party|concert|game|movie|friends?|hang out)\b/i;
 const TRAVEL_WORDS = /\b(flight|fly|trip|airport|hotel|train|bus ticket|packing|pack)\b/i;
 const MONEY_WORDS = /\b(return|refund|deposit|pay|bill|fee)\b/i;
@@ -107,9 +108,9 @@ function categorize(text: string, courses: Course[]): { category: Category; cour
   if (WORK_WORDS.test(text)) return { category: "work", consequence: "professional" };
   if (TRAVEL_WORDS.test(text)) return { category: "travel", consequence: "travel" };
   if (WELLNESS_WORDS.test(text)) return { category: "wellness", consequence: "low" };
-  if (SOCIAL_WORDS.test(text)) return { category: "social", consequence: "social" };
+  if (SOCIAL_WORDS.test(text) || FAMILY_WORDS.test(text)) return { category: "social", consequence: "social" };
   if (PERSONAL_WORDS.test(text)) return { category: "personal", consequence: MONEY_WORDS.test(text) ? "financial" : "social" };
-  if (/\b(class|exam|quiz|essay|paper|reading|professor|homework|problem set|study)\b/i.test(text)) return { category: "school", consequence: "academic" };
+  if (/\b(class|exam|quiz|essay|paper|reading|professor|homework|problem set|study|slides|presentation|project)\b/i.test(text)) return { category: "school", consequence: "academic" };
   return { category: "personal", consequence: "low" };
 }
 
@@ -138,6 +139,8 @@ function cleanTitle(raw: string, when: When): string {
     .replace(/^i\s+(have|need)\s+to\s+/i, "")
     .replace(/^i\s+should\s+/i, "")
     .replace(/^add\s+/i, "")
+    .replace(/\s+moved to\s*$/i, "")
+    .replace(/\b(night|morning|evening|afternoon)\s*[?!]?\s*$/i, "")
     .replace(/\b(by|on|due|before|at)\s*$/i, "")
     .replace(/\s+(by|on|due|before)\s+(?=[.,]|$)/gi, " ")
     .replace(/\s{2,}/g, " ")
@@ -254,7 +257,7 @@ export function processCapture(input: CaptureInput, ctx: CaptureContext): Captur
       date: when.date,
       startTime: when.time,
       endTime: addMinutesToTime(when.time, /concert|game|show|party/i.test(text) ? 150 : 60),
-      category: /meeting|interview|appointment/i.test(text) ? "meeting" : "social",
+      category: /meeting|interview/i.test(text) ? "meeting" : /appointment|dentist|doctor/i.test(text) ? "appointment" : WELLNESS_WORDS.test(text) ? "personal" : TRAVEL_WORDS.test(text) ? "travel" : "social",
       source,
       hardCommitment: false,
       confidence: input.kind === "text" || input.kind === "voice" ? 0.9 : 0.82,
@@ -307,14 +310,31 @@ export function splitCapture(text: string): string[] {
 }
 
 /** Process every item in a capture. Files and single thoughts return one result. */
+/** A line from a chat screenshot ("Maya: can you send me your slides?") read as your to-do. */
+export function fromChatLine(line: string): string {
+  const m = line.match(/^([A-Z][\w.' ]{0,20}):\s*(.+)$/);
+  if (!m) return line;
+  const [, sender, body] = m;
+  let t = body
+    .replace(/^(hey|hi)[,!]?\s+/i, "")
+    .replace(/^(can|could|would) you( please)?\s+/i, "")
+    .replace(/^(please|pls|don't forget to|dont forget to|remember to)\s+/i, "")
+    .replace(/\?$/, "");
+  t = t.replace(/\b(me|us)\b/i, sender).replace(/\byour\b/gi, "my").replace(/\byou\b/gi, "I");
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 export function processCaptureMany(input: CaptureInput, ctx: CaptureContext): CaptureResult[] {
   if (input.kind === "file" || !input.text) return [processCapture(input, ctx)];
-  const parts = splitCapture(input.text);
+  const parts = splitCapture(input.text).map(fromChatLine);
   return (parts.length ? parts : [input.text]).map((text) => processCapture({ ...input, text }, ctx));
 }
 
 /** What the simulated screenshot reader "sees" in the demo image. */
 export const DEMO_SCREENSHOT_TEXT = "Concert Saturday October 17 · 8 PM";
+
+/** A sample group-chat screenshot with three different parts of life in it. */
+export const DEMO_CHAT_TEXT = "Maya: can you send me your slides by Sunday night?\nCoach: practice moved to Thursday at 6pm\nMom: book your flight home for Thanksgiving by Friday";
 
 export const VOICE_EXAMPLES = [
   "Orbit, remind me that I have to email John tonight.",

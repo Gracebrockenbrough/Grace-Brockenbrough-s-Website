@@ -7,7 +7,7 @@ export default function NotFound() {
       <OrbitMark size={40} />
       <h1 className="mt-5 text-[26px] font-semibold">This page drifted out of orbit.</h1>
       <p className="mt-2 text-[16px] text-ink-2">Everything you care about is still on Today.</p>
-      <Link href="/today" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-accent px-5 font-medium text-white hover:bg-accent-strong">
+      <Link href="/today" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-accent px-5 font-medium text-navy hover:bg-accent-strong">
         Go to Today
       </Link>
     </div>
