@@ -30,7 +30,7 @@ import { mockSignals } from "@/data/mockSignals";
 import { defaultProfile, mockGoals, mockStudyLog } from "@/data/mockGoals";
 import { defaultNotificationSettings, defaultPreferences, mockUser } from "@/data/mockUser";
 
-export const STATE_VERSION = 6;
+export const STATE_VERSION = 7;
 
 /**
  * Everything Orbit knows. Components never read mock files directly — they read
@@ -38,6 +38,10 @@ export const STATE_VERSION = 6;
  */
 export interface OrbitState {
   version: number;
+  /** "demo" = Grace's sample week on a fixed clock; "live" = a real person's own data on the real clock. */
+  mode: "demo" | "live";
+  /** The day the morning brief was last opened (live mode shows it once a day). */
+  briefSeenOn?: string;
   onboarded: boolean;
   briefSeen: boolean;
   user: User;
@@ -77,6 +81,7 @@ export function createInitialState(): OrbitState {
   // Deep copy so the seed modules are never mutated.
   return structuredClone({
     version: STATE_VERSION,
+    mode: "demo" as const,
     onboarded: false,
     briefSeen: false,
     user: mockUser,
@@ -105,4 +110,49 @@ export function createInitialState(): OrbitState {
     studyLog: mockStudyLog,
     profile: defaultProfile,
   });
+}
+
+/** A brand-new account: nothing but the person's name. Everything else they add. */
+export function createLiveState(account?: { name?: string; email?: string | null }): OrbitState {
+  const base = createInitialState();
+  const full = (account?.name ?? "").trim();
+  return {
+    ...base,
+    mode: "live",
+    onboarded: false,
+    briefSeen: false,
+    user: { ...base.user, id: "me", name: full.split(/\s+/)[0] ?? "", fullName: full, email: account?.email ?? "", school: "", year: "" },
+    courses: [],
+    assignments: [],
+    exams: [],
+    milestones: [],
+    documents: [],
+    events: [],
+    loops: [],
+    messages: [],
+    facts: [],
+    // Connections are not live yet: nothing is connected, nothing has sample data.
+    sources: base.sources.map((s) => ({ ...s, status: "available" as const, hasDemoData: false })),
+    signals: [],
+    goals: [],
+    studyLog: {},
+    preferences: { ...base.preferences, ignoredSources: [] },
+    profile: { lives: [], areas: ["work", "health", "social", "personal"], messy: [], involvement: "helpful", answers: {} },
+  };
+}
+
+/**
+ * Brings a saved state forward to the current shape. Real people's data is
+ * never thrown away: missing fields are filled from a fresh state.
+ */
+export function migrateState(saved: unknown): OrbitState | null {
+  if (!saved || typeof saved !== "object") return null;
+  const s = saved as Partial<OrbitState>;
+  if (s.version === STATE_VERSION) return s as OrbitState;
+  if (s.mode === "live") {
+    const fresh = createLiveState();
+    return { ...fresh, ...s, version: STATE_VERSION, profile: { ...fresh.profile, ...(s.profile ?? {}) } } as OrbitState;
+  }
+  // Old sample-data saves are simply replaced by the current demo.
+  return null;
 }

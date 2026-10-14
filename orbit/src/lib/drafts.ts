@@ -6,8 +6,13 @@
 export const TONES = ["Friendly", "Casual", "Formal", "Brief", "Apologetic"] as const;
 export type Tone = (typeof TONES)[number];
 
-const SIGN = "Grace";
-const FULL = "Grace Brockenbrough";
+/** Who signs the drafts. Set from the signed-in person's name. */
+let SIGN = "";
+let FULL = "";
+export function setDraftSigner(name: string, fullName: string) {
+  SIGN = name;
+  FULL = fullName || name;
+}
 
 /** Rewrites a draft in a different tone. */
 export function toneDraft(base: string, tone: Tone): string {
@@ -23,9 +28,9 @@ export function toneDraft(base: string, tone: Tone): string {
     case "Casual":
       return `${name ? `Hey ${name}! ` : ""}${body}`;
     case "Formal":
-      return `${name ? `Dear ${name},\n\n` : ""}${body}\n\nBest regards,\n${FULL}`;
+      return `${name ? `Dear ${name},\n\n` : ""}${body}\n\nBest regards,${FULL ? `\n${FULL}` : ""}`;
     case "Brief":
-      return `${firstSentence}${name ? `\n\nThanks,\n${SIGN}` : ""}`;
+      return `${firstSentence}${name ? `\n\nThanks${SIGN ? `,\n${SIGN}` : "!"}` : ""}`;
     case "Apologetic":
       return `${greeting ? `${greeting},\n\n` : ""}Sorry for the slow reply! ${body}${signIdx >= 0 ? `\n\n${lines.slice(signIdx).join("\n")}` : ""}`;
   }
@@ -47,7 +52,7 @@ export function composeDraft({ kind, to, about }: { kind: "text" | "email"; to: 
   const lower = a.toLowerCase();
   const formal = /^(professor|prof|dr)\b/i.test(who);
   const hello = kind === "email" ? (formal ? `Dear ${who},` : `Hi ${first},`) : who ? `Hey ${first}!` : "Hey!";
-  const sign = kind === "email" ? `\n\nBest,\n${SIGN}` : "";
+  const sign = kind === "email" ? `\n\nBest${SIGN ? `,\n${SIGN}` : ""}` : "";
 
   if (/extension/.test(lower)) {
     const what = lower.match(/on (the )?(.+)$/)?.[2] ?? "the assignment";

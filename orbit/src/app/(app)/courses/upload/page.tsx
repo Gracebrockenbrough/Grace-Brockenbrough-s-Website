@@ -7,7 +7,7 @@ import { AlertCircle, ArrowLeft, Camera, Check, FileText, FileUp, Image as Image
 import type { SyllabusExtraction, SyllabusItem } from "@/types";
 import { cn } from "@/lib/cn";
 import { formatShortDate, formatTime } from "@/lib/time";
-import { DEMO_TODAY } from "@/data/demoClock";
+import { todayStr } from "@/lib/clock";
 import { sampleSyllabusExtraction, SYLLABUS_PROCESSING_STEPS } from "@/data/mockSyllabus";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
@@ -81,7 +81,7 @@ function UploadInner() {
   function confirm() {
     if (!extraction) return;
     const chosen = items.filter((i) => included.has(i.id));
-    const records = toCourseRecords(extraction, chosen, DEMO_TODAY);
+    const records = toCourseRecords(extraction, chosen, todayStr());
     dispatch({ type: "IMPORT_SYLLABUS", courseId: extraction.courseId, ...records, officeHours: extraction.officeHours });
     setImportedCount(chosen.length);
     setPhase("done");

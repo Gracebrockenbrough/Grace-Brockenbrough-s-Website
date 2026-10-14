@@ -2,14 +2,17 @@
   "name": "orbit",
   "version": "0.1.0",
   "private": true,
-  "description": "ORBIT — a proactive life-management prototype for college students.",
+  "description": "ORBIT \u2014 a proactive life-management prototype for college students.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:claude-link": "node claude-link/build.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
+    "@supabase/supabase-js": "2.117.2",
     "lucide-react": "0.468.0",
     "next": "16.4.0",
     "react": "19.2.8",
@@ -20,6 +23,7 @@
     "@types/node": "22.10.2",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "esbuild": "0.28.2",
     "postcss": "8.5.29",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3"

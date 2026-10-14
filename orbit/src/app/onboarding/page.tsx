@@ -22,7 +22,7 @@ import type { Category, Involvement } from "@/types";
 import { cn } from "@/lib/cn";
 import { areaLabel, areaStyle, BUILTIN_AREAS, customArea } from "@/lib/areas";
 import { relativeDay } from "@/lib/time";
-import { DEMO_NOW_STR } from "@/data/demoClock";
+import { nowStr, todayStr } from "@/lib/clock";
 import { buildGoal, GOAL_EXAMPLES } from "@/services/goals";
 import { useOrbit } from "@/store/OrbitProvider";
 import { Button } from "@/components/ui/Button";
@@ -76,8 +76,10 @@ function recommendedConnections(lives: string[]): { id: string; why: string }[] 
   return out.slice(0, 5);
 }
 
-type StepId = "welcome" | "how" | "life" | "areas" | "days" | "messy" | "involvement" | "connect" | "goal" | "ready";
-const STEPS: StepId[] = ["welcome", "how", "life", "areas", "days", "messy", "involvement", "connect", "goal", "ready"];
+type StepId = "welcome" | "name" | "how" | "life" | "areas" | "days" | "messy" | "involvement" | "connect" | "goal" | "ready";
+// Real accounts skip the connections step until real integrations exist.
+const LIVE_STEPS: StepId[] = ["welcome", "name", "how", "life", "areas", "days", "messy", "involvement", "goal", "ready"];
+const DEMO_STEPS: StepId[] = ["welcome", "how", "life", "areas", "days", "messy", "involvement", "connect", "goal", "ready"];
 
 function Title({ children, sub }: { children: React.ReactNode; sub?: React.ReactNode }) {
   return (
@@ -156,7 +158,9 @@ export default function OnboardingPage() {
   const [goalText, setGoalText] = useState("");
   const [goalAdded, setGoalAdded] = useState<string | undefined>();
 
-  const id = STEPS[stepIndex];
+  const STEPS = state.mode === "live" ? LIVE_STEPS : DEMO_STEPS;
+  const id = STEPS[Math.min(stepIndex, STEPS.length - 1)];
+  const [name, setName] = useState(state.user.name);
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   // Areas start from what the user said about their life; they can change anything.
@@ -168,7 +172,7 @@ export default function OnboardingPage() {
   }, [lives]);
   const chosenAreas = areas ?? suggestedAreas;
   const areaChoices = useMemo(() => [...BUILTIN_AREAS, ...chosenAreas.filter((a) => !(BUILTIN_AREAS as string[]).includes(a))], [chosenAreas]);
-  const goalPreview = useMemo(() => (goalText.trim() ? buildGoal(goalText, "2026-10-09", DEMO_NOW_STR) : undefined), [goalText]);
+  const goalPreview = useMemo(() => (goalText.trim() ? buildGoal(goalText, todayStr(), nowStr()) : undefined), [goalText]);
   const connections = recommendedConnections(lives);
 
   const next = () => setStepIndex((s) => Math.min(s + 1, STEPS.length - 1));
@@ -227,10 +231,57 @@ export default function OnboardingPage() {
                 <h1 className="mt-8 text-[32px] leading-[1.15]">Your life, without the mental juggling.</h1>
                 <p className="mt-3 text-[16.5px] text-ink-2">Most apps wait for you to manage them. Orbit notices.</p>
               </div>
-              <Button variant="primary" size="lg" className="w-full" onClick={next} data-autofocus>
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  if (state.mode !== "live") dispatch({ type: "START_LIVE" });
+                  next();
+                }}
+                data-autofocus
+              >
                 Get started
               </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  dispatch({ type: "LOAD_DEMO" });
+                  router.push("/today");
+                }}
+                className="mt-3 min-h-11 w-full text-[15px] text-ink-2 hover:text-ink"
+              >
+                Look around with sample data first
+              </button>
             </div>
+          )}
+
+          {id === "name" && (
+            <form
+              className="flex flex-1 flex-col"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const full = name.trim();
+                dispatch({ type: "SET_USER", patch: { name: full.split(/\s+/)[0] ?? "", fullName: full } });
+                next();
+              }}
+            >
+              <Title sub="So your mornings start with your name.">What should Orbit call you?</Title>
+              <label htmlFor="your-name" className="sr-only">Your name</label>
+              <input
+                id="your-name"
+                autoFocus
+                autoComplete="given-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your first name"
+                className="mt-6 block min-h-12 w-full rounded-2xl border border-line-strong bg-surface px-4 text-[17px]"
+              />
+              <div className="flex-1" />
+              <Button type="submit" variant="primary" size="lg" className="mt-8 w-full" disabled={!name.trim()}>
+                Continue
+              </Button>
+            </form>
           )}
 
           {id === "how" && (
@@ -466,7 +517,7 @@ export default function OnboardingPage() {
                       <ul className="mt-2 space-y-0.5 text-[14px] text-ink-3">
                         {goalPreview.steps.slice(0, 3).map((s) => (
                           <li key={s.id}>
-                            {relativeDay(s.date, "2026-10-09")}: {s.title}
+                            {relativeDay(s.date, todayStr())}: {s.title}
                           </li>
                         ))}
                       </ul>

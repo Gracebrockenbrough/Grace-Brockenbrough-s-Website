@@ -4,3 +4,8 @@ out/
 next-env.d.ts
 *.tsbuildinfo
 .DS_Store
+
+# Secrets
+.env
+.env*.local
+claude-link/dist/

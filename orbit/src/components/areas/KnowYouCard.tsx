@@ -7,11 +7,12 @@ import { ConnectionIcon } from "@/components/connections/ConnectionIcon";
 
 /** Orbit keeps asking, gently, so it understands more of your life. One question at a time. */
 export function KnowYouCard() {
-  const { derived, dispatch } = useOrbit();
+  const { derived, dispatch, state } = useOrbit();
   const { notify, open } = useUI();
   const { score, questions, connect } = derived.knowYou;
   const q = questions[0];
-  const c = connect[0];
+  // Connections are simulated, so real accounts aren't offered them yet.
+  const c = state.mode === "live" ? undefined : connect[0];
   if (!q && !c) return null;
 
   return (

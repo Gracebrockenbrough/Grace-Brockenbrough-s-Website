@@ -17,8 +17,11 @@ import type {
   PriorityLevel,
   Profile,
   SenderType,
+  User,
 } from "@/types";
-import { createInitialState, type OrbitState } from "./state";
+import { createInitialState, createLiveState, type OrbitState } from "./state";
+import { now, todayStr } from "@/lib/clock";
+import { addDays, toDateStr } from "@/lib/time";
 import { DEMO_TIMES } from "@/data/demoClock";
 
 const MAX_SIGNALS = 300;
@@ -37,6 +40,9 @@ export type OrbitAction =
   | { type: "HYDRATE"; state: OrbitState }
   | { type: "RESET_DEMO" }
   | { type: "RESTART_ONBOARDING" }
+  | { type: "START_LIVE"; account?: { name?: string; email?: string | null } }
+  | { type: "LOAD_DEMO" }
+  | { type: "SET_USER"; patch: Partial<User> }
   | { type: "COMPLETE_ONBOARDING" }
   | { type: "SET_BRIEF_SEEN"; seen: boolean }
   // Open Loops
@@ -176,11 +182,19 @@ function baseReducer(state: OrbitState, action: OrbitAction): OrbitState {
     case "RESET_DEMO":
       return { ...createInitialState(), onboarded: true, briefSeen: false, demoTime: state.demoTime, displayPrefs: { theme: state.displayPrefs.theme } };
     case "RESTART_ONBOARDING":
-      return { ...createInitialState(), displayPrefs: { theme: state.displayPrefs.theme } };
+      return state.mode === "live"
+        ? { ...createLiveState({ name: state.user.fullName, email: state.user.email }), displayPrefs: { theme: state.displayPrefs.theme } }
+        : { ...createInitialState(), displayPrefs: { theme: state.displayPrefs.theme } };
+    case "START_LIVE":
+      return { ...createLiveState(action.account ?? { name: state.mode === "live" ? state.user.fullName : "", email: state.mode === "live" ? state.user.email : "" }), displayPrefs: { theme: state.displayPrefs.theme } };
+    case "LOAD_DEMO":
+      return { ...createInitialState(), onboarded: true, displayPrefs: { theme: state.displayPrefs.theme } };
+    case "SET_USER":
+      return { ...state, user: { ...state.user, ...action.patch } };
     case "COMPLETE_ONBOARDING":
       return { ...state, onboarded: true };
     case "SET_BRIEF_SEEN":
-      return { ...state, briefSeen: action.seen };
+      return { ...state, briefSeen: action.seen, briefSeenOn: action.seen ? todayStr() : state.briefSeenOn };
 
     // ---- Open Loops -------------------------------------------------------
     case "COMPLETE_LOOP":
@@ -258,7 +272,7 @@ function baseReducer(state: OrbitState, action: OrbitAction): OrbitState {
           return setLoopCompletion(state, `msg:${action.id}`, true);
         case "remind_later":
           return {
-            ...updateMeta(state, `msg:${action.id}`, { snoozedUntil: "2026-10-10T09:00" }),
+            ...updateMeta(state, `msg:${action.id}`, { snoozedUntil: `${addDays(toDateStr(now()), 1)}T09:00` }),
             messages: state.messages.map((m) => (m.id === action.id ? { ...m, remindLater: true } : m)),
           };
         case "ignore_source":

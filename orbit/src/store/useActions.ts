@@ -2,19 +2,25 @@
 
 import { useCallback, useMemo } from "react";
 import type { CalendarEvent, LoopStatus, PriorityLevel, RankedLoop } from "@/types";
-import { DEMO_NOW_STR } from "@/data/demoClock";
-import { addDays, formatShortDate, formatTime } from "@/lib/time";
+import { now, nowStr, todayStr } from "@/lib/clock";
+import { addDays, formatShortDate, formatTime, weekday } from "@/lib/time";
 import { uid } from "@/lib/cn";
 import { useOrbit } from "./OrbitProvider";
 import { useUI } from "./UIProvider";
 import type { MessageFeedback } from "./reducer";
 
-export const SNOOZE_OPTIONS = [
-  { label: "Later today", until: "2026-10-09T18:00" },
-  { label: "Tomorrow", until: "2026-10-10T09:00" },
-  { label: "Monday", until: "2026-10-12T08:00" },
-  { label: "Next week", until: "2026-10-16T08:00" },
-] as const;
+/** Snooze choices relative to the current time. */
+export function snoozeOptions(): { label: string; until: string }[] {
+  const today = todayStr();
+  const hour = now().getHours();
+  const toMonday = ((8 - weekday(today)) % 7) || 7;
+  return [
+    ...(hour < 17 ? [{ label: "Later today", until: `${today}T18:00` }] : []),
+    { label: "Tomorrow", until: `${addDays(today, 1)}T09:00` },
+    { label: "Monday", until: `${addDays(today, toMonday)}T08:00` },
+    { label: "Next week", until: `${addDays(today, 7)}T08:00` },
+  ];
+}
 
 const STATUS_LABEL: Record<LoopStatus, string> = { now: "Now", soon: "Soon", later: "Later", waiting: "Waiting", done: "Done" };
 
@@ -29,14 +35,14 @@ export function useLoopActions() {
     () => ({
       complete(id: string) {
         const loop = find(id);
-        dispatch({ type: "COMPLETE_LOOP", id, at: DEMO_NOW_STR });
+        dispatch({ type: "COMPLETE_LOOP", id, at: nowStr() });
         notify(`Done: ${loop?.title ?? "item"}`, { undoable: true });
       },
       reopen(id: string) {
         dispatch({ type: "REOPEN_LOOP", id });
         notify("Moved back to your open loops.", { undoable: true });
       },
-      snooze(id: string, until: string = SNOOZE_OPTIONS[1].until, label = "tomorrow") {
+      snooze(id: string, until: string = snoozeOptions().find((o) => o.label === "Tomorrow")!.until, label = "tomorrow") {
         dispatch({ type: "SNOOZE_LOOP", id, until });
         notify(`Snoozed until ${label.toLowerCase()}.`, { undoable: true });
       },
@@ -46,7 +52,7 @@ export function useLoopActions() {
       },
       setStatus(id: string, status: LoopStatus) {
         if (status === "done") {
-          dispatch({ type: "COMPLETE_LOOP", id, at: DEMO_NOW_STR });
+          dispatch({ type: "COMPLETE_LOOP", id, at: nowStr() });
         } else {
           dispatch({ type: "SET_LOOP_STATUS", id, status });
         }
@@ -127,5 +133,5 @@ export function usePlanBlock() {
 }
 
 export function tomorrowAt(time: string): string {
-  return `${addDays(DEMO_NOW_STR.split("T")[0], 1)}T${time}`;
+  return `${addDays(nowStr().split("T")[0], 1)}T${time}`;
 }

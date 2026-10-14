@@ -61,7 +61,7 @@ function DayLine({ items, label }: { items: CalendarItem[]; label: "Today" | "To
             <li key="free" className="mx-2 my-1 flex items-center gap-3 rounded-xl border border-dashed border-line-strong px-2 py-2.5">
               <span className="w-[54px] shrink-0 text-right text-[13.5px] tabular-nums text-ink-3">{formatTime(free.start)}</span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-medium text-ink">{formatDuration(free.minutes)} open</span>
+                <span className="block text-[15px] font-medium text-ink">{free.minutes >= 240 ? `Open until ${formatTime(free.end)}` : `${formatDuration(free.minutes)} open`}</span>
                 <span className="block truncate text-[13.5px] text-ink-3">Good time for {free.planTitle.replace(/^Work on /, "")}</span>
               </span>
               <button
@@ -105,6 +105,8 @@ export default function TodayPage() {
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const involvement = state.profile.involvement;
+  // A brand-new account with nothing in it yet.
+  const fresh = state.mode === "live" && derived.loops.length === 0 && derived.upcomingItems.length === 0 && derived.goals.length === 0;
 
   const matters = priorities.slice(0, 3);
   // "Best window" turns a deadline into a plan.
@@ -121,7 +123,7 @@ export default function TodayPage() {
     <div className="space-y-8">
       <header className="px-1 pt-2">
         <h1 className="text-[34px] leading-tight">
-          {greeting}, {state.user.name}
+          {state.user.name ? `${greeting}, ${state.user.name}` : greeting}
         </h1>
         <p className="mt-1 text-[16.5px] text-ink-2">
           {ctx.headline(matters.length)}
@@ -135,6 +137,28 @@ export default function TodayPage() {
           )}
         </p>
       </header>
+
+      {fresh && (
+        <section aria-label="Get started" className="rounded-2xl bg-surface p-5 shadow-card">
+          <p className="text-[17px] font-semibold">Let&apos;s fill your Orbit</p>
+          <p className="mt-1 text-[14.5px] text-ink-2">Add what&apos;s on your mind. Orbit sorts it, finds the deadlines, and shows you what matters each morning.</p>
+          <div className="mt-4 space-y-2">
+            {[
+              { label: "Add things you need to do", hint: "“Paper due Friday. Call Mom Sunday.”", onClick: () => open({ type: "capture" }) },
+              { label: "Add plans with a time", hint: "“Dentist Tuesday at 3pm”", onClick: () => open({ type: "capture" }) },
+              { label: "Set a goal", hint: "“Run a 5K next month”", onClick: () => open({ type: "newGoal" }) },
+            ].map((x) => (
+              <button key={x.label} type="button" onClick={x.onClick} className="flex w-full items-center justify-between gap-3 rounded-xl bg-sunken px-4 py-3 text-left hover:bg-line">
+                <span>
+                  <span className="block text-[15.5px] font-medium">{x.label}</span>
+                  <span className="block text-[13.5px] text-ink-3">{x.hint}</span>
+                </span>
+                <ChevronRight size={16} className="shrink-0 text-ink-3" aria-hidden />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <Section title="What matters">
         {matters.length ? (

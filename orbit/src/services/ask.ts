@@ -32,6 +32,8 @@ export type AskAction =
   | { kind: "navigate"; label: string; href: string };
 
 export interface AskAnswer {
+  /** True when no built-in answer matched (Orbit's AI answers these when available). */
+  fallback?: boolean;
   intro: string;
   items?: string[];
   outro?: string;
@@ -84,6 +86,7 @@ export function answerQuestion(question: string, state: OrbitState, d: OrbitDeri
   if (/biggest|three|top|priorit|matter/.test(q)) return biggest(d);
 
   return {
+    fallback: true,
     intro: "I'm not sure how to answer that one yet. Here's what I can help with:",
     items: ["What you might be forgetting", "What to do tonight or during a free hour", "What changed and who's waiting on you", "When you have time to study"],
     outro: `Right now, your top priority is ${d.priorities[0] ? lowerFirst(d.priorities[0].title) : "nothing urgent"}${d.priorities[0]?.deadline ? ` (${dueText(d.priorities[0], today).toLowerCase()})` : ""}.`,
@@ -161,7 +164,7 @@ function tonight(d: OrbitDerived): AskAnswer {
 }
 
 function changes(d: OrbitDerived): AskAnswer {
-  if (!d.changes.length) return { intro: "Nothing has changed since this morning. Your calendar matches what your professors have sent." };
+  if (!d.changes.length) return { intro: "Nothing has changed. Your calendar matches everything Orbit has seen." };
   const confident = d.changes.filter((c) => c.confidence >= 0.8);
   const unsure = d.changes.filter((c) => c.confidence < 0.8);
   const items = [
@@ -359,6 +362,7 @@ function capacity(d: OrbitDerived): AskAnswer {
     const day = addDays(d.today, i);
     free += findGaps(d.upcomingItems, day, { from: i === 0 ? "08:15" : undefined, dayStart: "09:00", dayEnd: "21:00", minMinutes: 45 }).reduce((s, g) => s + g.minutes, 0);
   }
+  if (!due.length) return { intro: "Yes. Nothing with a deadline is due in the next seven days." };
   const ok = free >= need * 1.5;
   const tight = due.filter((l) => datePart(l.deadline!) <= addDays(d.today, 1));
   return {

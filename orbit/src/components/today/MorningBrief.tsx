@@ -62,8 +62,8 @@ export function MorningBrief({ onClose }: { onClose: () => void }) {
   const insight = free ? `You have ${formatDuration(free.minutes)} free ${toMinutesHour(free.start) >= 12 ? "this afternoon" : "this morning"}.` : undefined;
 
   return (
-    <Modal title={`Good morning, ${state.user.name}`} hideTitle onClose={start} footer={<Button variant="primary" size="lg" className="w-full" onClick={start} data-autofocus>Start my day</Button>}>
-      <p className="font-display text-[30px] leading-tight">Good morning, {state.user.name}</p>
+    <Modal title={state.user.name ? `Good morning, ${state.user.name}` : "Good morning"} hideTitle onClose={start} footer={<Button variant="primary" size="lg" className="w-full" onClick={start} data-autofocus>Start my day</Button>}>
+      <p className="font-display text-[30px] leading-tight">{state.user.name ? `Good morning, ${state.user.name}` : "Good morning"}</p>
       <p className="mt-1 text-[16px] text-ink-2">
         {priorities.length} {priorities.length === 1 ? "thing matters" : "things matter"} today
       </p>

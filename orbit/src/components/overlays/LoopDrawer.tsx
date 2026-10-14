@@ -8,7 +8,7 @@ import type { LoopStatus, PriorityLevel } from "@/types";
 import { datePart, formatLongDate, formatTime, relativeDateTime, timePart } from "@/lib/time";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
-import { SNOOZE_OPTIONS, useLoopActions } from "@/store/useActions";
+import { snoozeOptions, useLoopActions } from "@/store/useActions";
 import { Drawer, DetailRow } from "@/components/ui/Overlay";
 import { Button } from "@/components/ui/Button";
 import { ConfidenceTag, PriorityTag, SourceBadge } from "@/components/ui/Badges";
@@ -73,7 +73,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
           {!done && (
             <Menu
               label="Snooze"
-              items={SNOOZE_OPTIONS.map((o) => ({ label: `Snooze until ${o.label.toLowerCase()}`, onSelect: () => { actions.snooze(loop.id, o.until, o.label); onClose(); } }))}
+              items={snoozeOptions().map((o) => ({ label: `Snooze until ${o.label.toLowerCase()}`, onSelect: () => { actions.snooze(loop.id, o.until, o.label); onClose(); } }))}
               trigger={<span className="px-2 text-[15px] font-medium text-ink-2">Snooze</span>}
             />
           )}
@@ -148,9 +148,7 @@ export function LoopDrawer({ id, onClose }: { id: string; onClose: () => void })
           <p className="mb-3 text-[15px] font-semibold">New date</p>
           <div className="mb-3 flex flex-wrap gap-2">
             {[
-              { label: "Tomorrow", value: "2026-10-10" },
-              { label: "Monday", value: "2026-10-12" },
-              { label: "Next week", value: "2026-10-16" },
+              ...snoozeOptions().filter((o) => o.label !== "Later today").map((o) => ({ label: o.label, value: o.until.slice(0, 10) })),
             ].map((q) => (
               <button key={q.label} type="button" onClick={() => setDate(q.value)} className={`min-h-9 rounded-full border px-3 text-[14px] ${date === q.value ? "border-primary bg-primary text-on-primary" : "border-line-strong"}`}>
                 {q.label}

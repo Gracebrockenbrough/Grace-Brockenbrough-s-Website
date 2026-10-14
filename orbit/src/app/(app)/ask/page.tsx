@@ -7,10 +7,12 @@ import { ArrowUp, Check, Mic } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
-import { useLoopActions, usePlanBlock, SNOOZE_OPTIONS } from "@/store/useActions";
+import { useLoopActions, usePlanBlock, snoozeOptions } from "@/store/useActions";
 import { answerQuestion, type AskAction, type AskAnswer } from "@/services/ask";
 import { OrbitMark } from "@/components/shell/Logo";
 import { RightNow } from "@/components/ask/RightNow";
+import { useSession } from "@/store/SessionProvider";
+import { lifeSnapshot, ORBIT_VOICE } from "@/services/aiContext";
 
 interface Turn {
   id: number;
@@ -23,6 +25,7 @@ let turnId = 0;
 
 export default function AskPage() {
   const { state, derived, dispatch } = useOrbit();
+  const session = useSession();
   const { open, notify } = useUI();
   const loopActions = useLoopActions();
   const plan = usePlanBlock();
@@ -72,10 +75,23 @@ export default function AskPage() {
     setTurns((t) => [...t, { id, question: q, used: [] }]);
     dispatch({ type: "SIGNAL", signal: { itemType: "ask", action: "ask", context: { q } } });
     setInput("");
+    const local = answerQuestion(q, state, derived);
+    // Built-in answers carry actions; anything they can't answer goes to Orbit's AI when this copy has one.
+    if (local.fallback && session.ai) {
+      const history = turns.slice(-4).filter((t) => t.answer).map((t) => `Earlier they asked: ${t.question}\nYou answered: ${t.answer!.intro}`).join("\n\n");
+      const prompt = `${ORBIT_VOICE}\n\n--- Their life ---\n${lifeSnapshot(state, derived)}${history ? `\n\n--- Conversation so far ---\n${history}` : ""}\n\n--- Question ---\n${q}`;
+      session.ai
+        .ask(prompt)
+        .then((text) => setTurns((t) => t.map((x) => (x.id === id ? { ...x, answer: { intro: text.trim() } } : x))))
+        .catch(() =>
+          setTurns((t) => t.map((x) => (x.id === id ? { ...x, answer: { ...local, intro: "I couldn't reach Orbit's AI just now. " + local.intro } } : x))),
+        );
+      return;
+    }
     // A short, visible "thinking" beat. Answers are computed from live state.
     window.setTimeout(() => {
-      setTurns((t) => t.map((x) => (x.id === id ? { ...x, answer: answerQuestion(q, state, derived) } : x)));
-    }, 700);
+      setTurns((t) => t.map((x) => (x.id === id ? { ...x, answer: local } : x)));
+    }, 600);
   }
 
   function run(turn: Turn, action: AskAction) {
@@ -84,7 +100,7 @@ export default function AskPage() {
         loopActions.complete(action.loopId);
         break;
       case "snooze":
-        loopActions.snooze(action.loopId, SNOOZE_OPTIONS[0].until, SNOOZE_OPTIONS[0].label);
+        { const o = snoozeOptions()[0]; loopActions.snooze(action.loopId, o.until, o.label); }
         break;
       case "open_loop":
         open({ type: "loop", id: action.loopId });
@@ -180,7 +196,7 @@ export default function AskPage() {
                 </span>
                 {t.answer ? (
                   <div className="min-w-0 max-w-[90%] animate-rise-in rounded-2xl rounded-tl-md border border-line bg-surface px-4 py-3.5 shadow-card">
-                    <p className="text-[15.5px] leading-relaxed text-ink">{t.answer.intro}</p>
+                    <p className="whitespace-pre-line text-[15.5px] leading-relaxed text-ink">{t.answer.intro}</p>
                     {t.answer.items && (
                       <ol className="mt-2 space-y-1.5">
                         {t.answer.items.map((item, i) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Moon, Sun as SunIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
@@ -41,8 +41,12 @@ const POINTS = [
  */
 export function DeviceFrame({ children }: { children: ReactNode }) {
   const theme = useTheme();
-  const { state, dispatch } = useOrbit();
-  const router = useRouter();
+  const { state, derived, dispatch } = useOrbit();
+  const h = derived.now.getHours();
+  // Shown only after mount: the server's clock and time zone differ from the viewer's.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const clock = mounted ? `${h % 12 || 12}:${String(derived.now.getMinutes()).padStart(2, "0")}` : "";
   const pathname = usePathname();
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -88,16 +92,11 @@ export function DeviceFrame({ children }: { children: ReactNode }) {
               );
             })}
           </div>
-          <button
-            type="button"
-            className="hover:text-ink"
-            onClick={() => {
-              dispatch({ type: "RESTART_ONBOARDING" });
-              router.push("/onboarding");
-            }}
-          >
-            {state.onboarded ? "Start over as a new user" : "Interactive prototype · sample data"}
-          </button>
+          {state.mode === "demo" ? (
+            <span>Sample data · Fri, Oct 9</span>
+          ) : (
+            <span>{state.onboarded ? "Your Orbit" : "Interactive · your own data"}</span>
+          )}
         </div>
       </aside>
 
@@ -105,7 +104,7 @@ export function DeviceFrame({ children }: { children: ReactNode }) {
         <div className="lg:relative lg:flex lg:aspect-[390/844] lg:h-[min(844px,calc(100dvh-56px))] lg:flex-col lg:overflow-hidden lg:rounded-[47px] lg:bg-canvas lg:[transform:translateZ(0)]">
           {/* Status bar (frame only) */}
           <div className="hidden h-11 shrink-0 items-center justify-between px-8 pt-1 text-[14px] font-semibold lg:flex" aria-hidden>
-            <span>{state.demoTime === "morning" ? "8:12" : state.demoTime === "midday" ? "1:05" : "7:45"}</span>
+            <span>{clock}</span>
             <span className="absolute left-1/2 top-2.5 h-[30px] w-[104px] -translate-x-1/2 rounded-full bg-black" />
             <span className="flex items-center gap-1.5">
               <span className="flex items-end gap-[2px]">{[5, 7, 9, 11].map((h) => <span key={h} className="w-[3px] rounded-sm bg-ink" style={{ height: h }} />)}</span>

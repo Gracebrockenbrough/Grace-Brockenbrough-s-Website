@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { OrbitProvider } from "@/store/OrbitProvider";
-import { UIProvider } from "@/store/UIProvider";
-import { DeviceFrame } from "@/components/shell/DeviceFrame";
+import { WebAppRoot } from "@/components/shell/WebAppRoot";
 
 export const metadata: Metadata = {
   title: "Orbit",
@@ -29,11 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <OrbitProvider>
-          <UIProvider>
-            <DeviceFrame>{children}</DeviceFrame>
-          </UIProvider>
-        </OrbitProvider>
+        <WebAppRoot>{children}</WebAppRoot>
       </body>
     </html>
   );

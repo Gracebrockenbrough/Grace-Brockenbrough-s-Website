@@ -6,10 +6,11 @@ import { CalendarPlus, Camera, Check, CircleDot, FileUp, Mic, Smartphone, Target
 import type { CaptureInputKind, CaptureResult, Category } from "@/types";
 import { cn, uid } from "@/lib/cn";
 import { formatShortDate, formatTime, relativeDateTime } from "@/lib/time";
-import { DEMO_NOW_STR } from "@/data/demoClock";
+import { nowStr } from "@/lib/clock";
 import { areaLabel, areaStyle } from "@/lib/areas";
 import { areaForItem } from "@/services/areas";
 import { useOrbit } from "@/store/OrbitProvider";
+import { useSession } from "@/store/SessionProvider";
 import { useUI } from "@/store/UIProvider";
 import { Modal } from "@/components/ui/Overlay";
 import { Button } from "@/components/ui/Button";
@@ -29,10 +30,36 @@ const EXAMPLES = ["Return my dress by Friday", "Paper due Friday. Call Dad about
 
 let voiceIndex = 0;
 
+/** The bits of the Web Speech API Orbit uses. */
+interface SpeechRec {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
 export function CaptureModal({ onClose, initialMode }: { onClose: () => void; initialMode?: "type" | "speak" | "photo" | "screenshot" | "file" }) {
   const { state, derived, dispatch, undo } = useOrbit();
   const { notify, open } = useUI();
   const router = useRouter();
+  const session = useSession();
+  const live = state.mode === "live";
+  const recRef = useRef<SpeechRec | null>(null);
+  useEffect(() => () => recRef.current?.abort(), []);
+  // Real accounts only see what really works here: voice if the browser has it, pictures if Orbit's AI is on.
+  const [voiceOK, setVoiceOK] = useState(false);
+  useEffect(() => {
+    const W = window as unknown as Record<string, unknown>;
+    setVoiceOK(!!(W.SpeechRecognition || W.webkitSpeechRecognition));
+  }, []);
+  const tiles = live
+    ? [...(voiceOK ? ["Speak"] : []), ...(session.ai?.readImage ? ["Photo", "Screenshot"] : [])]
+    : ["Speak", "Photo", "Screenshot", "File"];
   const [text, setText] = useState("");
   const [phase, setPhase] = useState<Phase>("input");
   const [readingLabel, setReadingLabel] = useState("Orbit is reading…");
@@ -57,7 +84,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
 
   const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms));
 
-  const ctx = { today: derived.today, nowStr: DEMO_NOW_STR, courses: state.courses, loops: derived.loops };
+  const ctx = { today: derived.today, nowStr: nowStr(), courses: state.courses, loops: derived.loops };
 
   /** Nothing is saved until the user has had a look. */
   function finish(results: CaptureResult[], kind: CaptureInputKind, raw: string) {
@@ -81,9 +108,9 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
     for (const { result: r } of chosen) {
       if (r.type === "loop") dispatch({ type: "ADD_LOOP", loop: r.loop });
       else if (r.type === "event") dispatch({ type: "ADD_EVENT", event: r.event });
-      else dispatch({ type: "COMPLETE_LOOP", id: r.loopId, at: DEMO_NOW_STR });
+      else dispatch({ type: "COMPLETE_LOOP", id: r.loopId, at: nowStr() });
     }
-    dispatch({ type: "ADD_CAPTURE", capture: { id: uid("cap"), kind: inputKind, raw: text, createdAt: DEMO_NOW_STR, resultSummary: `${chosen.length} items` } });
+    dispatch({ type: "ADD_CAPTURE", capture: { id: uid("cap"), kind: inputKind, raw: text, createdAt: nowStr(), resultSummary: `${chosen.length} items` } });
     setAddedCount(chosen.length);
     setPhase("added");
   }
@@ -98,7 +125,48 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
     later(() => finish(processCaptureMany({ kind, text: value }, ctx), kind, value), 650);
   }
 
+  /** Real speech-to-text where the browser supports it (Chrome, Edge, Safari). */
+  function startRealVoice() {
+    const W = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
+    const Rec = W.SpeechRecognition ?? W.webkitSpeechRecognition;
+    if (!Rec) {
+      notify("Voice isn't available in this browser. Try your keyboard's microphone button.");
+      return;
+    }
+    const rec = new Rec();
+    rec.lang = navigator.language || "en-US";
+    rec.interimResults = true;
+    rec.continuous = false;
+    let heard = "";
+    rec.onresult = (e) => {
+      heard = Array.from(e.results).map((r) => r[0].transcript).join(" ");
+      setTranscript(heard);
+    };
+    rec.onerror = () => {
+      setPhase("input");
+      notify("Orbit couldn't hear that. Check microphone access and try again.");
+    };
+    rec.onend = () => {
+      if (!heard.trim()) {
+        setPhase("input");
+        return;
+      }
+      setText(heard);
+      setReadingLabel("Understanding what you said…");
+      setPhase("reading");
+      later(() => finish(processCaptureMany({ kind: "voice", text: heard }, ctx), "voice", heard), 300);
+    };
+    setTranscript("");
+    setPhase("listening");
+    recRef.current = rec;
+    rec.start();
+  }
+
   function startVoice() {
+    if (live) {
+      startRealVoice();
+      return;
+    }
     const phrase = VOICE_EXAMPLES[voiceIndex++ % VOICE_EXAMPLES.length];
     setPhase("listening");
     setTranscript("");
@@ -111,7 +179,35 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
     }, 900 + phrase.split(" ").length * 170);
   }
 
-  /** Image reading is simulated: a photo reads as a concert flyer, a screenshot as a group chat. */
+  /** Real accounts: Orbit's AI reads the picture and lists what's in it, then the usual review screen takes over. */
+  async function readRealImage(kind: "photo" | "screenshot", file: File) {
+    if (!session.ai?.readImage) return;
+    setSimulatedImage(true);
+    setPhase("reading");
+    setReadingLabel(kind === "photo" ? "Reading your photo…" : "Reading your screenshot…");
+    try {
+      const lines = await session.ai.readImage(
+        file,
+        `List every task, deadline, appointment, or plan in this image that the person should keep track of. Today is ${derived.now.toDateString()}.
+Write one per line as a short note in plain words with its day and time if shown, for example:
+Paper due Friday
+Dinner with Sam Saturday at 7pm
+Reply only with the lines. If there is nothing to keep track of, reply only NONE.`,
+      );
+      const clean = lines.replace(/^[-*•\d.)\s]+/gm, "").trim();
+      if (!clean || /^none\b/i.test(clean)) {
+        setPhase("input");
+        notify("Orbit didn't find anything to keep track of in that picture.");
+        return;
+      }
+      finish(processCaptureMany({ kind, text: clean }, ctx), kind, clean);
+    } catch {
+      setPhase("input");
+      notify("Orbit couldn't read that picture. Try another, or type it in.");
+    }
+  }
+
+  /** Image reading is simulated in the sample data: a photo reads as a concert flyer, a screenshot as a group chat. */
   function readImage(kind: "photo" | "screenshot", simulated = true) {
     const sample = kind === "photo" ? DEMO_SCREENSHOT_TEXT : DEMO_CHAT_TEXT;
     setSimulatedImage(simulated);
@@ -147,7 +243,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
         notify(`Added “${result.event.title}” to ${formatShortDate(result.event.date)}.`, { undoable: true });
         break;
       case "completion":
-        dispatch({ type: "COMPLETE_LOOP", id: result.loopId, at: DEMO_NOW_STR });
+        dispatch({ type: "COMPLETE_LOOP", id: result.loopId, at: nowStr() });
         notify(`Done: ${result.loopTitle}`, { undoable: true });
         break;
       case "office_hours": {
@@ -169,7 +265,7 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
       case "loop":
         break;
     }
-    dispatch({ type: "ADD_CAPTURE", capture: { id: uid("cap"), kind: inputKind, raw: text, createdAt: DEMO_NOW_STR, resultSummary: result.headline } });
+    dispatch({ type: "ADD_CAPTURE", capture: { id: uid("cap"), kind: inputKind, raw: text, createdAt: nowStr(), resultSummary: result.headline } });
     setApplied(true);
   }
 
@@ -209,13 +305,13 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
               </Button>
             </div>
             <p className="mb-2 mt-5 text-[13.5px] font-semibold text-ink-3">Or bring it in</p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className={cn("grid gap-2", tiles.length === 4 ? "grid-cols-4" : tiles.length === 3 ? "grid-cols-3" : tiles.length === 2 ? "grid-cols-2" : "grid-cols-1")}>
               {[
                 { label: "Speak", hint: "Say it", icon: Mic, onClick: startVoice },
                 { label: "Photo", hint: "Flyer, board", icon: Camera, onClick: () => photoRef.current?.click() },
                 { label: "Screenshot", hint: "Chat, email", icon: Smartphone, onClick: () => shotRef.current?.click() },
                 { label: "File", hint: "Syllabus, PDF", icon: FileUp, onClick: () => fileRef.current?.click() },
-              ].map(({ label, hint, icon: Icon, onClick }) => (
+              ].filter((t) => tiles.includes(t.label)).map(({ label, hint, icon: Icon, onClick }) => (
                 <button
                   key={label}
                   type="button"
@@ -229,8 +325,8 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
               ))}
             </div>
             {/* Photo opens the camera on phones; Screenshot and File open the library. */}
-            <input ref={photoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && readImage("photo")} />
-            <input ref={shotRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && readImage("screenshot")} />
+            <input ref={photoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) (live ? void readRealImage("photo", f) : readImage("photo")); }} />
+            <input ref={shotRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) (live ? void readRealImage("screenshot", f) : readImage("screenshot")); }} />
             <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,image/*" className="hidden" onChange={(e) => e.target.files?.[0] && readFile(e.target.files[0])} />
             <button
               type="button"
@@ -245,13 +341,15 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
             </button>
             <div className="mt-6 space-y-1">
               {EXAMPLES.map((ex) => (
-                <button key={ex} type="button" onClick={() => submitText(ex)} className="block rounded-lg px-1 py-1 text-left text-[15px] text-ink-3 hover:text-ink">
+                <button key={ex} type="button" onClick={() => (live ? setText(ex) : submitText(ex))} className="block rounded-lg px-1 py-1 text-left text-[15px] text-ink-3 hover:text-ink">
                   “{ex}”
                 </button>
               ))}
-              <button type="button" onClick={() => readImage("screenshot")} className="block rounded-lg px-1 py-1 text-left text-[14px] text-ink-3 hover:text-ink">
-                Try a sample group-chat screenshot
-              </button>
+              {!live && (
+                <button type="button" onClick={() => readImage("screenshot")} className="block rounded-lg px-1 py-1 text-left text-[14px] text-ink-3 hover:text-ink">
+                  Try a sample group-chat screenshot
+                </button>
+              )}
             </div>
           </form>
         </div>
@@ -265,7 +363,13 @@ export function CaptureModal({ onClose, initialMode }: { onClose: () => void; in
           </span>
           <p className="mt-5 text-[15px] font-medium text-ink-3">Listening…</p>
           <p className="mt-2 min-h-[56px] max-w-sm text-[19px] font-medium leading-snug text-ink">{transcript}</p>
-          <p className="mt-3 text-[13px] text-ink-3">Voice is simulated in this prototype.</p>
+          {live ? (
+            <button type="button" onClick={() => recRef.current?.stop()} className="mt-4 min-h-10 rounded-full bg-sunken px-5 text-[14.5px] font-medium">
+              Done
+            </button>
+          ) : (
+            <p className="mt-3 text-[13px] text-ink-3">Voice is simulated with sample data.</p>
+          )}
         </div>
       )}
 
@@ -425,7 +529,7 @@ function CaptureResultView({
           <p className="mt-0.5 text-[14.5px] text-ink-2">
             {formatShortDate(result.event.date)} · {formatTime(result.event.startTime)}
           </p>
-          {simulatedImage && <p className="mt-2 text-[13px] text-ink-3">Demo: image reading is simulated with a sample concert screenshot.</p>}
+          {simulatedImage && state.mode === "demo" && <p className="mt-2 text-[13px] text-ink-3">Sample data: image reading is simulated with a sample concert flyer.</p>}
         </div>
       )}
 

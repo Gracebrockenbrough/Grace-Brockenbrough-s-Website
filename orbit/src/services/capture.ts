@@ -88,7 +88,7 @@ function dateFromMonthDay(today: string, month: number, day: number): string {
 // Classification
 // ---------------------------------------------------------------------------
 
-const EVENT_WORDS = /\b(concert|party|game|show|dinner|lunch|brunch|coffee|meeting|appointment|interview|movie|tailgate|recital|match|event)\b/i;
+const EVENT_WORDS = /\b(concert|party|game|show|dinner|lunch|brunch|coffee|meeting|appointment|interview|movie|tailgate|recital|match|event|dentist|doctor|therapy|haircut|practice|class|call with|flight)\b/i;
 const COMPLETION = /^(?:i\s+)?(?:just\s+)?(finished|completed|submitted|turned in|did|am done with|i'm done with|done with)\s+(?:my\s+|the\s+)?(.+)$/i;
 const OFFICE_HOURS = /office hours/i;
 const IGNORE = /\bignore\s+(?:all\s+)?(?:emails?|messages?|texts?)?\s*(?:from\s+)?(.+?)(?:\s+from now on)?$/i;

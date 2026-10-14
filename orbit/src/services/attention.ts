@@ -127,7 +127,7 @@ export function buildAttention(input: AttentionInput): AttentionItem[] {
       id: `deadline:${l.id}`,
       kind: "deadline",
       label: "Deadline",
-      title: capitalize(`${l.title.replace(/^Submit (spring )?/, "")} ${verbFor(l.title)} ${relativeDay(datePart(l.deadline), today)}`),
+      title: capitalize(`${l.title.replace(/^Submit (spring )?/, "")} ${verbFor(l.title)} ${relativeDay(datePart(l.deadline), today).replace(/^(Today|Tomorrow)$/, (w) => w.toLowerCase())}`),
       body: l.blocks ? `${l.blocks} depends on it` : "",
       why: l.why ?? "It has a hard deadline coming up.",
       weight: 70,

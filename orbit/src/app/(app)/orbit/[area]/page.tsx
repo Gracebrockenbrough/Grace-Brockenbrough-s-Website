@@ -153,7 +153,7 @@ export default function AreaPage({ params }: { params: Promise<{ area: string }>
         )}
       </Section>
 
-      {area === "school" && (
+      {area === "school" && (state.courses.length > 0 || state.mode === "demo") && (
         <Section title="Courses">
           <ul className="divide-y divide-line rounded-2xl bg-surface shadow-card">
             {state.courses.map((c) => (
@@ -167,11 +167,13 @@ export default function AreaPage({ params }: { params: Promise<{ area: string }>
                 </Link>
               </li>
             ))}
-            <li>
-              <Link href="/courses/upload" className="flex items-center gap-3 px-4 py-3 text-[15px] text-accent">
-                <Plus size={16} aria-hidden /> Add a syllabus
-              </Link>
-            </li>
+            {state.mode === "demo" && (
+              <li>
+                <Link href="/courses/upload" className="flex items-center gap-3 px-4 py-3 text-[15px] text-accent">
+                  <Plus size={16} aria-hidden /> Add a syllabus
+                </Link>
+              </li>
+            )}
           </ul>
         </Section>
       )}

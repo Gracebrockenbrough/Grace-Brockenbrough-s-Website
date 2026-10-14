@@ -2,11 +2,14 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from "react";
 import { computeDerived, type OrbitDerived } from "@/services/orbitEngine";
-import { demoNow } from "@/data/demoClock";
-import { createInitialState, STATE_VERSION, type OrbitState } from "./state";
+import { configureClock, now } from "@/lib/clock";
+import { setDraftSigner } from "@/lib/drafts";
+import { createLiveState, migrateState, type OrbitState } from "./state";
+import type { Backend } from "./backend";
+
+export type SyncStatus = "saved" | "saving" | "error";
 import { orbitReducer, type OrbitAction } from "./reducer";
 
-const STORAGE_KEY = "orbit:state";
 
 interface History {
   present: OrbitState;
@@ -35,52 +38,119 @@ interface OrbitContextValue {
   undo: () => void;
   canUndo: boolean;
   hydrated: boolean;
+  /** Whether the latest changes reached the backend. */
+  sync: SyncStatus;
 }
 
 const OrbitContext = createContext<OrbitContextValue | null>(null);
 
-function loadState(): OrbitState | null {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as OrbitState;
-    return parsed.version === STATE_VERSION ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-export function OrbitProvider({ children }: { children: ReactNode }) {
-  const [history, dispatchHistory] = useReducer(historyReducer, undefined, () => ({ present: createInitialState(), past: [] }));
+/**
+ * Holds one person's Orbit. Loads it from their backend (an account, or this
+ * device), keeps it in memory with undo, and saves changes back a moment after
+ * they happen — one write at a time.
+ */
+export function OrbitProvider({ backend, children }: { backend: Backend | null; children: ReactNode }) {
+  const [history, dispatchHistory] = useReducer(historyReducer, undefined, () => ({ present: createLiveState(), past: [] }));
   const [hydrated, setHydrated] = useState(false);
-  const skipSave = useRef(true);
+  const [sync, setSync] = useState<SyncStatus>("saved");
+  const loadedFor = useRef<Backend | null>(null);
+  const pending = useRef<OrbitState | null>(null);
+  const writing = useRef(false);
+  const timer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    const saved = loadState();
-    if (saved) dispatchHistory({ type: "HYDRATE", state: saved });
-    setHydrated(true);
+    if (!backend) return;
+    let cancelled = false;
+    loadedFor.current = null;
+    setHydrated(false);
+    backend
+      .load()
+      .then((raw) => {
+        if (cancelled) return;
+        const saved = migrateState(raw);
+        const account = backend.account;
+        dispatchHistory({ type: "HYDRATE", state: saved ?? createLiveState(account.kind === "local" ? undefined : { name: account.name, email: account.email }) });
+        loadedFor.current = backend;
+        setHydrated(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSync("error");
+        dispatchHistory({ type: "HYDRATE", state: createLiveState({ name: backend.account.name, email: backend.account.email }) });
+        setHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [backend]);
+
+  const flush = useCallback(async () => {
+    const b = loadedFor.current;
+    if (!b || writing.current || !pending.current) return;
+    writing.current = true;
+    const state = pending.current;
+    pending.current = null;
+    setSync("saving");
+    try {
+      await b.save(state);
+      setSync(pending.current ? "saving" : "saved");
+    } catch {
+      setSync("error");
+    } finally {
+      writing.current = false;
+      if (pending.current) void flush();
+    }
   }, []);
 
+  // Save a moment after each change; bursts of edits become one write.
+  const first = useRef(true);
   useEffect(() => {
-    if (!hydrated) return;
-    if (skipSave.current) {
-      skipSave.current = false;
+    if (!hydrated || !loadedFor.current) return;
+    if (first.current) {
+      first.current = false;
       return;
     }
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(history.present));
-    } catch {
-      // Storage can be unavailable (private mode); the prototype still works in memory.
-    }
-  }, [history.present, hydrated]);
+    pending.current = history.present;
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => void flush(), 900);
+  }, [history.present, hydrated, flush]);
 
+  // Don't lose the last edit when the tab closes.
+  useEffect(() => {
+    const onHide = () => {
+      if (pending.current) void flush();
+    };
+    window.addEventListener("pagehide", onHide);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [flush]);
+
+  // Real accounts run on the real clock, so the screen refreshes every minute.
+  const [tick, setTick] = useState(0);
+  const live = history.present.mode === "live";
+  useEffect(() => {
+    if (!live) return;
+    const t = window.setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(t);
+  }, [live]);
+
+  configureClock(live, history.present.demoTime);
+  setDraftSigner(history.present.user.name, history.present.user.fullName);
   const dispatch = useCallback((action: OrbitAction) => dispatchHistory(action), []);
   const undo = useCallback(() => dispatchHistory({ type: "UNDO" }), []);
-  const derived = useMemo(() => computeDerived(history.present, demoNow(history.present.demoTime)), [history.present]);
+  const derived = useMemo(() => {
+    configureClock(history.present.mode === "live", history.present.demoTime);
+    return computeDerived(history.present, now());
+    // `tick` re-runs this once a minute in live mode.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history.present, tick]);
 
   const value = useMemo(
-    () => ({ state: history.present, derived, dispatch, undo, canUndo: history.past.length > 0, hydrated }),
-    [history.present, history.past.length, derived, dispatch, undo, hydrated],
+    () => ({ state: history.present, derived, dispatch, undo, canUndo: history.past.length > 0, hydrated, sync }),
+    [history.present, history.past.length, derived, dispatch, undo, hydrated, sync],
   );
 
   return <OrbitContext.Provider value={value}>{children}</OrbitContext.Provider>;

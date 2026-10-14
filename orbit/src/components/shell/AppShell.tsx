@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from "react";
 import { Plus } from "lucide-react";
 import { useOrbit } from "@/store/OrbitProvider";
 import { useUI } from "@/store/UIProvider";
+import { useSession } from "@/store/SessionProvider";
 import { cn } from "@/lib/cn";
 import { Logo, OrbitMark } from "./Logo";
 import { NAV_ITEMS } from "./nav";
@@ -19,7 +20,8 @@ function isActive(pathname: string, href: string) {
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { state, hydrated } = useOrbit();
+  const { state, derived, hydrated, dispatch, sync } = useOrbit();
+  const session = useSession();
   const { open, overlay } = useUI();
 
   // First-time users start with onboarding.
@@ -27,11 +29,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (hydrated && !state.onboarded) router.replace("/onboarding");
   }, [hydrated, state.onboarded, router]);
 
-  // The Morning Brief appears the first time Orbit is opened in the morning.
+  // The Morning Brief appears the first time Orbit is opened in the morning (once a day for real accounts).
   useEffect(() => {
-    if (hydrated && state.onboarded && !state.briefSeen && state.notificationSettings.morningBrief && pathname === "/today" && !overlay) {
-      open({ type: "brief" });
-    }
+    if (!hydrated || !state.onboarded || !state.notificationSettings.morningBrief || pathname !== "/today" || overlay) return;
+    const due =
+      state.mode === "live"
+        ? state.briefSeenOn !== derived.today && derived.now.getHours() < 12 && (derived.priorities.length > 0 || derived.todayItems.length > 0)
+        : !state.briefSeen;
+    if (due) open({ type: "brief" });
     // Only on arrival — not every time an overlay closes.
   }, [hydrated, state.onboarded, pathname]);
 
@@ -79,9 +84,35 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-current={isActive(pathname, "/settings") ? "page" : undefined}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-sunken text-[14px] font-semibold text-ink-2"
         >
-          {state.user.name[0]}
+          {state.user.name?.[0]?.toUpperCase() || "•"}
         </Link>
       </header>
+
+      {sync === "error" && (
+        <div role="alert" className="mx-5 mt-1 rounded-xl bg-critical-soft px-3.5 py-2 text-[13.5px] text-critical">
+          Orbit couldn&apos;t save your latest changes.{" "}
+          {session.account?.kind === "claude"
+            ? "If someone shared Orbit with you, ask them for edit access. Your changes stay on this screen until then."
+            : "Check your connection. Orbit will try again with your next change."}
+        </div>
+      )}
+
+      {state.mode === "demo" && (
+        <div className="mx-5 mt-1 flex items-center justify-between gap-3 rounded-xl bg-accent-soft px-3.5 py-2 text-[13.5px] text-accent-strong">
+          <span>You&apos;re looking at sample data.</span>
+          <button
+            type="button"
+            className="shrink-0 font-semibold underline-offset-2 hover:underline"
+            onClick={() => {
+              const a = session.account;
+              dispatch({ type: "START_LIVE", account: a && a.kind !== "local" ? { name: a.name, email: a.email } : undefined });
+              router.push("/onboarding");
+            }}
+          >
+            Start my own
+          </button>
+        </div>
+      )}
 
       <main id="main" className="px-5 pb-32 pt-3">{children}</main>
 

@@ -6,7 +6,19 @@ Orbit is a proactive life-management prototype for college students. It turns sc
 
 This is a working prototype with realistic sample data on a fixed demo clock: **Friday, October 9, 8:12 AM**. Every button changes state, and changes are saved in your browser.
 
-## Run it
+## Use it for real
+
+Orbit runs three ways. Everyone gets an empty, private Orbit and adds their own things; the sample week ("Look around with sample data") is optional.
+
+| Where | Accounts | Data lives | AI (Ask, reading photos) |
+| --- | --- | --- | --- |
+| **Claude link**, built with `npm run build:claude-link` and published as a Claude artifact | Claude sign-in | Each person's private storage on that artifact | Claude, built in |
+| **Website**: deploy to Vercel (see [DEPLOY.md](DEPLOY.md)) | Email + password (Supabase) | One private row per account (`supabase/schema.sql`) | Optional `ANTHROPIC_API_KEY` |
+| **Website without Supabase** | None | That browser only | Optional `ANTHROPIC_API_KEY` |
+
+Real accounts use the real clock. They never see simulated connections, the fake syllabus reader, or sample screenshots. Voice uses the browser's speech recognition where it exists. Photos and screenshots are read by AI when it's available.
+
+## Run it locally
 
 ```bash
 cd orbit

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, RotateCcw, X } from "lucide-react";
+import { ChevronRight, LogOut, RotateCcw, X } from "lucide-react";
 import type { DemoTime, Involvement, NotificationSettings } from "@/types";
 
 const INVOLVEMENT_NOTE: Record<Involvement, string> = {
@@ -12,6 +12,7 @@ const INVOLVEMENT_NOTE: Record<Involvement, string> = {
 };
 import { cn } from "@/lib/cn";
 import { useOrbit } from "@/store/OrbitProvider";
+import { useSession } from "@/store/SessionProvider";
 import { useUI } from "@/store/UIProvider";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -52,7 +53,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 /** Profile: connections first, then notifications, what Orbit learned, and account. */
 export default function SettingsPage() {
-  const { state, derived, dispatch } = useOrbit();
+  const { state, derived, dispatch, sync } = useOrbit();
+  const session = useSession();
+  const live = state.mode === "live";
   const { notify, open } = useUI();
   const router = useRouter();
   const connected = state.sources.filter((s) => s.status === "connected");
@@ -62,11 +65,11 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-2xl space-y-10">
       <header className="flex items-center gap-4">
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft text-[22px] font-semibold text-accent-strong" aria-hidden>
-          {state.user.name[0]}
+          {state.user.name?.[0]?.toUpperCase() || "•"}
         </span>
-        <div>
-          <h1 className="text-[30px] leading-tight">{state.user.fullName}</h1>
-          <p className="text-[15px] text-ink-2">{state.user.school} · {state.user.year}</p>
+        <div className="min-w-0">
+          <h1 className="truncate text-[30px] leading-tight">{state.user.fullName || state.user.name || "Your Orbit"}</h1>
+          <p className="truncate text-[15px] text-ink-2">{live ? session.account?.email || session.storageLabel : `${state.user.school} · ${state.user.year}`}</p>
         </div>
       </header>
 
@@ -114,13 +117,22 @@ export default function SettingsPage() {
         </Section>
       )}
 
-      <Link href="/settings/connections" className="group block rounded-2xl border border-line bg-surface p-5 shadow-card hover:shadow-raised">
-        <p className="text-[17px] font-semibold">Orbit is connected to {connected.length} {connected.length === 1 ? "place" : "places"}</p>
-        <p className="mt-0.5 text-[15px] text-ink-2">{connected.map((s) => s.name.replace("Google ", "")).join(" · ") || "Nothing yet"}</p>
-        <p className="mt-3 inline-flex items-center gap-1 text-[15px] font-medium text-accent">
-          Manage connections <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
-        </p>
-      </Link>
+      {live ? (
+        <section aria-label="Connections" className="rounded-2xl bg-surface p-5 shadow-card">
+          <p className="text-[16px] font-semibold">Connections are coming</p>
+          <p className="mt-1 text-[14.5px] text-ink-2">
+            Google Calendar, Gmail, and Canvas will connect here. Until then, tap ＋ to add anything: type it, say it, or share a photo or screenshot.
+          </p>
+        </section>
+      ) : (
+        <Link href="/settings/connections" className="group block rounded-2xl border border-line bg-surface p-5 shadow-card hover:shadow-raised">
+          <p className="text-[17px] font-semibold">Orbit is connected to {connected.length} {connected.length === 1 ? "place" : "places"}</p>
+          <p className="mt-0.5 text-[15px] text-ink-2">{connected.map((s) => s.name.replace("Google ", "")).join(" · ") || "Nothing yet"}</p>
+          <p className="mt-3 inline-flex items-center gap-1 text-[15px] font-medium text-accent">
+            Manage connections <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
+          </p>
+        </Link>
+      )}
 
       <Section title="Notifications">
         <div className="divide-y divide-line">
@@ -178,14 +190,48 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="Account">
-        <p className="text-[15.5px]">{state.user.email}</p>
-        <p className="text-[14px] text-ink-3">Time zone: Eastern</p>
-      </Section>
-
-      <Section title="Prototype">
-        <div className="space-y-4 rounded-2xl bg-sunken p-4">
-          <div>
-            <p className="mb-2 text-[14.5px] text-ink-2">See how Today changes through Friday, October 9.</p>
+        {live ? (
+          <div className="space-y-4">
+            <label className="block text-[14px] text-ink-2">
+              Name
+              <input
+                defaultValue={state.user.fullName || state.user.name}
+                onBlur={(e) => {
+                  const full = e.target.value.trim();
+                  if (full && full !== (state.user.fullName || state.user.name)) {
+                    dispatch({ type: "SET_USER", patch: { name: full.split(/\s+/)[0], fullName: full } });
+                    notify("Name updated.");
+                  }
+                }}
+                className="mt-1 block min-h-11 w-full rounded-xl border border-line-strong bg-surface px-3 text-[15.5px] text-ink"
+              />
+            </label>
+            <p className="text-[14.5px] text-ink-2">
+              {session.storageLabel}
+              {sync === "saving" ? " · saving…" : sync === "error" ? " · couldn't save the latest change" : " · up to date"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {session.auth && (
+                <Button size="sm" variant="secondary" onClick={() => session.auth!.signOut()}>
+                  <LogOut size={15} aria-hidden /> Sign out
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => {
+                  if (!window.confirm("Erase everything in your Orbit and start over? This can't be undone.")) return;
+                  dispatch({ type: "START_LIVE", account: { name: state.user.fullName || state.user.name, email: state.user.email } });
+                  router.push("/onboarding");
+                }}
+              >
+                <RotateCcw size={15} aria-hidden /> Erase and start over
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 rounded-2xl bg-sunken p-4">
+            <p className="text-[14.5px] text-ink-2">You&apos;re looking at sample data. See how Today changes through Friday, October 9.</p>
             <SegmentedControl<DemoTime>
               label="Demo time"
               value={state.demoTime}
@@ -199,22 +245,17 @@ export default function SettingsPage() {
                 { value: "evening", label: "Evening" },
               ]}
             />
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="primary" onClick={() => { dispatch({ type: "START_LIVE", account: session.account?.kind === "local" ? undefined : { name: session.account?.name, email: session.account?.email } }); router.push("/onboarding"); }}>
+                Start my own Orbit
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => open({ type: "brief" })}>Show morning brief</Button>
+              <Button size="sm" variant="ghost" onClick={() => { dispatch({ type: "RESET_DEMO" }); router.push("/today"); notify("Sample data reset."); }}>
+                Reset sample data
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" onClick={() => open({ type: "brief" })}>Show morning brief</Button>
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={() => {
-                dispatch({ type: "RESET_DEMO" });
-                router.push("/today");
-                notify("Demo reset.");
-              }}
-            >
-              <RotateCcw size={15} aria-hidden /> Reset demo
-            </Button>
-          </div>
-        </div>
+        )}
       </Section>
     </div>
   );

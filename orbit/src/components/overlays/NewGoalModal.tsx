@@ -5,7 +5,7 @@ import { Mic, Sparkles } from "lucide-react";
 import type { Category } from "@/types";
 import { BUILTIN_AREAS, areaLabel, areaStyle } from "@/lib/areas";
 import { cn } from "@/lib/cn";
-import { DEMO_NOW_STR } from "@/data/demoClock";
+import { nowStr } from "@/lib/clock";
 import { relativeDay } from "@/lib/time";
 import { buildGoal, GOAL_EXAMPLES } from "@/services/goals";
 import { useOrbit } from "@/store/OrbitProvider";
@@ -27,7 +27,7 @@ export function NewGoalModal({ onClose, area: initialArea, text: initialText = "
   // The page's area is only a default for goals Orbit can't place on its own.
   const goal = useMemo(() => {
     if (!preview || !text.trim()) return undefined;
-    const g = buildGoal(text, derived.today, DEMO_NOW_STR, { area, target });
+    const g = buildGoal(text, derived.today, nowStr(), { area, target });
     return !area && initialArea && g.kind === "generic" ? { ...g, area: initialArea } : g;
   }, [preview, text, area, target, derived.today, initialArea]);
 
