@@ -189,7 +189,7 @@ export default function SettingsPage() {
 
       {/* What the AI can and can't do */}
       <section className="mt-8">
-        <SectionTitle>What Orbit&apos;s AI can and can&apos;t do</SectionTitle>
+        <SectionTitle>What Tote&apos;s AI can and can&apos;t do</SectionTitle>
         <Card className="p-4">
           <p className="text-[15px] font-semibold">It can</p>
           <ul className="mt-1.5 space-y-2 text-[15px]">
@@ -209,7 +209,7 @@ export default function SettingsPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-[14px] text-muted">You take every action yourself. Orbit prepares the details and links you to the store.</p>
+          <p className="mt-4 text-[14px] text-muted">You take every action yourself. Tote prepares the details and links you to the store.</p>
         </Card>
       </section>
 
@@ -219,8 +219,8 @@ export default function SettingsPage() {
         <Card className="p-4">
           <ul className="space-y-2.5 text-[15px]">
             {[
-              "Orbit never asks for your retailer passwords.",
-              "Orbit never connects to your bank. You confirm refunds yourself.",
+              "Tote never asks for your retailer passwords.",
+              "Tote never connects to your bank. You confirm refunds yourself.",
               "Gift card codes are hidden until you reveal them.",
               "Your wishlist and preferences are only used to choose sales for you.",
             ].map((t) => (
@@ -279,7 +279,7 @@ export default function SettingsPage() {
         open={consent != null}
         onOpenChange={(v) => !v && setConsent(null)}
         title={consent ? `Connect ${consent.displayName}` : ""}
-        description="Orbit would only read shopping emails, and you can disconnect any time."
+        description="Tote would only read shopping emails, and you can disconnect any time."
         footer={
           consent && (
             <>
@@ -292,7 +292,7 @@ export default function SettingsPage() {
         {consent && (
           <div className="space-y-4 text-[15px]">
             <div>
-              <p className="font-semibold">Orbit would read</p>
+              <p className="font-semibold">Tote would read</p>
               <ul className="mt-1 space-y-1 text-muted">
                 {consent.consent.reads.map((r) => (
                   <li key={r}>• {r}</li>
@@ -300,7 +300,7 @@ export default function SettingsPage() {
               </ul>
             </div>
             <div>
-              <p className="font-semibold">Orbit would never</p>
+              <p className="font-semibold">Tote would never</p>
               <ul className="mt-1 space-y-1 text-muted">
                 {consent.consent.neverDoes.map((r) => (
                   <li key={r}>• {r}</li>
@@ -308,7 +308,7 @@ export default function SettingsPage() {
               </ul>
             </div>
             <p className="text-[13px] text-muted">
-              Permission requested: {consent.consent.scope}. You sign in on {consent.displayName}&apos;s own page; Orbit never sees your password.
+              Permission requested: {consent.consent.scope}. You sign in on {consent.displayName}&apos;s own page; Tote never sees your password.
             </p>
             <Link href="/add/" className="inline-flex min-h-11 items-center font-semibold text-navy underline-offset-4 hover:underline">
               Import an email instead
@@ -321,7 +321,7 @@ export default function SettingsPage() {
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         title="Delete everything?"
-        description="This removes all purchases, returns, refunds, saved emails, wishlist and wallet cards from Orbit, and disconnects your inbox. It can't be undone."
+        description="This removes all purchases, returns, refunds, saved emails, wishlist and wallet cards from Tote, and disconnects your inbox. It can't be undone."
         footer={
           <Button
             variant="danger"

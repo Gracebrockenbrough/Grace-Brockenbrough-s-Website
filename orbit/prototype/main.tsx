@@ -10,6 +10,7 @@ import Insights from "@/app/insights/page";
 import Preferences from "@/app/preferences/page";
 import Promo from "@/app/promo/page";
 import Purchases from "@/app/returns/page";
+import Sales from "@/app/sales/page";
 import Label from "@/app/returns/label/page";
 import Purchase from "@/app/returns/purchase/page";
 import Refund from "@/app/returns/refund/page";
@@ -34,6 +35,7 @@ const routes: Record<string, ComponentType> = {
   "/preferences/": Preferences,
   "/promo/": Promo,
   "/returns/": Purchases,
+  "/sales/": Sales,
   "/returns/label/": Label,
   "/returns/purchase/": Purchase,
   "/returns/refund/": Refund,

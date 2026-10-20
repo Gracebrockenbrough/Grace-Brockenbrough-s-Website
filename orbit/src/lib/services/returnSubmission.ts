@@ -1,7 +1,7 @@
 /**
  * Return Workflow Service: submission adapters, one per capability level.
  *
- * Orbit is read-only: it never submits a return. A request only moves past "prepared"
+ * Tote is read-only: it never submits a return. A request only moves past "prepared"
  * when the customer says they submitted it on the retailer's site, and only becomes
  * "confirmed" when the retailer's own email arrives.
  */
@@ -26,7 +26,7 @@ export interface ReturnSubmissionAdapter {
   submit(request: ReturnRequest, details: PreparedReturnDetails, approvedAt: string): Promise<SubmissionResult>;
 }
 
-/** Level 1: Orbit prepares; the customer submits on the retailer's site. */
+/** Level 1: Tote prepares; the customer submits on the retailer's site. */
 export const guidedAdapter: ReturnSubmissionAdapter = {
   capability: "guided",
   async submit(_r, _d, _approvedAt) {

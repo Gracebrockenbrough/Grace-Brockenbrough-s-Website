@@ -1,5 +1,5 @@
 /**
- * Orbit domain model.
+ * Tote domain model.
  *
  * Conventions:
  * - `null` always means "unknown". Never substitute a guess for a null.
@@ -20,9 +20,9 @@ export type Confidence = "high" | "medium" | "low";
 // ─── Retailers & policies ────────────────────────────────────────────────
 
 /**
- * How much of a retailer's return process Orbit performs. Orbit is read-only by design:
+ * How much of a retailer's return process Tote performs. Tote is read-only by design:
  * it reads shopping emails and prepares information, and the customer always completes
- * the retailer's own process. Orbit never submits, buys or sends anything on anyone's behalf.
+ * the retailer's own process. Tote never submits, buys or sends anything on anyone's behalf.
  */
 export type ReturnCapability = "guided";
 
@@ -180,7 +180,7 @@ export interface Order {
  * Nothing becomes `submitted_confirmed` or later without retailer evidence.
  */
 export type ReturnStatus =
-  | "prepared" // Orbit prepared it. Nothing has been sent to the retailer.
+  | "prepared" // Tote prepared it. Nothing has been sent to the retailer.
   | "reported_submitted" // Customer says they submitted it on the retailer's site. Awaiting retailer confirmation.
   | "approval_pending" // Retailer confirmed receipt of the request; approval pending.
   | "label_ready" // Retailer confirmed; label/QR available. Customer must ship.
@@ -239,7 +239,7 @@ export interface Refund {
   /** What we expect, and why. Never shown as received. */
   expected: { amount: number | null; by: DateOnly | null; basis: string } | null;
   /**
-   * The refund was issued. Orbit has no bank access, so this comes from the
+   * The refund was issued. Tote has no bank access, so this comes from the
    * retailer's refund email, or from the customer telling us it arrived.
    */
   confirmed: { amount: number; at: DateOnly; by: "retailer_email" | "customer"; evidenceId: string | null } | null;

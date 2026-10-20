@@ -60,7 +60,7 @@ export default function WalletPage() {
           title="Your wallet is empty"
           action={<ButtonLink href="/wallet/add/">Add a Gift Card</ButtonLink>}
         >
-          Add gift cards and store credit, and Orbit will keep each balance with its store.
+          Add gift cards and store credit, and Tote will keep each balance with its store.
         </EmptyState>
       ) : (
         <>

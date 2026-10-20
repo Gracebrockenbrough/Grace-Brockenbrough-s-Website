@@ -49,7 +49,7 @@ export default function WelcomePage() {
             <li>Gift cards and store credit, ready when you shop.</li>
             <li>A clear picture of what you spend, with no judgment.</li>
           </ul>
-          <p className="mt-6 text-[15px] text-muted">Orbit only reads your shopping emails. It never sends, buys or acts for you.</p>
+          <p className="mt-6 text-[15px] text-muted">Tote only reads your shopping emails. It never sends, buys or acts for you.</p>
           <Button className="mt-8" onClick={() => setStep(1)}>
             Get Started
           </Button>

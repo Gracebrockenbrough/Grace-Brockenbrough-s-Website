@@ -16,7 +16,7 @@ import type {
 } from "../domain/types";
 import type { ItemKind } from "../intelligence/buckets";
 
-/** Everything Orbit knows for one user. Mirrors the relational schema in supabase/migrations. */
+/** Everything Tote knows for one user. Mirrors the relational schema in supabase/migrations. */
 export interface OrbitData {
   retailers: Retailer[];
   policies: ReturnPolicy[];

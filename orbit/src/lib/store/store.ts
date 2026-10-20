@@ -190,7 +190,7 @@ export const actions = {
       submission: { by: null, at: null, confirmedByRetailer: false, confirmationEvidenceId: null },
       artifacts: [],
       rmaNumber: null,
-      history: [{ at: now(), status: "prepared", note: "Orbit prepared your return. Nothing has been sent yet." }],
+      history: [{ at: now(), status: "prepared", note: "Tote prepared your return. Nothing has been sent yet." }],
     };
     setData((x) => ({ ...x, returns: [...x.returns, req] }));
     return id;
@@ -390,7 +390,7 @@ export const actions = {
   // ── Wallet ───────────────────────────────────────────────────────────
   addWalletItem(item: Omit<WalletItem, "id" | "addedAt" | "demo" | "currency" | "history">): string {
     const id = uid("w");
-    const history = item.balance != null ? [{ at: today(), amount: item.balance, label: "Added to Orbit" }] : [];
+    const history = item.balance != null ? [{ at: today(), amount: item.balance, label: "Added to Tote" }] : [];
     setData((d) => ({ ...d, wallet: [...d.wallet, { ...item, id, currency: "USD", history, addedAt: now(), demo: false }] }));
     return id;
   },

@@ -6,7 +6,7 @@ import { ChartNoAxesColumn, Compass, ShoppingBag, WalletCards } from "lucide-rea
 import { cn } from "../ui/cn";
 
 const tabs = [
-  { href: "/", label: "Discover", icon: Compass, match: (p: string) => p === "/" || ["/wishlist", "/promo", "/ask", "/attention", "/preferences"].some((x) => p.startsWith(x)) },
+  { href: "/", label: "Discover", icon: Compass, match: (p: string) => p === "/" || ["/sales", "/wishlist", "/promo", "/ask", "/attention", "/preferences"].some((x) => p.startsWith(x)) },
   { href: "/returns/", label: "Purchases", icon: ShoppingBag, match: (p: string) => p.startsWith("/returns") || p.startsWith("/add") || p.startsWith("/calendar") },
   { href: "/wallet/", label: "Wallet", icon: WalletCards, match: (p: string) => p.startsWith("/wallet") || p.startsWith("/gift") },
   { href: "/insights/", label: "Insights", icon: ChartNoAxesColumn, match: (p: string) => p.startsWith("/insights") },

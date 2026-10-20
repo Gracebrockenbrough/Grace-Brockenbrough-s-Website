@@ -236,7 +236,7 @@ function Assistant({ view, existing, preselect, email }: { view: OrderView; exis
           </Card>
 
           <Notice tone={cap === "guided" ? "info" : "demo"} title={`${capabilityLabel[cap].name} return`}>
-            {cap === "guided" && `Orbit can't submit returns to ${retailer.name}. We'll prepare everything so you can finish on their site in a couple of minutes.`}
+            {cap === "guided" && `Tote can't submit returns to ${retailer.name}. We'll prepare everything so you can finish on their site in a couple of minutes.`}
           </Notice>
 
           <Button onClick={approve} disabled={busy}>
@@ -272,7 +272,7 @@ function NextSteps({ view, request, result, email }: { view: OrderView; request:
         <h1 id="s4" className="mt-3 text-[26px] font-semibold tracking-[-0.02em]">Finish on {retailer.name}&apos;s site</h1>
         <p className="mt-1 text-[16px] text-muted">
           {(result && !result.submitted ? result.message : null) ??
-            `Orbit prepared everything. Nothing has been sent to ${retailer.name}.`}{" "}
+            `Tote prepared everything. Nothing has been sent to ${retailer.name}.`}{" "}
           It takes about two minutes.
         </p>
       </div>
@@ -305,7 +305,7 @@ function NextSteps({ view, request, result, email }: { view: OrderView; request:
           <Card className="p-4">
             <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">3 · Then come back</p>
             <p className="mt-2 text-[15px]">
-              {retailer.name} will email your {request.dropOff === "store" ? "return confirmation" : "label or QR code"}. Forward it to Orbit and it&apos;ll appear here, ready to show at drop-off.
+              {retailer.name} will email your {request.dropOff === "store" ? "return confirmation" : "label or QR code"}. Forward it to Tote and it&apos;ll appear here, ready to show at drop-off.
             </p>
           </Card>
         </li>
@@ -357,7 +357,7 @@ function ReturnStatus({ view, request }: { view: OrderView; request: ReturnReque
         {request.status === "reported_submitted" && (
           <>
             <Notice tone="info" title={`Waiting for ${retailer.name}`}>
-              When their confirmation email arrives, forward it to Orbit. Your label or QR code will appear here.
+              When their confirmation email arrives, forward it to Tote. Your label or QR code will appear here.
             </Notice>
             <ButtonLink href="/add/?mode=paste" icon={<Mail aria-hidden className="size-5" />}>
               Add Confirmation Email

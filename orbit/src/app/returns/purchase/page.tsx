@@ -534,7 +534,7 @@ function PurchaseDetail() {
         open={deleteSheet}
         onOpenChange={setDeleteSheet}
         title="Delete this purchase?"
-        description="This removes the order, its returns, refund tracking and saved emails from Orbit. It doesn't affect anything at the retailer."
+        description="This removes the order, its returns, refund tracking and saved emails from Tote. It doesn't affect anything at the retailer."
         footer={
           <Button
             variant="danger"

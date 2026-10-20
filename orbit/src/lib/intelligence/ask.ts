@@ -1,5 +1,5 @@
 /**
- * Ask Orbit: find purchases and credits from everyday descriptions.
+ * Ask Tote: find purchases and credits from everyday descriptions.
  *
  * "I think I ordered a red dress from somewhere, when do I return it?" works
  * without an order number. This prototype matches on-device against item names,
@@ -128,7 +128,7 @@ function itemAnswer(v: OrderView, itemId: string, today: DateOnly, intent: AskIn
     const f = v.refund;
     answer = f?.confirmed
       ? f.confirmed.by === "retailer_email"
-        ? `${v.retailer.name} issued ${f.destination === "store_credit" ? "store credit" : "your refund"} of ${money(f.confirmed.amount)} on ${formatDate(f.confirmed.at, today)}, according to their email.${f.destination === "store_credit" ? "" : f.arrivedAt ? " You confirmed it arrived." : " Orbit can't see your bank, so check your statement to confirm it arrived."}`
+        ? `${v.retailer.name} issued ${f.destination === "store_credit" ? "store credit" : "your refund"} of ${money(f.confirmed.amount)} on ${formatDate(f.confirmed.at, today)}, according to their email.${f.destination === "store_credit" ? "" : f.arrivedAt ? " You confirmed it arrived." : " Tote can't see your bank, so check your statement to confirm it arrived."}`
         : `You confirmed the refund of ${money(f.confirmed.amount)} arrived.`
       : "You've already returned this.";
     if (f) actions.push({ label: "View Refund", href: `/returns/refund/?id=${f.id}` });
@@ -196,7 +196,7 @@ export function ask(query: string, data: OrbitData, today: DateOnly): { intent: 
           title: `Spending ${year ? "this year" : "this month"}`,
           href: "/insights/",
           answer: `You've recorded ${money(amount)} ${what} ${year ? "this year" : "this month"}, before tax and shipping. Confirmed refunds aren't subtracted here.`,
-          note: "Only includes orders Orbit knows about.",
+          note: "Only includes orders Tote knows about.",
           actions: [{ label: "Open Shopping Insights", href: "/insights/" }],
           score: 100,
         },

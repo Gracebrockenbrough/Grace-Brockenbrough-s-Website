@@ -3,8 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Camera, Check, Heart, Link2, Mic, Trash, Type } from "lucide-react";
-import { Shell, TopBar } from "@/components/layout/shell";
-import { DiscoverTabs } from "@/components/orbit/discover-tabs";
+import { BackBar, Shell } from "@/components/layout/shell";
 import { ItemArt, KIND_COLOR } from "@/components/orbit/item-art";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -265,12 +264,8 @@ export default function WishlistPage() {
 
   return (
     <Shell>
-      <TopBar />
-      <div className="pb-4 pt-2">
-        <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.025em]">Wishlist</h1>
-        <p className="mt-1 text-[17px] text-muted">Things you&apos;re keeping an eye on. We&apos;ll tell you when they go on sale.</p>
-      </div>
-      <DiscoverTabs current="wishlist" wishCount={active.length} />
+      <BackBar fallback="/" title="Wishlist" />
+      <p className="pb-1 pt-1 text-[16px] text-muted">Things you&apos;re keeping an eye on. We&apos;ll tell you when they go on sale.</p>
 
       <div className="mt-4 grid grid-cols-4 gap-2" role="group" aria-label="Add to your wishlist">
         {methods.map((m) => (

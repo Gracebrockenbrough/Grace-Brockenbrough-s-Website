@@ -10,7 +10,7 @@ import type { DateOnly, Promotion, Retailer, WishItem } from "../domain/types";
 import { creditAt, retailerOf } from "../store/selectors";
 import type { OrbitData } from "../store/state";
 
-export type FeedFilter = "all" | "favorites" | "wishlist" | "codes";
+export type FeedFilter = "all" | "favorites" | "wishlist" | "codes" | "credit" | "ending";
 
 export interface FeedItem {
   promo: Promotion;
@@ -82,7 +82,19 @@ export function buildFeed(d: OrbitData, today: DateOnly, filter: FeedFilter = "a
     items.push({ promo: p, retailer, favorite, wishes: matched, credit, endsIn, reasons, score });
   }
 
-  const filtered = items.filter((i) => (filter === "favorites" ? i.favorite : filter === "wishlist" ? i.wishes.length > 0 : filter === "codes" ? Boolean(i.promo.code) : true));
+  const filtered = items.filter((i) =>
+    filter === "favorites"
+      ? i.favorite
+      : filter === "wishlist"
+        ? i.wishes.length > 0
+        : filter === "codes"
+          ? Boolean(i.promo.code)
+          : filter === "credit"
+            ? i.credit > 0 && !i.promo.sponsored
+            : filter === "ending"
+              ? i.endsIn != null && i.endsIn <= 3
+              : true,
+  );
   return filtered.sort((a, b) => b.score - a.score || (a.endsIn ?? 99) - (b.endsIn ?? 99));
 }
 

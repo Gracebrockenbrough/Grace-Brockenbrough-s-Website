@@ -3,7 +3,7 @@
  *
  * Real issuance needs an authorized gift card distribution partner and a payment
  * processor. Until then only the demo provider exists: it charges nothing and issues
- * a fictional card that can only be claimed inside Orbit's demo.
+ * a fictional card that can only be claimed inside Tote's demo.
  */
 import type { GiftTransfer } from "../domain/types";
 

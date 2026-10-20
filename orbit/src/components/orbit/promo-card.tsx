@@ -123,7 +123,7 @@ export function PromoCard({ item, compact = false }: { item: FeedItem; compact?:
         )}
       </div>
       {(p.affiliate || p.sponsored) && !compact && (
-        <p className="px-4 pb-3 text-[12px] text-muted">{p.sponsored ? "Paid placement by the retailer. " : ""}{p.affiliate ? "Orbit may earn a commission if you buy." : ""}</p>
+        <p className="px-4 pb-3 text-[12px] text-muted">{p.sponsored ? "Paid placement by the retailer. " : ""}{p.affiliate ? "Tote may earn a commission if you buy." : ""}</p>
       )}
     </article>
   );

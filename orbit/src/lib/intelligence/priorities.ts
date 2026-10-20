@@ -328,8 +328,8 @@ export function buildPriorities(data: OrbitData, today: DateOnly, prefs: Notific
         dueDate: null,
         amount: null,
         estimated: false,
-        action: { label: "Open Discover", href: "/?filter=favorites" },
-        detailHref: "/?filter=favorites",
+        action: { label: "See Their Sales", href: "/sales/?filter=favorites" },
+        detailHref: "/sales/?filter=favorites",
       });
   }
 

@@ -43,7 +43,7 @@ export const dropOffLabel: Record<DropOffKind, string> = {
 export const capabilityLabel: Record<ReturnCapability, { name: string; summary: string }> = {
   guided: {
     name: "Guided",
-    summary: "Orbit prepares your details and links you to the store. You finish on their site.",
+    summary: "Tote prepares your details and links you to the store. You finish on their site.",
   },
 };
 

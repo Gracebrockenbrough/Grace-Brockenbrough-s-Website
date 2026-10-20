@@ -58,7 +58,7 @@ function Value<T>({ x, render }: { x: Extracted<T> | null; render?: (v: T) => st
 
 function Chooser() {
   const options = [
-    { mode: "forward", icon: Forward, title: "Forward an email", body: "Send confirmations to your Orbit address" },
+    { mode: "forward", icon: Forward, title: "Forward an email", body: "Send confirmations to your Tote address" },
     { mode: "paste", icon: Mail, title: "Paste an email", body: "Copy the text of an order or return email" },
     { mode: "upload", icon: FileUp, title: "Upload a receipt", body: "An email file, PDF or screenshot" },
     { mode: "manual", icon: PencilLine, title: "Enter it yourself", body: "Just the basics: store, item, date" },
@@ -66,7 +66,7 @@ function Chooser() {
   return (
     <>
       <h1 className="pb-1 pt-2 text-[28px] font-semibold tracking-[-0.02em]">Add a purchase</h1>
-      <p className="pb-5 text-[16px] text-muted">Orbit reads the details and tracks the return window for you.</p>
+      <p className="pb-5 text-[16px] text-muted">Tote reads the details and tracks the return window for you.</p>
       <Card className="divide-y divide-line">
         {options.map(({ mode, icon: Icon, title, body }) => (
           <Link key={mode} href={`/add/?mode=${mode}`} className="flex min-h-[72px] items-center gap-4 px-4 py-3 hover:bg-ivory-deep">
@@ -106,7 +106,7 @@ function PasteFlow({ initialText }: { initialText?: string }) {
     const copy = {
       added: { title: "Purchase added", body: "We'll keep an eye on the return window." },
       merged: { title: "Matched to an existing order", body: "We added the new details to the order you already had. No duplicate was created." },
-      duplicate_message: { title: "Already imported", body: "This email is already in Orbit, so nothing changed." },
+      duplicate_message: { title: "Already imported", body: "This email is already in Tote, so nothing changed." },
       unrecognized: { title: "We couldn't read this email", body: "It doesn't look like an order, shipping, return or refund email. You can enter the details yourself." },
     }[result.status];
     return (
@@ -167,7 +167,7 @@ function PasteFlow({ initialText }: { initialText?: string }) {
             You can add {x.missing.length === 1 ? "it" : "them"} later on the purchase page. We won&apos;t guess.
           </Notice>
         )}
-        <Button onClick={() => setResult(actions.importMessage(msg))}>Save to Orbit</Button>
+        <Button onClick={() => setResult(actions.importMessage(msg))}>Save to Tote</Button>
         <Button variant="ghost" size="md" className="w-full" onClick={() => setX(null)}>
           Edit Text
         </Button>
@@ -317,10 +317,10 @@ function ForwardInfo() {
     <section className="animate-in space-y-5 pt-2">
       <div>
         <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Forward your emails</h1>
-        <p className="mt-1 text-[16px] text-muted">Forward order, shipping, return and refund emails to your private Orbit address.</p>
+        <p className="mt-1 text-[16px] text-muted">Forward order, shipping, return and refund emails to your private Tote address.</p>
       </div>
       <Card className="px-4 pb-2 pt-3">
-        <CopyRow label="Your Orbit address" value={FORWARDING_ADDRESS_DEMO} />
+        <CopyRow label="Your Tote address" value={FORWARDING_ADDRESS_DEMO} />
       </Card>
       <Notice tone="demo" title="Not receiving mail yet">
         This is a placeholder address. Inbound email isn&apos;t live in this preview, so paste the email text instead.

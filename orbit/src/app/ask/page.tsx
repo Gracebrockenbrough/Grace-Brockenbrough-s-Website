@@ -79,7 +79,7 @@ function AskPage() {
 
   return (
     <Shell nav={false}>
-      <BackBar fallback="/" title="Ask Orbit" />
+      <BackBar fallback="/" title="Ask Tote" />
 
       <div className="pt-2">
         <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.02em]">What are you looking for?</h1>
@@ -94,7 +94,7 @@ function AskPage() {
         }}
       >
         <label htmlFor="ask" className="sr-only">
-          Ask Orbit
+          Ask Tote
         </label>
         <div className="flex h-[52px] min-w-0 flex-1 items-center gap-2 rounded-full border border-line bg-card px-4 shadow-[var(--shadow-card)] focus-within:border-navy/40">
           <Search aria-hidden className="size-5 shrink-0 text-muted" />

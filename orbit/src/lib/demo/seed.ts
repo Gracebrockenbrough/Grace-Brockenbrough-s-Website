@@ -18,7 +18,7 @@ import type {
 import type { OrbitData } from "../store/state";
 import { SEED_RETAILERS, seedPolicies } from "./retailers";
 
-export const DEMO_PROFILE = { firstName: "Alex", email: "alex@orbit.example" };
+export const DEMO_PROFILE = { firstName: "Alex", email: "alex@tote.example" };
 
 /** Fictional promotions, as if found in promotional emails. Codes are invented. */
 function buildPromotions(d: (n: number) => DateOnly): Promotion[] {

@@ -1,11 +1,13 @@
-# Orbit — Architecture & Plan
+# Tote — Architecture & Plan
 
-> **Product direction (current).** One place for everything shopping: **Discover** (a personal sales feed built from promotional emails, with the Wishlist inside it), **Purchases** (orders, receipts, deliveries, returns and refunds in one list), **Wallet** (gift cards and store credit), and **Insights** (spending awareness with optional, color-coded targets). Proactive "Heads up" alerts connect them. Orbit is **read-only**: its AI reads shopping emails and fills in details; it never sends, buys, submits returns or acts for the customer. The product name lives in `src/lib/brand.ts` (e.g. switch to "Tally" there).
+> The codebase folder and internal identifiers still say "orbit"; the product is **Tote** (see `src/lib/brand.ts`).
+
+> **Product direction (current).** One place for everything shopping: **Discover** (a personal sales feed built from promotional emails, with the Wishlist inside it), **Purchases** (orders, receipts, deliveries, returns and refunds in one list), **Wallet** (gift cards and store credit), and **Insights** (spending awareness with optional, color-coded targets). Proactive "Heads up" alerts connect them. Tote is **read-only**: its AI reads shopping emails and fills in details; it never sends, buys, submits returns or acts for the customer. The product name lives in `src/lib/brand.ts` (change it there).
 >
 > Monetization the design already supports, without compromising trust: affiliate links (disclosed on the card), sponsored promotions (always labeled, never ranked above what the customer asked for, can be turned off), retailer partner codes, and a future premium tier.
 
 
-**Orbit · Returns & Wallet** — *Your shopping, taken care of.*
+**Tote · Returns & Wallet** — *Your shopping, taken care of.*
 
 Guiding rule for every screen: show what matters, when it matters, and make the next action obvious.
 
@@ -13,7 +15,7 @@ Guiding rule for every screen: show what matters, when it matters, and make the 
 
 ## 1. Proposed architecture
 
-Orbit is a mobile-first Next.js app over a set of small services that talk through typed interfaces. No service depends on the UI, and the UI doesn't depend on Gmail, Outlook or any retailer integration. If one service fails, the rest of the app keeps working (try *Settings → Preview tools → Simulate a service outage*).
+Tote is a mobile-first Next.js app over a set of small services that talk through typed interfaces. No service depends on the UI, and the UI doesn't depend on Gmail, Outlook or any retailer integration. If one service fails, the rest of the app keeps working (try *Settings → Preview tools → Simulate a service outage*).
 
 ```
                  ┌──────────────────────────── UI (Next.js, React, Tailwind) ───────────────────────────┐
@@ -48,7 +50,7 @@ Orbit is a mobile-first Next.js app over a set of small services that talk throu
 - A return only moves past *prepared* when the customer reports submitting it, or when retailer evidence arrives. The schema enforces `confirmed_by_retailer ⇒ evidence`.
 - Submission adapters need an approval timestamp. Guided and Assisted adapters never return `submitted: true` in this prototype.
 - Email content is parsed as data only. A test checks that injected instructions are ignored.
-- Orbit never asks for retailer passwords. Gmail/Outlook use the providers' own OAuth (not enabled yet).
+- Tote never asks for retailer passwords. Gmail/Outlook use the providers' own OAuth (not enabled yet).
 
 ## 2. Screens & navigation
 
@@ -56,9 +58,9 @@ Three tabs: **Today · Returns · Wallet**. Focused flows hide the tab bar.
 
 | Route | Screen |
 |---|---|
-| `/` | **Today**: greeting, Ask Orbit, potential return value, up to three "Needs attention" items, interactive week calendar, subtle link to the shopping overview |
+| `/` | **Today**: greeting, Ask Tote, potential return value, up to three "Needs attention" items, interactive week calendar, subtle link to the shopping overview |
 | `/attention/` | Every to-do, grouped Overdue / Next 3 days / This week / Later deadlines / Deadline unknown |
-| `/ask/` | **Ask Orbit**: find purchases and credits from everyday descriptions, typed or spoken. No order number needed |
+| `/ask/` | **Ask Tote**: find purchases and credits from everyday descriptions, typed or spoken. No order number needed |
 | `/returns/` | **Returns**: filter tabs Needs your action · Awaiting retailer · Not delivered yet (counts and value), rows grouped by urgency |
 | `/returns/history/` | Completed returns, kept items, closed windows |
 | `/insights/` | **Shopping Insights** (from Profile): month / year / custom; purchases, issued refunds, net, credit used; "What you've bought" buckets (dresses, jeans, sweaters…) that fill as you buy, each opening its purchases; optional monthly goals per bucket; by store; data coverage |
@@ -71,7 +73,7 @@ Three tabs: **Today · Returns · Wallet**. Focused flows hide the tab bar.
 | `/wallet/card/?id=` | Card detail: balance trust, **Shop {Retailer}**, secure code reveal, restrictions, update/remove |
 | `/wallet/add/` | Add a gift card or credit |
 | `/wallet/gift/` | Send a Gift: store → amount → recipient → message → review → confirm (demo) |
-| `/gift/claim/?id=` | Recipient view: open gift, add to Orbit Wallet |
+| `/gift/claim/?id=` | Recipient view: open gift, add to Tote Wallet |
 | `/add/` | Add a purchase: forward, paste email, upload, manual |
 | `/settings/` | **Profile**: Shopping Insights, Saved for Later, email connections (demo / not connected / connecting / connected / syncing / sync failed / reconnection required) with retry, notifications, privacy, preview tools |
 
@@ -119,11 +121,11 @@ Highlights:
 
 ### One source of truth
 
-`lib/store/selectors.ts` decides every order's current stage (one of eight: decide → initiate → awaiting approval → ready to drop off → in transit → received → refund pending → refund confirmed), its next action, deadline, and amounts. Today's to-dos (`priorities.ts`), Returns rows, order details, calendar events (`calendar.ts`), Insights (`insights.ts`) and Ask Orbit (`ask.ts`) all read from it, and every row links to the record by id. Money is always labeled by kind: purchase price (actual), potential, expected, issued, or last known.
+`lib/store/selectors.ts` decides every order's current stage (one of eight: decide → initiate → awaiting approval → ready to drop off → in transit → received → refund pending → refund confirmed), its next action, deadline, and amounts. Today's to-dos (`priorities.ts`), Returns rows, order details, calendar events (`calendar.ts`), Insights (`insights.ts`) and Ask Tote (`ask.ts`) all read from it, and every row links to the record by id. Money is always labeled by kind: purchase price (actual), potential, expected, issued, or last known.
 
 ### Refunds without bank access
 
-Orbit never connects to bank accounts or card wallets. A refund has three states, and the UI names the source of each:
+Tote never connects to bank accounts or card wallets. A refund has three states, and the UI names the source of each:
 1. **Received by the store**: from the store's email.
 2. **Issued**: from the store's refund email (most retailers send one). If none arrives by the expected date, it's flagged "Refund late" and the customer is prompted to follow up.
 3. **Arrived**: only when the customer taps "It arrived in my account". This step is optional.
@@ -145,7 +147,7 @@ Store logos and brand colors are trademarks, so they arrive through a retailer p
 - **Return workflow**: item-level selection, refund and drop-off choices, fee logic, prepare → reported submitted → retailer-confirmed via email → label → shipped → refund confirmed. Retailer emails move returns and refunds forward.
 - Wallet: add, update balance (labeled "Updated by you"), 30-second code reveal, remove, Shop Store links to the official site.
 - Manual purchase entry, missing-delivery-date capture, delete purchase, delete all data.
-- Ask Orbit lookup; voice input where the browser supports speech recognition.
+- Ask Tote lookup; voice input where the browser supports speech recognition.
 - 54 unit tests (`npm test`), plus a scripted click-through audit of every main interaction.
 
 ### Demo simulations (clearly labeled in the UI)
@@ -169,7 +171,7 @@ Store logos and brand colors are trademarks, so they arrive through a retailer p
 
 | Tab | Route | What's there |
 |---|---|---|
-| **Discover** | `/` | Greeting, Ask Orbit, **Heads up** (top 3 alerts, `/attention/` for all), **Sales for you** feed with filters (All, Favorites, Wishlist, Codes), copyable codes with community verification (+points), hide a sale, share a code, preferences |
+| **Discover** | `/` | Greeting, Ask Tote, **Heads up** (top 3 alerts, `/attention/` for all), **Sales for you** feed with filters (All, Favorites, Wishlist, Codes), copyable codes with community verification (+points), hide a sale, share a code, preferences |
 | | `/wishlist/` | Add by **text, photo, voice or link**; exact products or broad interests; temporary interests; matching sales; credit at that store; bought / remove |
 | | `/promo/?id=` | A sale with your matching credit and wishlist items |
 | | `/preferences/`, `/welcome/` | Favorite and hidden brands, categories, minimum discount, sponsored on/off; first-run onboarding |
@@ -180,9 +182,9 @@ Store logos and brand colors are trademarks, so they arrive through a retailer p
 
 **Proactive alerts** (`priorities.ts`): return deadlines, drop-offs, refunds needing a check, refunds issued but not yet confirmed ("Have you received it?"), packages arriving, wishlist items on sale, credit at a store with a sale, several favorite brands on sale, and spending over a personal target. Money you could lose always ranks above opportunities.
 
-**Refunds** stay *pending* after the store's refund email until the customer ticks "I've received this refund". Orbit never connects to bank accounts.
+**Refunds** stay *pending* after the store's refund email until the customer ticks "I've received this refund". Tote never connects to bank accounts.
 
-**Read-only AI.** Returns are guided only: Orbit prepares details and links to the retailer's portal. There are no "assisted" or "integrated" submission paths. See Profile → "What Orbit's AI can and can't do".
+**Read-only AI.** Returns are guided only: Tote prepares details and links to the retailer's portal. There are no "assisted" or "integrated" submission paths. See Profile → "What Tote's AI can and can't do".
 
 ### MVP vs future
 

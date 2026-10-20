@@ -19,7 +19,7 @@ export interface EmailConnector {
   /** What the customer is consenting to, shown before authorization. */
   readonly consent: { reads: string[]; neverDoes: string[]; scope: string };
   availability(): ConnectorAvailability;
-  /** Starts the provider's own OAuth consent flow. Orbit never sees the email password. */
+  /** Starts the provider's own OAuth consent flow. Tote never sees the email password. */
   authorize(): Promise<{ ok: true; address: string } | { ok: false; reason: string }>;
   /** Fetches only purchase-related messages since the given time. */
   fetchSince(since: Timestamp | null): Promise<RawMessage[]>;
@@ -86,4 +86,4 @@ export const outlookConnector = new OAuthMailConnector(
 );
 
 /** Address customers forward confirmations to. Inbound mail is parsed like any other channel. */
-export const FORWARDING_ADDRESS_DEMO = "alex.k7q2@in.orbit.example";
+export const FORWARDING_ADDRESS_DEMO = "alex.k7q2@in.tote.example";

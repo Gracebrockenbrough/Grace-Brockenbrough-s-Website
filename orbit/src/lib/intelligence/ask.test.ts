@@ -5,7 +5,7 @@ import { ask, detectIntent } from "./ask";
 const TODAY = "2026-10-20";
 const data = buildDemoData(TODAY);
 
-describe("Ask Orbit", () => {
+describe("Ask Tote", () => {
   it("finds the dress from a vague description, without an order number", () => {
     const { intent, results } = ask("I think I ordered a red dress from somewhere but I want to return it, when do I need to?", data, TODAY);
     expect(intent).toBe("deadline");
@@ -21,7 +21,7 @@ describe("Ask Orbit", () => {
     expect(ask("my flats", data, TODAY).results[0].id).toBe("d-o-eve:d-i-eve-1");
   });
 
-  it("answers refund questions from what Orbit actually knows", () => {
+  it("answers refund questions from what Tote actually knows", () => {
     const r = ask("did I get my Sephora money back?", data, TODAY).results[0];
     expect(r.retailerId).toBe("sephora");
     expect(r.answer).toMatch(/no refund email/i);

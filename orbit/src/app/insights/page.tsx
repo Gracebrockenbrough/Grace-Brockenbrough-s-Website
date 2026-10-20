@@ -67,7 +67,7 @@ export default function InsightsPage() {
 
   return (
     <Shell>
-      <PageHeader title="Insights" subtitle="Awareness, not restriction. Only purchases Orbit knows about count." />
+      <PageHeader title="Insights" subtitle="Awareness, not restriction. Only purchases Tote knows about count." />
 
       <div role="radiogroup" aria-label="Time period" className="mt-4 inline-flex rounded-full bg-ivory-deep p-1">
         {(["month", "quarter", "year", "custom"] as RangeKind[]).map((k) => (
@@ -162,7 +162,7 @@ export default function InsightsPage() {
           <section className="mt-6 rounded-[18px] bg-ivory-deep px-4 py-3.5 text-[14px] text-muted">
             <p className="font-semibold text-navy">What&apos;s included</p>
             <p className="mt-1">
-              {plural(sourceTotal, "order")} from {r.coverage.map((c) => `${c.label} (${c.count})`).join(", ")}. Purchases that never reached Orbit aren&apos;t counted.
+              {plural(sourceTotal, "order")} from {r.coverage.map((c) => `${c.label} (${c.count})`).join(", ")}. Purchases that never reached Tote aren&apos;t counted.
               {r.unpricedItems > 0 ? ` ${plural(r.unpricedItems, "item")} had no price in the email and ${r.unpricedItems === 1 ? "is" : "are"} left out.` : ""}
             </p>
           </section>

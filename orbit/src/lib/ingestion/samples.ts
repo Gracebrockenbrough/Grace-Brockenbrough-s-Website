@@ -30,7 +30,7 @@ export function sampleMessages(today: DateOnly): (RawMessage & { label: string; 
     {
       id: "sample-hollis-order",
       label: "Hollis & Pine order confirmation",
-      hint: "A new retailer Orbit doesn't have a policy for yet.",
+      hint: "A new retailer Tote doesn't have a policy for yet.",
       channel: "email_upload",
       from: "Hollis & Pine <orders@hollisandpine.example>",
       subject: "Thank you for your order",
@@ -54,7 +54,7 @@ export function sampleMessages(today: DateOnly): (RawMessage & { label: string; 
     {
       id: "sample-sephora-refund",
       label: "Sephora refund email",
-      hint: "Confirms the refund Orbit has been tracking.",
+      hint: "Confirms the refund Tote has been tracking.",
       channel: "email_upload",
       from: "Sephora <beauty@sephora.example>",
       subject: "Your refund has been issued",
