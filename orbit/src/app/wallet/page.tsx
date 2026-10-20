@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Gift, Plus, WalletCards } from "lucide-react";
 import { PageHeader, Shell } from "@/components/layout/shell";
-import { WalletTile } from "@/components/orbit/wallet-tile";
+import { WalletCardFace } from "@/components/orbit/wallet-card";
 import { ButtonLink, IconLink } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
 import { EmptyState, ErrorState } from "@/components/ui/states";
@@ -13,6 +13,10 @@ import type { WalletItem } from "@/lib/domain/types";
 import { isExpired, retailerOf, walletTotals } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
+
+/** Visible strip of each stacked card, in px. */
+const STRIP = 84;
+const CARD_H = 212;
 
 export default function WalletPage() {
   const o = useOrbit();
@@ -71,12 +75,18 @@ export default function WalletPage() {
             )}
           </section>
 
-          <ul aria-label="Cards" className="grid grid-cols-2 gap-3">
-            {active.map((w) => (
-              <li key={w.id}>
-                <WalletTile item={w} retailer={retailerOf(data, w.retailerId)} today={today} />
-              </li>
-            ))}
+          {/* Apple Wallet-style stack: each card's top strip shows the store, balance, type and status. */}
+          <ul aria-label="Cards" className="relative">
+            {active.map((w, i) => {
+              const r = retailerOf(data, w.retailerId);
+              return (
+                <li key={w.id} className="relative transition-transform duration-200 hover:-translate-y-1 focus-within:-translate-y-1" style={{ marginTop: i ? -(CARD_H - STRIP) : 0, zIndex: i + 1 }}>
+                  <Link href={`/wallet/card/?id=${w.id}`} aria-label={`${r.name}, ${money(w.balance)}`} className="block rounded-[20px]">
+                    <WalletCardFace item={w} retailer={r} today={today} className="aspect-auto h-[212px]" />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}
