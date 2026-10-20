@@ -16,10 +16,18 @@ import { Field, Input, Toggle } from "../ui/form";
 import { Sheet } from "../ui/sheet";
 import { ItemArt, KIND_COLOR } from "./item-art";
 
+/** Green within, yellow approaching (80%+), red over. Colors are paired with words. */
+export function goalStatus(amount: number, goal: number): { label: string; cls: string } {
+  const r = amount / goal;
+  if (r > 1) return { label: `${money(amount - goal)} over`, cls: "bg-terracotta-soft text-terracotta" };
+  if (r >= 0.8) return { label: "Close to target", cls: "bg-sand text-sand-ink" };
+  return { label: "Within target", cls: "bg-sage text-sage-ink" };
+}
+
 function BucketCard({ b, onOpen }: { b: Bucket; onOpen: () => void }) {
   const c = KIND_COLOR[b.kind];
-  const over = b.goal != null && b.amount > b.goal;
   const pct = Math.round(b.fill * 100);
+  const status = b.goal != null ? goalStatus(b.amount, b.goal) : null;
   return (
     <button
       type="button"
@@ -42,9 +50,10 @@ function BucketCard({ b, onOpen }: { b: Bucket; onOpen: () => void }) {
       <span className="relative mt-auto">
         <span className="block text-[14px] font-semibold">{b.label}</span>
         <span className="tabular block text-[22px] font-semibold leading-tight tracking-[-0.02em]">{money(b.amount)}</span>
-        {b.goal != null && (
-          <span className={`block text-[12px] font-medium ${over ? "text-sand-ink" : "text-muted"}`}>
-            {over ? `${money(b.amount - b.goal)} over your ${money(b.goal)} goal` : `of ${money(b.goal)} goal`}
+        {b.goal != null && status && (
+          <span className="mt-1 flex flex-wrap items-center gap-1 text-[12px] font-medium text-muted">
+            <span className={`rounded-full px-2 py-0.5 font-semibold ${status.cls}`}>{status.label}</span>
+            of {money(b.goal)}
           </span>
         )}
       </span>
@@ -53,15 +62,16 @@ function BucketCard({ b, onOpen }: { b: Bucket; onOpen: () => void }) {
 }
 
 /**
- * "What you've bought", as buckets that fill up. Goals are optional and monthly;
- * they never block anything and never turn red.
+ * "What you've bought", as buckets that fill up. Targets are optional and monthly;
+ * they never block anything. Status is shown in green, yellow or red, always with words.
  */
-export function SpendBuckets({ data, r, monthly, today }: { data: OrbitData; r: Insights; monthly: boolean; today: DateOnly }) {
+export function SpendBuckets({ data, r, multiplier, today }: { data: OrbitData; r: Insights; multiplier: number | null; today: DateOnly }) {
   const goals = data.goals ?? { enabled: false, monthly: {} };
-  const useGoals = goals.enabled && monthly;
+  const useGoals = goals.enabled && multiplier != null;
+  const scaled = Object.fromEntries(Object.entries(goals.monthly).map(([k, v]) => [k, (v ?? 0) * (multiplier ?? 1)]));
   const buckets = buildBuckets(
     r.purchases.map((p) => p.item),
-    useGoals ? goals.monthly : null,
+    useGoals ? scaled : null,
   );
   const [open, setOpen] = useState<ItemKind | null>(null);
   const [goalInput, setGoalInput] = useState("");
@@ -74,7 +84,7 @@ export function SpendBuckets({ data, r, monthly, today }: { data: OrbitData; r: 
         What you&apos;ve bought
       </h2>
       <p className="mt-0.5 text-[14px] text-muted">
-        {useGoals ? "Each bucket fills toward your monthly goal." : "Each bucket fills as you buy. Fuller buckets are where most of your shopping goes."}
+        {useGoals ? `Each bucket fills toward your target${multiplier && multiplier > 1 ? ` (monthly target × ${multiplier})` : ""}.` : "Each bucket fills as you buy. Fuller buckets are where most of your shopping goes."}
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
@@ -92,8 +102,8 @@ export function SpendBuckets({ data, r, monthly, today }: { data: OrbitData; r: 
 
       <div className="mt-4 rounded-[18px] border border-line bg-card px-4">
         <Toggle
-          label="Monthly goals (optional)"
-          description={goals.enabled ? (monthly ? "Tap a bucket to set or change its goal." : "Goals are monthly. Switch to This month to see them.") : "Set a soft goal for any bucket. Nothing is blocked."}
+          label="Spending targets (optional)"
+          description={goals.enabled ? (multiplier != null ? "Tap a bucket to set or change its monthly target." : "Targets show for month, quarter and year views.") : "Set a personal monthly target for any bucket. Nothing is blocked."}
           checked={goals.enabled}
           onChange={(v) => actions.setGoalsEnabled(v)}
         />
@@ -113,7 +123,7 @@ export function SpendBuckets({ data, r, monthly, today }: { data: OrbitData; r: 
                 setOpen(null);
               }}
             >
-              {goalInput ? "Save Monthly Goal" : "Remove Goal"}
+              {goalInput ? "Save Monthly Target" : "Remove Target"}
             </Button>
           ) : undefined
         }
@@ -144,7 +154,7 @@ export function SpendBuckets({ data, r, monthly, today }: { data: OrbitData; r: 
               </ul>
             )}
             {goals.enabled && (
-              <Field label={`Monthly goal for ${KIND_LABEL[openBucket.kind].toLowerCase()}`} htmlFor="goal" hint="Leave blank for no goal. It's a guide, not a limit.">
+              <Field label={`Monthly target for ${KIND_LABEL[openBucket.kind].toLowerCase()}`} htmlFor="goal" hint="Leave blank for no target. It's a guide, not a limit.">
                 <Input id="goal" inputMode="decimal" placeholder="$" value={goalInput} onChange={(e) => setGoalInput(e.target.value.replace(/[^0-9.]/g, ""))} />
               </Field>
             )}

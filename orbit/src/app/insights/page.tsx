@@ -1,7 +1,7 @@
 "use client";
 
 import { ChartNoAxesColumn } from "lucide-react";
-import { BackBar, Shell } from "@/components/layout/shell";
+import { PageHeader, Shell } from "@/components/layout/shell";
 import { SpendBuckets } from "@/components/orbit/spend-buckets";
 import { Card, Row, Rows } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
@@ -10,7 +10,9 @@ import { EmptyState } from "@/components/ui/states";
 import { formatDate } from "@/lib/domain/dates";
 import { money, plural } from "@/lib/domain/format";
 import { useSessionState } from "@/lib/hooks/useSessionState";
-import { insights, rangeFor, type InsightRange, type RangeKind } from "@/lib/intelligence/insights";
+import { goalMultiplier, insights, previousRange, rangeFor, type InsightRange, type RangeKind } from "@/lib/intelligence/insights";
+import { buildBuckets } from "@/lib/intelligence/buckets";
+import { ItemArt } from "@/components/orbit/item-art";
 import { useOrbit } from "@/lib/store/store";
 
 /** Horizontal bars in one hue; the labels carry identity, values are printed. */
@@ -49,20 +51,26 @@ export default function InsightsPage() {
   const o = useOrbit();
   const [kind, setKind] = useSessionState<RangeKind>("insights-range", "year");
   const [custom, setCustom] = useSessionState<InsightRange | null>("insights-custom", null);
-  if (!o) return <Shell loading nav={false} />;
+  if (!o) return <Shell loading />;
   const { today, data } = o;
 
   const range = kind === "custom" ? custom ?? rangeFor("year", today) : rangeFor(kind, today);
   const r = insights(data, range);
   const sourceTotal = r.coverage.reduce((s, c) => s + c.count, 0);
+  const before = insights(data, previousRange(range));
+  const prevByKind = new Map(buildBuckets(before.purchases.map((p) => p.item), null).map((b) => [b.kind, b.amount]));
+  const trends = buildBuckets(r.purchases.map((p) => p.item), null)
+    .map((b) => ({ kind: b.kind, label: b.label, now: b.amount, before: prevByKind.get(b.kind) ?? 0 }))
+    .filter((t) => Math.abs(t.now - t.before) >= 1)
+    .sort((a, b) => Math.abs(b.now - b.before) - Math.abs(a.now - a.before))
+    .slice(0, 4);
 
   return (
-    <Shell nav={false}>
-      <BackBar fallback="/settings/" title="Shopping Insights" />
-      <p className="pt-1 text-[16px] text-muted">For awareness, not budgeting. Only purchases Orbit knows about are counted.</p>
+    <Shell>
+      <PageHeader title="Insights" subtitle="Awareness, not restriction. Only purchases Orbit knows about count." />
 
       <div role="radiogroup" aria-label="Time period" className="mt-4 inline-flex rounded-full bg-ivory-deep p-1">
-        {(["month", "year", "custom"] as RangeKind[]).map((k) => (
+        {(["month", "quarter", "year", "custom"] as RangeKind[]).map((k) => (
           <button
             key={k}
             type="button"
@@ -72,9 +80,9 @@ export default function InsightsPage() {
               setKind(k);
               if (k === "custom" && !custom) setCustom(rangeFor("month", today));
             }}
-            className={cn("h-10 rounded-full px-4 text-[15px] font-semibold transition-colors", kind === k ? "bg-card shadow-[var(--shadow-card)]" : "text-muted hover:text-navy")}
+            className={cn("h-10 rounded-full px-3 text-[15px] font-semibold transition-colors", kind === k ? "bg-card shadow-[var(--shadow-card)]" : "text-muted hover:text-navy")}
           >
-            {k === "month" ? "This month" : k === "year" ? "This year" : "Custom"}
+            {k === "month" ? "Month" : k === "quarter" ? "Quarter" : k === "year" ? "Year" : "Custom"}
           </button>
         ))}
       </div>
@@ -127,7 +135,28 @@ export default function InsightsPage() {
             </Rows>
           </Card>
 
-          <SpendBuckets data={data} r={r} monthly={kind === "month"} today={today} />
+          <SpendBuckets data={data} r={r} multiplier={goalMultiplier[kind]} today={today} />
+
+          {trends.length > 0 && (
+            <section aria-labelledby="trends" className="mt-7">
+              <h2 id="trends" className="text-[17px] font-semibold">
+                Trends
+              </h2>
+              <p className="mt-0.5 text-[14px] text-muted">Compared with the {kind === "custom" ? "same number of days before" : `previous ${kind}`}.</p>
+              <Card className="mt-3 divide-y divide-line">
+                {trends.map((t) => (
+                  <div key={t.kind} className="flex items-center gap-3 px-4 py-2.5">
+                    <ItemArt kind={t.kind} className="size-9 shrink-0" />
+                    <span className="flex-1 text-[15px] font-medium">{t.label}</span>
+                    <span className="tabular text-right text-[15px]">
+                      {money(t.now)}
+                      <span className="block text-[13px] text-muted">{t.before === 0 ? "New this period" : `${t.now >= t.before ? "Up" : "Down"} ${money(Math.abs(t.now - t.before))}`}</span>
+                    </span>
+                  </div>
+                ))}
+              </Card>
+            </section>
+          )}
           {r.byRetailer.length > 0 && <Bars title="By store" rows={r.byRetailer} />}
 
           <section className="mt-6 rounded-[18px] bg-ivory-deep px-4 py-3.5 text-[14px] text-muted">

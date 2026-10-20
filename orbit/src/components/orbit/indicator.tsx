@@ -1,4 +1,4 @@
-import { Banknote, CalendarClock, CircleCheck, CircleQuestionMark, Gift, Hourglass, MapPin, PackageCheck, PenLine, Truck, Undo2 } from "lucide-react";
+import { Banknote, CalendarClock, CircleCheck, CircleQuestionMark, Gift, Heart, Hourglass, MapPin, PackageCheck, PenLine, Tag, Target, Truck, Undo2 } from "lucide-react";
 import type { Indicator } from "@/lib/store/selectors";
 import { cn } from "../ui/cn";
 
@@ -16,6 +16,10 @@ const icons: Record<Indicator, typeof Truck> = {
   credit: Gift,
   delivered: PackageCheck,
   started: Undo2,
+  arriving: Truck,
+  sale: Tag,
+  wish: Heart,
+  goal: Target,
 };
 
 export type Tone = "urgent" | "caution" | "success" | "neutral";
@@ -23,7 +27,8 @@ export type Tone = "urgent" | "caution" | "success" | "neutral";
 /** Tone is about urgency or certainty, never decoration. */
 export function toneFor(indicator: Indicator, daysLeft: number | null): Tone {
   if (indicator === "done") return "success";
-  if (indicator === "unknown" || indicator === "refund_check") return "caution";
+  if (indicator === "unknown" || indicator === "refund_check" || indicator === "goal") return "caution";
+  if (indicator === "sale" || indicator === "wish") return "neutral";
   if (daysLeft != null && daysLeft <= 3 && indicator !== "delivered" && indicator !== "started") return "urgent";
   return "neutral";
 }

@@ -14,7 +14,7 @@ export function OrderRow({ v, showAction = true }: { v: OrderView; showAction?: 
       sub={
         <>
           <span className="font-semibold text-navy">{c.label}</span>
-          {c.dueLabel && c.dueLabel !== c.label ? ` · ${c.dueLabel}${c.estimated ? " (est.)" : ""}` : ""}
+          {c.dueLabel && c.dueLabel !== c.label ? ` · ${c.dueLabel}` : ""}
         </>
       }
       amount={v.amount}

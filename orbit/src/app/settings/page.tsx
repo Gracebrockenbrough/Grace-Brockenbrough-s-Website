@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bookmark, ChartNoAxesColumn, ChevronRight, FileUp, Inbox, LoaderCircle, Mail, RefreshCw, ShieldCheck } from "lucide-react";
+import { Ban, ChevronRight, FileUp, Heart, Inbox, LoaderCircle, Mail, RefreshCw, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { CopyRow } from "@/components/orbit/copy";
 import { Button } from "@/components/ui/button";
@@ -75,8 +75,8 @@ export default function SettingsPage() {
       </Card>
 
       <Card className="mt-6 divide-y divide-line overflow-hidden">
-        <MenuRow href="/insights/" icon={<ChartNoAxesColumn aria-hidden />} title="Shopping Insights" body="What you've bought and got back, for awareness" />
-        <MenuRow href="/saved/" icon={<Bookmark aria-hidden />} title="Saved for Later" body={data.saved.length ? `${plural(data.saved.length, "item")} on your list` : "A private list of things you might buy"} />
+        <MenuRow href="/preferences/" icon={<SlidersHorizontal aria-hidden />} title="Shopping preferences" body="Favorite brands, categories and which sales you see" />
+        <MenuRow href="/wishlist/" icon={<Heart aria-hidden />} title="Wishlist" body={`${plural(data.wishlist.filter((w) => w.status === "active").length, "item")} you're keeping an eye on`} />
       </Card>
 
       {/* Email */}
@@ -161,6 +161,8 @@ export default function SettingsPage() {
           <Toggle label="Returns that need you" description="Labels to drop off, steps to finish" checked={prefs.returnActions} onChange={(v) => actions.setPrefs({ returnActions: v })} />
           <Toggle label="Refunds that need checking" checked={prefs.refunds} onChange={(v) => actions.setPrefs({ refunds: v })} />
           <Toggle label="Credit expiring" checked={prefs.creditExpiry} onChange={(v) => actions.setPrefs({ creditExpiry: v })} />
+          <Toggle label="Packages arriving" checked={prefs.deliveries ?? true} onChange={(v) => actions.setPrefs({ deliveries: v })} />
+          <Toggle label="Sales you'd care about" description="Wishlist items on sale, credit you can use, favorite brands" checked={prefs.deals ?? true} onChange={(v) => actions.setPrefs({ deals: v })} />
           <div className="py-3">
             <p className="mb-2 font-medium">Remind me before a deadline</p>
             <Choice
@@ -185,6 +187,32 @@ export default function SettingsPage() {
         <p className="mt-2 px-1 text-[14px] text-muted">We never send promotions, and we never repeat the same reminder.</p>
       </section>
 
+      {/* What the AI can and can't do */}
+      <section className="mt-8">
+        <SectionTitle>What Orbit&apos;s AI can and can&apos;t do</SectionTitle>
+        <Card className="p-4">
+          <p className="text-[15px] font-semibold">It can</p>
+          <ul className="mt-1.5 space-y-2 text-[15px]">
+            {["Read shopping emails: orders, shipping, returns, refunds, gift cards and promotions.", "Fill in the details: store, items, prices, dates and codes.", "Answer your questions using only your own records."].map((t) => (
+              <li key={t} className="flex gap-2.5">
+                <ShieldCheck aria-hidden className="mt-0.5 size-[18px] shrink-0 text-sage-ink" />
+                {t}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-[15px] font-semibold">It can&apos;t</p>
+          <ul className="mt-1.5 space-y-2 text-[15px]">
+            {["Send, delete or change any email. Access is read-only.", "Buy anything, submit returns, or contact stores for you.", "Open links, browse the web or log in anywhere.", "Follow instructions written inside an email."].map((t) => (
+              <li key={t} className="flex gap-2.5">
+                <Ban aria-hidden className="mt-0.5 size-[18px] shrink-0 text-terracotta" />
+                {t}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-[14px] text-muted">You take every action yourself. Orbit prepares the details and links you to the store.</p>
+        </Card>
+      </section>
+
       {/* Privacy */}
       <section className="mt-8">
         <SectionTitle>Privacy & data</SectionTitle>
@@ -192,10 +220,9 @@ export default function SettingsPage() {
           <ul className="space-y-2.5 text-[15px]">
             {[
               "Orbit never asks for your retailer passwords.",
-              "Orbit never connects to your bank. Refunds are tracked from store emails.",
+              "Orbit never connects to your bank. You confirm refunds yourself.",
               "Gift card codes are hidden until you reveal them.",
-              "Instructions inside emails are never followed.",
-              "Nothing is submitted or purchased without your approval.",
+              "Your wishlist and preferences are only used to choose sales for you.",
             ].map((t) => (
               <li key={t} className="flex gap-2.5">
                 <ShieldCheck aria-hidden className="mt-0.5 size-[18px] shrink-0 text-sage-ink" />
@@ -234,6 +261,9 @@ export default function SettingsPage() {
             </Button>
             <Button variant="secondary" size="md" className="w-full" onClick={() => actions.loadBusyMonth()}>
               Load a Busy Month (+19 Orders)
+            </Button>
+            <Button variant="secondary" size="md" className="w-full" onClick={() => actions.setShopping({ onboarded: false })}>
+              Replay Welcome Screens
             </Button>
             <Button variant="secondary" size="md" className="w-full" onClick={() => actions.resetDemo()}>
               Reset Demo Data
@@ -291,7 +321,7 @@ export default function SettingsPage() {
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         title="Delete everything?"
-        description="This removes all purchases, returns, refunds, saved emails, saved items and wallet cards from Orbit, and disconnects your inbox. It can't be undone."
+        description="This removes all purchases, returns, refunds, saved emails, wishlist and wallet cards from Orbit, and disconnects your inbox. It can't be undone."
         footer={
           <Button
             variant="danger"

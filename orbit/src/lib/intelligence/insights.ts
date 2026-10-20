@@ -7,11 +7,12 @@
  * - Gift card and credit spending is shown separately and never subtracted, because those
  *   purchases are already counted once as purchases.
  */
+import { addDays, daysBetween } from "../domain/dates";
 import type { DateOnly, ItemCategory, OrderItem } from "../domain/types";
 import { retailerOf } from "../store/selectors";
 import type { OrbitData } from "../store/state";
 
-export type RangeKind = "month" | "year" | "custom";
+export type RangeKind = "month" | "quarter" | "year" | "custom";
 
 export interface InsightRange {
   from: DateOnly;
@@ -19,8 +20,23 @@ export interface InsightRange {
 }
 
 export function rangeFor(kind: Exclude<RangeKind, "custom">, today: DateOnly): InsightRange {
-  return kind === "month" ? { from: `${today.slice(0, 7)}-01`, to: today } : { from: `${today.slice(0, 4)}-01-01`, to: today };
+  if (kind === "month") return { from: `${today.slice(0, 7)}-01`, to: today };
+  if (kind === "quarter") {
+    const q = Math.floor((Number(today.slice(5, 7)) - 1) / 3) * 3 + 1;
+    return { from: `${today.slice(0, 4)}-${String(q).padStart(2, "0")}-01`, to: today };
+  }
+  return { from: `${today.slice(0, 4)}-01-01`, to: today };
 }
+
+/** The same span immediately before, for "compared with last month". */
+export function previousRange(r: InsightRange): InsightRange {
+  const len = daysBetween(r.from, r.to);
+  const to = addDays(r.from, -1);
+  return { from: addDays(to, -len), to };
+}
+
+/** Monthly goals scaled to the period shown. null for custom ranges. */
+export const goalMultiplier: Record<RangeKind, number | null> = { month: 1, quarter: 3, year: 12, custom: null };
 
 export const categoryLabel: Record<ItemCategory, string> = {
   clothing: "Clothing",

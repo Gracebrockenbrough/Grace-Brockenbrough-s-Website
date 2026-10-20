@@ -48,6 +48,7 @@ export function buildBusyMonth(today: DateOnly): { orders: Order[]; returns: Ret
       purchasedAt: d(-purchased),
       shippedAt: d(-(purchased - 1)),
       deliveredAt: delivered == null ? null : d(-delivered),
+      expectedDeliveryAt: delivered == null ? d(2 + (i % 3)) : null,
       shipmentStatus: delivered == null ? "shipped" : "delivered",
       currency: "USD",
       items: [{ id: itemId, name, variant, quantity: 1, unitPrice: price, category, finalSale: false }],

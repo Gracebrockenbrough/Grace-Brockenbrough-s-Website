@@ -7,6 +7,9 @@
 import { useSyncExternalStore } from "react";
 import { daysBetween, toDateOnly } from "../domain/dates";
 import type {
+  Promotion,
+  ShoppingPrefs,
+  WishItem,
   ConnectionStatus,
   ConnectorId,
   DateOnly,
@@ -32,7 +35,7 @@ import type { Extraction, RawMessage } from "../ingestion/types";
 import { shiftSeedDates } from "./shift";
 import { EMPTY_PREVIEW, emptied, type OrbitData, type PersistedState, type PreviewFlags } from "./state";
 
-const KEY = "orbit:v2";
+const KEY = "orbit:v3";
 const listeners = new Set<() => void>();
 let state: PersistedState | null = null;
 
@@ -41,7 +44,7 @@ const now = () => new Date().toISOString();
 export const today = (): DateOnly => toDateOnly(new Date());
 
 function fresh(): PersistedState {
-  return { version: 2, anchor: today(), data: buildDemoData(today()), preview: EMPTY_PREVIEW };
+  return { version: 3, anchor: today(), data: buildDemoData(today()), preview: EMPTY_PREVIEW };
 }
 
 function load(): PersistedState {
@@ -49,7 +52,7 @@ function load(): PersistedState {
     const raw = window.localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as PersistedState;
-      if (parsed.version === 2) {
+      if (parsed.version === 3) {
         const shift = daysBetween(parsed.anchor, today());
         return { ...parsed, anchor: today(), data: shiftSeedDates(parsed.data, shift), preview: parsed.preview ?? EMPTY_PREVIEW };
       }
@@ -482,16 +485,135 @@ export const actions = {
     actions.setConnection("sample_inbox", "connected");
   },
 
-  // ── Saved for later ──────────────────────────────────────────────────
-  addSaved(input: { name: string; retailerName: string; url: string; imageUrl: string | null; note: string | null }): string {
-    const retailerId = actions.ensureRetailer(input.retailerName);
-    const id = uid("s");
-    setData((d) => ({ ...d, saved: [{ id, name: input.name.trim(), retailerId, url: input.url.trim(), imageUrl: input.imageUrl, note: input.note, addedAt: now() }, ...d.saved] }));
+  // ── Wishlist ─────────────────────────────────────────────────────────
+  addWish(input: Omit<WishItem, "id" | "addedAt" | "status">): string {
+    const id = uid("wl");
+    setData((d) => ({ ...d, wishlist: [{ ...input, id, status: "active", addedAt: now() }, ...d.wishlist] }));
     return id;
   },
 
-  removeSaved(id: string) {
-    setData((d) => ({ ...d, saved: d.saved.filter((x) => x.id !== id) }));
+  setWishStatus(id: string, status: WishItem["status"]) {
+    setData((d) => ({ ...d, wishlist: d.wishlist.map((w) => (w.id === id ? { ...w, status, until: status === "active" ? null : w.until } : w)) }));
+  },
+
+  removeWish(id: string) {
+    setData((d) => ({ ...d, wishlist: d.wishlist.filter((w) => w.id !== id) }));
+  },
+
+  // ── Discover ─────────────────────────────────────────────────────────
+  setShopping(patch: Partial<ShoppingPrefs>) {
+    setData((d) => ({ ...d, shopping: { ...d.shopping, ...patch } }));
+  },
+
+  toggleFavorite(retailerId: string) {
+    setData((d) => {
+      const fav = d.shopping.favoriteRetailerIds.includes(retailerId);
+      return {
+        ...d,
+        shopping: {
+          ...d.shopping,
+          favoriteRetailerIds: fav ? d.shopping.favoriteRetailerIds.filter((x) => x !== retailerId) : [...d.shopping.favoriteRetailerIds, retailerId],
+          hiddenRetailerIds: d.shopping.hiddenRetailerIds.filter((x) => x !== retailerId),
+        },
+      };
+    });
+  },
+
+  toggleHiddenRetailer(retailerId: string) {
+    setData((d) => {
+      const hidden = d.shopping.hiddenRetailerIds.includes(retailerId);
+      return {
+        ...d,
+        shopping: {
+          ...d.shopping,
+          hiddenRetailerIds: hidden ? d.shopping.hiddenRetailerIds.filter((x) => x !== retailerId) : [...d.shopping.hiddenRetailerIds, retailerId],
+          favoriteRetailerIds: d.shopping.favoriteRetailerIds.filter((x) => x !== retailerId),
+        },
+      };
+    });
+  },
+
+  hidePromotion(id: string) {
+    setData((d) => ({ ...d, shopping: { ...d.shopping, hiddenPromotionIds: [...d.shopping.hiddenPromotionIds, id] } }));
+  },
+
+  /** Community verification of a code. One vote per code per person in production. */
+  voteCode(id: string, worked: boolean) {
+    setData((d) => ({
+      ...d,
+      promotions: d.promotions.map((p) => (p.id === id ? { ...p, votes: { worked: p.votes.worked + (worked ? 1 : 0), failed: p.votes.failed + (worked ? 0 : 1) } } : p)),
+      shopping: { ...d.shopping, points: d.shopping.points + 5 },
+    }));
+  },
+
+  submitCode(input: { retailerName: string; code: string; title: string; discountPct: number | null; endsAt: DateOnly | null }): string {
+    const retailerId = actions.ensureRetailer(input.retailerName);
+    const r = get().data.retailers.find((x) => x.id === retailerId);
+    const id = uid("p");
+    const promo: Promotion = {
+      id,
+      retailerId,
+      title: input.title.trim() || `Code for ${r?.name ?? "this store"}`,
+      detail: "Shared by you. Not verified yet.",
+      discountPct: input.discountPct,
+      code: input.code.trim().toUpperCase(),
+      source: "community",
+      sponsored: false,
+      votes: { worked: 0, failed: 0 },
+      tags: [],
+      categories: [],
+      startsAt: today(),
+      endsAt: input.endsAt,
+      url: r?.websiteUrl ?? "",
+      affiliate: false,
+      addedByUser: true,
+    };
+    setData((d) => ({ ...d, promotions: [promo, ...d.promotions], shopping: { ...d.shopping, points: d.shopping.points + 10 } }));
+    return id;
+  },
+
+  // ── Receipts, labels, return tracking ────────────────────────────────
+  attachReceipt(orderId: string, file: { name: string; type: string; dataUrl: string }) {
+    const evId = uid("ev");
+    setData((d) => ({
+      ...d,
+      evidence: [...d.evidence, { id: evId, kind: "receipt_upload", channel: "screenshot", title: file.name, from: null, receivedAt: now(), excerpt: null, attachment: file }],
+      orders: d.orders.map((o) => (o.id === orderId ? { ...o, evidenceIds: [...o.evidenceIds, evId] } : o)),
+    }));
+  },
+
+  /** Saves a label the customer has (from the store's site or email). */
+  saveReturnLabel(returnId: string, file: { name: string; type: string; dataUrl: string }) {
+    const evId = uid("ev");
+    setData((d) => {
+      const r = d.returns.find((x) => x.id === returnId);
+      return {
+        ...d,
+        evidence: [...d.evidence, { id: evId, kind: "return_label", channel: "screenshot", title: file.name, from: null, receivedAt: now(), excerpt: "Label saved by you.", attachment: file }],
+        orders: d.orders.map((o) => (r && o.id === r.orderId ? { ...o, evidenceIds: [...o.evidenceIds, evId] } : o)),
+        returns: d.returns.map((x) =>
+          x.id === returnId
+            ? {
+                ...x,
+                status: x.status === "prepared" || x.status === "reported_submitted" || x.status === "approval_pending" ? "label_ready" : x.status,
+                artifacts: [...x.artifacts, { id: uid("a"), kind: "label_pdf", carrier: null, code: file.name, evidenceId: evId, expiresAt: null, file }],
+                history: [...x.history, { at: now(), status: "label_ready", note: "You saved the return label." }],
+              }
+            : x,
+        ),
+      };
+    });
+  },
+
+  /** The customer shipped it and has the tracking number (typed or scanned). */
+  setReturnTracking(returnId: string, number: string) {
+    const n = number.trim().toUpperCase().replace(/\s+/g, "");
+    const carrier = /^1Z/.test(n) ? "UPS" : /^9[2-5]\d{18,}/.test(n) ? "USPS" : /^\d{12}$|^\d{15}$/.test(n) ? "FedEx" : null;
+    patchReturn(returnId, "shipped", "You added the return tracking number.", { returnTracking: { carrier, number: n } });
+    setData((d) => ({
+      ...d,
+      refunds: d.refunds.map((f) => (f.returnId === returnId ? { ...f, milestones: [...f.milestones, { at: now(), label: "Shipped back by you", evidenceId: null }] } : f)),
+    }));
   },
 
   setGoalsEnabled(enabled: boolean) {

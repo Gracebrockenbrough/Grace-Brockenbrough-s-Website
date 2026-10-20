@@ -1,9 +1,9 @@
 /**
  * Return Workflow Service: submission adapters, one per capability level.
  *
- * The workflow never marks a return as submitted on its own. A request only moves past
- * "prepared" when the customer says they submitted it on the retailer's site, or when
- * an integrated adapter returns a retailer confirmation id.
+ * Orbit is read-only: it never submits a return. A request only moves past "prepared"
+ * when the customer says they submitted it on the retailer's site, and only becomes
+ * "confirmed" when the retailer's own email arrives.
  */
 import type { Order, Retailer, ReturnCapability, ReturnRequest } from "../domain/types";
 
@@ -18,7 +18,7 @@ export interface PreparedReturnDetails {
 
 export type SubmissionResult =
   | { submitted: true; retailerConfirmationId: string }
-  | { submitted: false; reason: "customer_completes_on_retailer_site" | "demo_mode" | "integration_unavailable"; message: string };
+  | { submitted: false; reason: "customer_completes_on_retailer_site"; message: string };
 
 export interface ReturnSubmissionAdapter {
   readonly capability: ReturnCapability;
@@ -38,32 +38,8 @@ export const guidedAdapter: ReturnSubmissionAdapter = {
   },
 };
 
-/**
- * Level 2: Orbit fills the retailer's form in an authorized session, and the customer
- * approves the final submission. The prototype has no authorized retailer sessions,
- * so it prepares the request and stops.
- */
-export const assistedAdapter: ReturnSubmissionAdapter = {
-  capability: "assisted",
-  async submit() {
-    return {
-      submitted: false,
-      reason: "demo_mode",
-      message: "Preview mode: Orbit prepared your request but didn't send anything to the retailer.",
-    };
-  },
-};
-
-/** Level 3: authorized retailer integration (e.g. a platform return-request API). Not yet available. */
-export const integratedAdapter: ReturnSubmissionAdapter = {
-  capability: "integrated",
-  async submit() {
-    return { submitted: false, reason: "integration_unavailable", message: "This retailer's integration isn't available yet." };
-  },
-};
-
-export function adapterFor(capability: ReturnCapability): ReturnSubmissionAdapter {
-  return { guided: guidedAdapter, assisted: assistedAdapter, integrated: integratedAdapter }[capability];
+export function adapterFor(_capability: ReturnCapability): ReturnSubmissionAdapter {
+  return guidedAdapter;
 }
 
 export function prepareDetails(order: Order, request: Pick<ReturnRequest, "itemIds" | "reason" | "refundPreference" | "dropOff">, email: string): PreparedReturnDetails {

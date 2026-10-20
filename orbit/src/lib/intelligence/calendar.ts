@@ -34,6 +34,8 @@ export function calendarEvents(d: OrbitData, today: DateOnly): CalendarEvent[] {
     const v = orderView(d, order, today);
     const href = orderHref(order.id);
 
+    if (!order.deliveredAt && order.expectedDeliveryAt)
+      out.push({ id: `exp:${order.id}`, date: order.expectedDeliveryAt, kind: "delivered", retailerId: order.retailerId, title: v.title, label: "Expected delivery", amount: null, certainty: "estimated", deadline: false, indicator: "arriving", href });
     if (order.deliveredAt)
       out.push({ id: `del:${order.id}`, date: order.deliveredAt, kind: "delivered", retailerId: order.retailerId, title: v.title, label: "Delivered", amount: null, certainty: "recorded", deadline: false, indicator: "delivered", href });
 

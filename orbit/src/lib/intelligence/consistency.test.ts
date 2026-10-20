@@ -17,7 +17,9 @@ describe("return stages", () => {
     expect(view("d-o-sep").current).toMatchObject({ label: "Refund needs checking", group: "action", action: { label: "Check Refund" } });
     expect(view("d-o-eve").current).toMatchObject({ label: "Deadline unknown", group: "action" });
     expect(view("d-o-jc").current).toMatchObject({ label: "Not delivered yet", group: "not_delivered" });
-    expect(view("d-o-cos").current).toMatchObject({ key: "refund_confirmed", group: "history" });
+    // Issued by the store, but stays pending until the customer confirms it arrived.
+    expect(view("d-o-cos").current).toMatchObject({ key: "refund_pending", group: "awaiting", action: { label: "Confirm Refund" } });
+    expect(view("d-o-zara").current).toMatchObject({ key: "refund_confirmed", group: "history" });
     expect(stageIndex(view("d-o-mad"))).toBe(3);
   });
 
@@ -25,6 +27,7 @@ describe("return stages", () => {
     expect(refundOutlook(view("d-o-ref"))).toMatchObject({ amount: 180, kind: "potential" });
     expect(refundOutlook(view("d-o-sep"))).toMatchObject({ amount: 95, kind: "expected" });
     expect(refundOutlook(view("d-o-cos"))).toMatchObject({ amount: 89, kind: "confirmed" });
+    expect(refundOutlook(view("d-o-zara"))).toMatchObject({ amount: 100, kind: "confirmed" });
   });
 
   it("Today's to-dos and Returns agree on the same deadline", () => {

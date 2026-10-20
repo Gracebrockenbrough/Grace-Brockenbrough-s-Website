@@ -2,7 +2,9 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, LockKeyhole, WalletCards } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Eye, EyeOff, LockKeyhole, Tag, WalletCards } from "lucide-react";
+import { isActive } from "@/lib/intelligence/discover";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { BalanceStatus, balanceStatusText } from "@/components/orbit/balance";
 import { CopyRow } from "@/components/orbit/copy";
@@ -56,6 +58,7 @@ function CardDetail() {
   const revealed = revealLeft > 0;
   const exp = item.expiration;
   const expDays = exp.kind === "date" ? daysBetween(today, exp.date) : null;
+  const sale = o.data.promotions.find((p) => p.retailerId === item.retailerId && isActive(p, today) && !o.data.shopping.hiddenPromotionIds.includes(p.id));
 
   return (
     <Shell nav={false}>
@@ -106,6 +109,14 @@ function CardDetail() {
           {revealed ? "Hide Code" : "Show Code"}
         </Button>
       </div>
+
+      {sale && (
+        <Link href={`/promo/?id=${sale.id}`} className="mt-4 flex min-h-12 items-center gap-2 rounded-2xl bg-terracotta-soft px-4 py-2.5 text-[15px] font-semibold text-terracotta">
+          <Tag aria-hidden className="size-4 shrink-0" />
+          <span className="flex-1">{retailer.name} has a sale: {sale.title}</span>
+          <ChevronRight aria-hidden className="size-4" />
+        </Link>
+      )}
 
       {revealed && item.secret && (
         <Card className="animate-in mt-4 px-4 pb-3 pt-4">

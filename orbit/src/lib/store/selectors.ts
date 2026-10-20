@@ -61,7 +61,11 @@ export type Indicator =
   | "not_delivered"
   | "credit"
   | "delivered"
-  | "started";
+  | "started"
+  | "arriving"
+  | "sale"
+  | "wish"
+  | "goal";
 
 export interface Stage {
   key: StageKey | null;
@@ -163,8 +167,19 @@ function stageFor(v: Omit<OrderView, "current">, today: DateOnly): Stage {
     }
   }
 
-  // Finished returns.
+  // Finished returns. A refund the store issued stays pending until the customer confirms it arrived.
   const done = v.latestReturn;
+  if (done && refund?.confirmed && refund.destination !== "store_credit" && !refund.arrivedAt && refund.confirmed.by === "retailer_email") {
+    return {
+      ...base,
+      key: "refund_pending",
+      label: "Refund issued · confirm arrival",
+      group: "awaiting",
+      indicator: "refund",
+      why: `${retailer.name} issued ${money(refund.confirmed.amount)} on ${formatDate(refund.confirmed.at, today)}. Check ${refund.destinationLabel ?? "your original payment method"}, then tick it off.`,
+      action: { label: "Confirm Refund", href: `/returns/refund/?id=${refund.id}` },
+    };
+  }
   if (done && (done.status === "completed" || (done.status === "received" && refund?.confirmed))) {
     const credit = refund?.destination === "store_credit";
     return { ...base, key: "refund_confirmed", label: credit ? "Store credit issued" : "Refund confirmed", group: "history", indicator: "done", why: refund?.confirmed ? `${credit ? "Credit" : "Refund"} issued ${formatDate(refund.confirmed.at, today)}.` : "Return complete.", action: refund ? { label: "View Refund", href: `/returns/refund/?id=${refund.id}` } : { label: "View Details", href: detail } };
@@ -205,6 +220,17 @@ export function orderViews(d: OrbitData, today: DateOnly): OrderView[] {
   return d.orders
     .map((o) => orderView(d, o, today))
     .sort((a, b) => (a.current.daysLeft ?? 999) - (b.current.daysLeft ?? 999) || (b.amount ?? 0) - (a.amount ?? 0));
+}
+
+/** Which Purchases filter an order belongs to (it always also appears under All). */
+export type PurchaseFilter = "deliveries" | "returns" | "refunds";
+
+export function purchaseFilter(v: OrderView): PurchaseFilter | null {
+  const c = v.current;
+  if (c.group === "not_delivered") return "deliveries";
+  if (c.key === "awaiting_approval" || c.key === "in_transit" || c.key === "received" || c.key === "refund_pending") return "refunds";
+  if (c.group === "action") return "returns";
+  return null;
 }
 
 /** Index of the current stage in STAGES, or -1 when the order isn't in a return. */

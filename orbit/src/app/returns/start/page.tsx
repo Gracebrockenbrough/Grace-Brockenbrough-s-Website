@@ -237,8 +237,6 @@ function Assistant({ view, existing, preselect, email }: { view: OrderView; exis
 
           <Notice tone={cap === "guided" ? "info" : "demo"} title={`${capabilityLabel[cap].name} return`}>
             {cap === "guided" && `Orbit can't submit returns to ${retailer.name}. We'll prepare everything so you can finish on their site in a couple of minutes.`}
-            {cap === "assisted" && `Orbit fills in ${retailer.name}'s return request, and nothing is sent until you approve. In this preview, Orbit isn't connected to ${retailer.name}, so nothing will be sent.`}
-            {cap === "integrated" && `Orbit will submit this request to ${retailer.name} after you approve.`}
           </Notice>
 
           <Button onClick={approve} disabled={busy}>
@@ -274,9 +272,7 @@ function NextSteps({ view, request, result, email }: { view: OrderView; request:
         <h1 id="s4" className="mt-3 text-[26px] font-semibold tracking-[-0.02em]">Finish on {retailer.name}&apos;s site</h1>
         <p className="mt-1 text-[16px] text-muted">
           {(result && !result.submitted ? result.message : null) ??
-            (request.capability === "assisted"
-              ? `Preview mode: Orbit prepared your request but didn't send anything to ${retailer.name}.`
-              : `Orbit prepared everything. Nothing has been sent to ${retailer.name} yet.`)}{" "}
+            `Orbit prepared everything. Nothing has been sent to ${retailer.name}.`}{" "}
           It takes about two minutes.
         </p>
       </div>

@@ -163,7 +163,7 @@ export function ask(query: string, data: OrbitData, today: DateOnly): { intent: 
   const results: AskResult[] = [];
 
   if (intent === "agenda") {
-    const week = buildPriorities(data, today).filter((p) => p.daysLeft != null && p.daysLeft <= 7);
+    const week = buildPriorities(data, today).filter((p) => ["return_deadline", "drop_off", "finish_return", "refund_check"].includes(p.kind) && p.daysLeft != null && p.daysLeft <= 7);
     return {
       intent,
       results: week.map((p, i) => ({

@@ -43,15 +43,7 @@ export const dropOffLabel: Record<DropOffKind, string> = {
 export const capabilityLabel: Record<ReturnCapability, { name: string; summary: string }> = {
   guided: {
     name: "Guided",
-    summary: "Orbit prepares your details. You finish on the retailer's site.",
-  },
-  assisted: {
-    name: "Assisted",
-    summary: "Orbit fills in the request. Nothing is sent until you approve.",
-  },
-  integrated: {
-    name: "Integrated",
-    summary: "Orbit submits the request for you after you approve.",
+    summary: "Orbit prepares your details and links you to the store. You finish on their site.",
   },
 };
 

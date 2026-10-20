@@ -20,12 +20,11 @@ export type Confidence = "high" | "medium" | "low";
 // ─── Retailers & policies ────────────────────────────────────────────────
 
 /**
- * How much of a retailer's return process Orbit can perform.
- * - guided: Orbit prepares everything; the customer completes the retailer's process.
- * - assisted: Orbit pre-fills the request in an authorized environment; the customer approves submission.
- * - integrated: Orbit submits via an authorized retailer integration after approval (future).
+ * How much of a retailer's return process Orbit performs. Orbit is read-only by design:
+ * it reads shopping emails and prepares information, and the customer always completes
+ * the retailer's own process. Orbit never submits, buys or sends anything on anyone's behalf.
  */
-export type ReturnCapability = "guided" | "assisted" | "integrated";
+export type ReturnCapability = "guided";
 
 export type CardTone = "navy" | "sage" | "terracotta" | "sand" | "slate" | "ink";
 
@@ -121,6 +120,8 @@ export interface Evidence {
   receivedAt: Timestamp;
   /** Short, user-visible excerpt. Full bodies live in private storage. */
   excerpt: string | null;
+  /** An uploaded or scanned receipt image or PDF (private storage in production). */
+  attachment?: { name: string; type: string; dataUrl: string } | null;
 }
 
 /** Provenance for an individual extracted field. */
@@ -154,6 +155,8 @@ export interface Order {
   purchasedAt: DateOnly | null;
   shippedAt: DateOnly | null;
   deliveredAt: DateOnly | null;
+  /** Carrier or retailer estimate. Never shown as a confirmed date. */
+  expectedDeliveryAt: DateOnly | null;
   shipmentStatus: ShipmentStatus;
   currency: Currency;
   items: OrderItem[];
@@ -194,6 +197,8 @@ export interface ReturnArtifact {
   code: string;
   evidenceId: string;
   expiresAt: DateOnly | null;
+  /** A label the customer saved (image or PDF). */
+  file?: { name: string; type: string; dataUrl: string } | null;
 }
 
 export interface ReturnRequest {
@@ -217,6 +222,8 @@ export interface ReturnRequest {
   };
   artifacts: ReturnArtifact[];
   rmaNumber: string | null;
+  /** Tracking number for the package going back, entered or scanned by the customer. */
+  returnTracking?: { carrier: string | null; number: string } | null;
   history: { at: Timestamp; status: ReturnStatus; note: string }[];
 }
 
@@ -308,17 +315,70 @@ export interface ConnectedAccount {
   lastError?: string | null;
 }
 
-// ─── Saved for later ─────────────────────────────────────────────────────
+// ─── Discover ────────────────────────────────────────────────────────────
 
-/** A personal list. Never populated by Orbit, never sponsored. */
-export interface SavedProduct {
+/** A sale or code, found in promotional emails, shared by the community, or from a partner. */
+export interface Promotion {
   id: string;
-  name: string;
   retailerId: string;
+  title: string;
+  detail: string | null;
+  /** Headline discount, e.g. 25 for "25% off". null when it isn't a percentage. */
+  discountPct: number | null;
+  code: string | null;
+  /** Where it came from. Sponsored promotions are always labeled. */
+  source: "email" | "community" | "partner";
+  sponsored: boolean;
+  /** Community verification of the code. */
+  votes: { worked: number; failed: number };
+  /** Words used to match wishlist items, e.g. ["dress", "dresses"]. */
+  tags: string[];
+  categories: ("clothing" | "shoes" | "beauty" | "accessories" | "home")[];
+  startsAt: DateOnly;
+  endsAt: DateOnly | null;
   url: string;
-  imageUrl: string | null;
-  note: string | null;
+  /** Affiliate links are disclosed in the UI. */
+  affiliate: boolean;
+  addedByUser: boolean;
+}
+
+// ─── Wishlist ────────────────────────────────────────────────────────────
+
+/** Something the customer is looking for: an exact product or a broader interest. */
+export interface WishItem {
+  id: string;
+  kind: "product" | "interest";
+  /** "Leather Chelsea Boots" or "a blue dress for a wedding under $150". */
+  text: string;
+  retailerId: string | null;
+  url: string | null;
+  /** Small, downscaled image from an upload or screenshot. */
+  image: string | null;
+  color: string | null;
+  maxPrice: number | null;
+  occasion: string | null;
+  tags: string[];
+  source: "text" | "photo" | "voice" | "link";
+  /** Temporary interests drop off after this date. */
+  until: DateOnly | null;
+  status: "active" | "purchased";
   addedAt: Timestamp;
+}
+
+export type ShopCategory = "clothing" | "shoes" | "beauty" | "accessories" | "home";
+
+/** Shopping preferences that shape Discover. Always editable, never inferred silently. */
+export interface ShoppingPrefs {
+  onboarded: boolean;
+  favoriteRetailerIds: string[];
+  hiddenRetailerIds: string[];
+  categories: ShopCategory[];
+  /** Hide sales smaller than this. 0 = show all. */
+  minDiscount: 0 | 15 | 25 | 40;
+  showSponsored: boolean;
+  hiddenPromotionIds: string[];
+  /** Points for sharing and verifying codes. */
+  points: number;
 }
 
 export interface NotificationPrefs {
@@ -327,6 +387,10 @@ export interface NotificationPrefs {
   refunds: boolean;
   creditExpiry: boolean;
   weeklySummary: boolean;
+  /** Packages arriving soon. */
+  deliveries?: boolean;
+  /** Wishlist sales, credit you can use, favorite-brand sales. */
+  deals?: boolean;
   /** Days before a deadline to remind. */
   leadDays: 3 | 5 | 7;
 }

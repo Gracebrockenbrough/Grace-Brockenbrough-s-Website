@@ -6,7 +6,7 @@ import { RecordRow } from "./task-row";
 /** A to-do from the Notification Service, rendered with the shared row. */
 export function PriorityRow({ p, retailer, today, prominent }: { p: Priority; retailer: Retailer; today: DateOnly; prominent?: boolean }) {
   const meta = kindMeta[p.kind];
-  const due = p.dueDate ? `${meta.due} ${formatDate(p.dueDate, today)}${p.estimated && p.kind !== "refund_check" ? " (est.)" : ""}` : null;
+  const due = p.dueDate ? `${meta.due} ${formatDate(p.dueDate, today)}` : null;
   return (
     <RecordRow
       indicator={meta.indicator}

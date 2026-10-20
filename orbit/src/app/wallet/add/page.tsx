@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Camera } from "lucide-react";
+import { downscaleImage } from "@/lib/hooks/downscale";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { Button } from "@/components/ui/button";
 import { Choice, Field, Input, Select } from "@/components/ui/form";
@@ -21,6 +23,7 @@ export default function AddCardPage() {
   const [pin, setPin] = useState("");
   const [expKind, setExpKind] = useState<Expiration["kind"]>("unknown");
   const [expDate, setExpDate] = useState("");
+  const [cardPhoto, setCardPhoto] = useState<string | null>(null);
   if (!o) return <Shell loading nav={false} />;
 
   const retailers = [...o.data.retailers].sort((a, b) => a.name.localeCompare(b.name));
@@ -49,6 +52,28 @@ export default function AddCardPage() {
     <Shell nav={false}>
       <BackBar fallback="/wallet/" title="Add to Wallet" />
       <div className="space-y-5 pt-3">
+        <label className="flex min-h-24 cursor-pointer items-center gap-4 overflow-hidden rounded-[18px] border-2 border-dashed border-line bg-card px-4 py-3 hover:border-navy/30">
+          {cardPhoto ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cardPhoto} alt="Your gift card" className="h-16 w-24 rounded-lg object-cover" />
+          ) : (
+            <Camera aria-hidden className="size-7 shrink-0 text-muted" />
+          )}
+          <span>
+            <span className="block font-semibold">{cardPhoto ? "Photo added" : "Scan a physical card"}</span>
+            <span className="block text-[14px] text-muted">{cardPhoto ? "Type the number and PIN below. Automatic reading comes with the mobile app." : "Take a photo of the back of the card"}</span>
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (f) setCardPhoto(await downscaleImage(f, 600));
+            }}
+          />
+        </label>
         <Field label="Retailer" htmlFor="retailer">
           <Select id="retailer" value={retailerId} onChange={(e) => setRetailerId(e.target.value)}>
             <option value="">Choose a retailer</option>

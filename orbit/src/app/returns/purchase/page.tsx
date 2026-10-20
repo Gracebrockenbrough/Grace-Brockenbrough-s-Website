@@ -3,18 +3,20 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CalendarDays, Check, ChevronRight, Copy, FileText, ListChecks, Mail, ScrollText, Trash } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Camera, Check, ChevronRight, Copy, FileText, FileUp, ListChecks, Mail, ScanBarcode, ScrollText, Trash } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { ProductThumb } from "@/components/orbit/retail";
 import { Button, ButtonLink, ExternalButton, TextLink } from "@/components/ui/button";
 import { Card, Row, Rows } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { Disclosure } from "@/components/ui/disclosure";
-import { Field, Input } from "@/components/ui/form";
+import { CheckRow, Field, Input } from "@/components/ui/form";
 import { Notice, Tag } from "@/components/ui/notice";
 import { Sheet } from "@/components/ui/sheet";
 import { EmptyState } from "@/components/ui/states";
+import { trackingUrl } from "@/lib/domain/carriers";
 import { formatDate } from "@/lib/domain/dates";
+import { downscaleImage, readSmallFile } from "@/lib/hooks/downscale";
 import { dropOffLabel, money, orderTotal, refundMethodLabel } from "@/lib/domain/format";
 import type { DateOnly, Evidence, FieldSource, ReturnPolicy } from "@/lib/domain/types";
 import { STAGES, orderView, refundOutlook, stageIndex, type MoneyKind } from "@/lib/store/selectors";
@@ -129,6 +131,9 @@ function PurchaseDetail() {
   const [deleteSheet, setDeleteSheet] = useState(false);
   const [receipt, setReceipt] = useState<Evidence | null>(null);
   const [date, setDate] = useState("");
+  const [trackSheet, setTrackSheet] = useState(false);
+  const [trackNo, setTrackNo] = useState("");
+  const [fileError, setFileError] = useState<string | null>(null);
 
   if (!o) return <Shell loading nav={false} />;
   const order = o.data.orders.find((x) => x.id === id);
@@ -155,6 +160,28 @@ function PurchaseDetail() {
   const artifact = r?.artifacts[0] ?? null;
   const step = stageIndex(v);
   const ch = order.charges;
+  const refundIssued = Boolean(v.refund?.confirmed && v.refund.destination !== "store_credit" && !v.refund.arrivedAt);
+  const shipment = v.activeReturn && ["prepared", "reported_submitted", "approval_pending", "label_ready", "shipped"].includes(v.activeReturn.status) ? v.activeReturn : null;
+
+  const toFile = async (f: File) => ({ name: f.name, type: f.type || "application/octet-stream", dataUrl: f.type.startsWith("image/") ? await downscaleImage(f, 1000) : await readSmallFile(f) });
+  const onReceipt = async (f?: File) => {
+    if (!f) return;
+    try {
+      setFileError(null);
+      actions.attachReceipt(order.id, await toFile(f));
+    } catch (e) {
+      setFileError(e instanceof Error ? e.message : "Couldn't read that file.");
+    }
+  };
+  const onLabel = async (f?: File) => {
+    if (!f || !shipment) return;
+    try {
+      setFileError(null);
+      actions.saveReturnLabel(shipment.id, await toFile(f));
+    } catch (e) {
+      setFileError(e instanceof Error ? e.message : "Couldn't read that file.");
+    }
+  };
   const itemsSubtotal = orderTotal(order);
 
   const deadlineRow = (() => {
@@ -203,6 +230,50 @@ function PurchaseDetail() {
           </Row>
           <Row label="Return method">{r?.dropOff ? (r.dropOff === "store" ? `${retailer.name} store` : `${dropOffLabel[r.dropOff]} drop-off`) : <Missing>Choose when you start</Missing>}</Row>
         </Rows>
+
+        {refundIssued && (
+          <div className="mt-2 rounded-2xl bg-ivory px-3">
+            <CheckRow checked={false} onChange={() => actions.markRefundArrived(v.refund!.id, v.refund!.confirmed!.amount)}>
+              <span className="block font-semibold">I&apos;ve received this refund</span>
+              <span className="block text-[14px] text-muted">Check {v.refund!.destinationLabel ?? "your original payment method"} for {money(v.refund!.confirmed!.amount)}.</span>
+            </CheckRow>
+          </div>
+        )}
+        {v.refund?.arrivedAt && <p className="mt-2 text-[14px] font-medium text-sage-ink">You confirmed the refund arrived on {formatDate(v.refund.arrivedAt, today)}.</p>}
+
+        {shipment && (
+          <div className="mt-3 rounded-2xl border border-line px-3 py-2.5">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Return shipment</p>
+            {shipment.returnTracking ? (
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="text-[15px]">
+                  {shipment.returnTracking.carrier ?? "Tracking"} <span className="tabular text-muted">{shipment.returnTracking.number}</span>
+                </span>
+                {trackingUrl(shipment.returnTracking.carrier, shipment.returnTracking.number) && (
+                  <a href={trackingUrl(shipment.returnTracking.carrier, shipment.returnTracking.number)!} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 text-[14px] font-semibold text-navy">
+                    Track <ArrowUpRight aria-hidden className="size-4" />
+                  </a>
+                )}
+              </div>
+            ) : (
+              <p className="mt-1 text-[14px] text-muted">Shipped it? Add the tracking number from your drop-off receipt.</p>
+            )}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {!shipment.artifacts.length && (
+                <label className="inline-flex h-11 cursor-pointer items-center gap-1.5 rounded-full border border-line bg-card px-4 text-[14px] font-semibold hover:bg-ivory-deep">
+                  <FileUp aria-hidden className="size-4" /> Save Return Label
+                  <input type="file" accept="image/*,application/pdf" className="sr-only" onChange={(e) => onLabel(e.target.files?.[0])} />
+                </label>
+              )}
+              {!shipment.returnTracking && (
+                <Button variant="secondary" size="sm" icon={<ScanBarcode aria-hidden className="size-4" />} onClick={() => setTrackSheet(true)}>
+                  Add Tracking Number
+                </Button>
+              )}
+            </div>
+            {fileError && <p role="alert" className="mt-1 text-[14px] text-terracotta">{fileError}</p>}
+          </div>
+        )}
 
         <div className="mt-3 space-y-2">
           {needsDelivery ? (
@@ -312,8 +383,24 @@ function PurchaseDetail() {
             <Row label="Delivered" hint={sourceHint(order.fieldSources.deliveredAt, evidence)}>
               {order.deliveredAt ? formatDate(order.deliveredAt, today) : <Missing>Not confirmed</Missing>}
             </Row>
+            {!order.deliveredAt && order.expectedDeliveryAt && (
+              <Row label="Expected delivery" hint={<Tag tone="warning" className="mt-1">Estimate</Tag>}>
+                {formatDate(order.expectedDeliveryAt, today)}
+              </Row>
+            )}
             <Row label="Carrier">{order.tracking?.carrier ?? <Missing />}</Row>
-            <Row label="Tracking number">{order.tracking ? <CopyValue value={order.tracking.number} label="tracking number" /> : <Missing />}</Row>
+            <Row
+              label="Tracking number"
+              hint={
+                order.tracking && trackingUrl(order.tracking.carrier, order.tracking.number) ? (
+                  <a href={trackingUrl(order.tracking.carrier, order.tracking.number)!} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1 font-semibold text-navy">
+                    Track package <ArrowUpRight aria-hidden className="size-3.5" />
+                  </a>
+                ) : undefined
+              }
+            >
+              {order.tracking ? <CopyValue value={order.tracking.number} label="tracking number" /> : <Missing />}
+            </Row>
             <Row label="Item subtotal">{ch.subtotal != null ? money(ch.subtotal) : itemsSubtotal != null ? money(itemsSubtotal) : <Missing />}</Row>
             <Row label="Shipping">{ch.shipping != null ? (ch.shipping === 0 ? "Free" : money(ch.shipping)) : <Missing />}</Row>
             <Row label="Tax">{ch.tax != null ? money(ch.tax) : <Missing />}</Row>
@@ -338,7 +425,7 @@ function PurchaseDetail() {
 
         <Disclosure title="Source emails & receipt" summary={evidence.length ? `${evidence.length} saved` : "None saved"} icon={<Mail aria-hidden className="size-5" />}>
           {evidence.length === 0 ? (
-            <p className="text-[15px] text-muted">No emails or receipts are attached to this order.</p>
+            <p className="mb-2 text-[15px] text-muted">No emails or receipts are attached to this order.</p>
           ) : (
             <ul className="space-y-2">
               {evidence.map((e) => (
@@ -357,6 +444,11 @@ function PurchaseDetail() {
               ))}
             </ul>
           )}
+          <label className="mt-3 flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line px-3 text-[15px] font-semibold hover:border-navy/30">
+            <Camera aria-hidden className="size-5" /> Add a Receipt
+            <input type="file" accept="image/*,application/pdf" capture="environment" className="sr-only" onChange={(e) => onReceipt(e.target.files?.[0])} />
+          </label>
+          <p className="mt-1.5 text-[13px] text-muted">Scan a paper receipt or upload a PDF. It&apos;s stored with this purchase.</p>
         </Disclosure>
 
         <Disclosure title="Return policy" summary={policy?.windowDays ? `${policy.windowDays} days from ${policy.windowStartsAt}` : "Not on file"} icon={<ScrollText aria-hidden className="size-5" />}>
@@ -378,12 +470,42 @@ function PurchaseDetail() {
       <Sheet open={receipt != null} onOpenChange={(x) => !x && setReceipt(null)} title={receipt?.title ?? ""} description={receipt ? `${evidenceLabel[receipt.kind]} from ${receipt.from ?? "unknown sender"}` : undefined}>
         {receipt && (
           <div className="space-y-3">
-            <p className="rounded-2xl bg-card p-4 text-[15px] leading-relaxed">{receipt.excerpt ?? "No preview saved."}</p>
+            {receipt.attachment?.type.startsWith("image/") ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={receipt.attachment.dataUrl} alt={receipt.title} className="w-full rounded-2xl border border-line" />
+            ) : receipt.attachment ? (
+              <p className="rounded-2xl bg-card p-4 text-[15px]">PDF saved: {receipt.attachment.name}</p>
+            ) : (
+              <p className="rounded-2xl bg-card p-4 text-[15px] leading-relaxed">{receipt.excerpt ?? "No preview saved."}</p>
+            )}
             <p className="text-[13px] text-muted">
               Received {formatDate(receipt.receivedAt.slice(0, 10), today)}. {receipt.channel === "sample_inbox" ? "This is a fictional sample email." : "The full message is stored privately."}
             </p>
           </div>
         )}
+      </Sheet>
+
+      <Sheet
+        open={trackSheet}
+        onOpenChange={setTrackSheet}
+        title="Return tracking number"
+        description="It's on your drop-off receipt. Scanning the barcode comes with the mobile app; for now, type it in."
+        footer={
+          <Button
+            disabled={trackNo.trim().length < 8 || !shipment}
+            onClick={() => {
+              actions.setReturnTracking(shipment!.id, trackNo);
+              setTrackNo("");
+              setTrackSheet(false);
+            }}
+          >
+            Save Tracking Number
+          </Button>
+        }
+      >
+        <Field label="Tracking number" htmlFor="rt-no" hint="UPS numbers start with 1Z. USPS numbers are usually 22 digits.">
+          <Input id="rt-no" autoComplete="off" spellCheck={false} value={trackNo} onChange={(e) => setTrackNo(e.target.value)} />
+        </Field>
       </Sheet>
 
       <Sheet

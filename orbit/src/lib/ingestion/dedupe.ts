@@ -99,6 +99,7 @@ export function blankOrder(id: string, retailerId: string, createdAt: string): O
     purchasedAt: null,
     shippedAt: null,
     deliveredAt: null,
+    expectedDeliveryAt: null,
     shipmentStatus: "unknown",
     currency: "USD",
     items: [],

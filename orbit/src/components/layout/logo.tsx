@@ -1,3 +1,5 @@
+import { BRAND } from "@/lib/brand";
+
 /** A shopping bag in orbit: the bag outline with the terracotta "planet" at its handle. */
 export function OrbitMark({ className = "size-7" }: { className?: string }) {
   return (
@@ -13,8 +15,8 @@ export function OrbitWordmark() {
   return (
     <span className="inline-flex items-center gap-1.5 text-navy">
       <OrbitMark />
-      <span className="text-[21px] font-semibold tracking-[-0.03em]">orbit</span>
-      <span className="sr-only">Orbit, Returns and Wallet</span>
+      <span className="text-[21px] font-semibold tracking-[-0.03em]">{BRAND.wordmark}</span>
+      <span className="sr-only">{BRAND.name}</span>
     </span>
   );
 }

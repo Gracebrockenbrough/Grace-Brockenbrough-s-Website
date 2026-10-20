@@ -7,8 +7,10 @@ import type {
   Order,
   Refund,
   Retailer,
+  Promotion,
   ReturnPolicy,
-  SavedProduct,
+  ShoppingPrefs,
+  WishItem,
   ReturnRequest,
   WalletItem,
 } from "../domain/types";
@@ -23,7 +25,9 @@ export interface OrbitData {
   refunds: Refund[];
   wallet: WalletItem[];
   gifts: GiftTransfer[];
-  saved: SavedProduct[];
+  promotions: Promotion[];
+  wishlist: WishItem[];
+  shopping: ShoppingPrefs;
   evidence: Evidence[];
   connections: ConnectedAccount[];
   prefs: NotificationPrefs;
@@ -42,7 +46,7 @@ export interface PreviewFlags {
 }
 
 export interface PersistedState {
-  version: 2;
+  version: 3;
   /** Date the seeded demo data was last aligned to. */
   anchor: DateOnly;
   data: OrbitData;
@@ -53,5 +57,5 @@ export const EMPTY_PREVIEW: PreviewFlags = { emptyAccount: false, outage: "none"
 
 /** A copy of `data` with no purchases or credits, for previewing first-run states. */
 export function emptied(data: OrbitData): OrbitData {
-  return { ...data, orders: [], returns: [], refunds: [], wallet: [], gifts: [], saved: [], evidence: [], dismissed: [] };
+  return { ...data, orders: [], returns: [], refunds: [], wallet: [], gifts: [], wishlist: [], evidence: [], dismissed: [] };
 }

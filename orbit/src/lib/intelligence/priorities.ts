@@ -12,11 +12,25 @@ import { countWord, orderTotal } from "../domain/format";
 import type { DateOnly, NotificationPrefs } from "../domain/types";
 import type { OrbitData } from "../store/state";
 import type { Indicator } from "../store/selectors";
+import { buildBuckets } from "./buckets";
+import { insights, rangeFor } from "./insights";
 import { assessItem, type ItemAssessment } from "./returns";
 
-export type PriorityKind = "return_deadline" | "drop_off" | "finish_return" | "refund_check" | "credit_expiring" | "missing_info";
+export type PriorityKind =
+  | "return_deadline"
+  | "drop_off"
+  | "finish_return"
+  | "refund_check"
+  | "credit_expiring"
+  | "missing_info"
+  | "delivery_soon"
+  | "refund_arrival"
+  | "wishlist_sale"
+  | "credit_sale"
+  | "goal_over"
+  | "favorites_sales";
 
-export type Bucket = "overdue" | "soon" | "week" | "later" | "missing";
+export type Bucket = "overdue" | "soon" | "week" | "updates" | "later" | "missing";
 
 export interface Priority {
   /** Stable key, so a dismissed or already-sent reminder isn't repeated. */
@@ -48,17 +62,27 @@ export const kindMeta: Record<PriorityKind, { indicator: Indicator; label: strin
   refund_check: { indicator: "refund_check", label: "Refund needs checking", due: "Expected" },
   credit_expiring: { indicator: "credit", label: "Credit expiring", due: "Use by" },
   missing_info: { indicator: "unknown", label: "Deadline unknown", due: "" },
+  delivery_soon: { indicator: "arriving", label: "Arriving soon", due: "Expected" },
+  refund_arrival: { indicator: "refund", label: "Refund issued", due: "Issued" },
+  wishlist_sale: { indicator: "wish", label: "Wishlist on sale", due: "Ends" },
+  credit_sale: { indicator: "sale", label: "Use your credit", due: "Sale ends" },
+  goal_over: { indicator: "goal", label: "Spending goal", due: "" },
+  favorites_sales: { indicator: "sale", label: "Favorite brands", due: "" },
 };
+
+/** Opportunities and check-ins: shown as updates, never ranked above money you could lose. */
+const UPDATE_KINDS: PriorityKind[] = ["delivery_soon", "refund_arrival", "wishlist_sale", "credit_sale", "goal_over", "favorites_sales"];
 
 export const bucketMeta: Record<Bucket, { title: string; hint: string }> = {
   overdue: { title: "Overdue", hint: "Past the date. Act now." },
   soon: { title: "Next 3 days", hint: "Money you could lose soon." },
   week: { title: "This week", hint: "" },
+  updates: { title: "Updates", hint: "Sales and check-ins worth knowing about." },
   later: { title: "Later deadlines", hint: "" },
   missing: { title: "Deadline unknown", hint: "We need a detail before we can set a date." },
 };
 
-const BUCKET_ORDER: Bucket[] = ["overdue", "soon", "week", "later", "missing"];
+const BUCKET_ORDER: Bucket[] = ["overdue", "soon", "week", "updates", "later", "missing"];
 
 /** How far ahead deadlines and expirations count as unfinished business. */
 const DEADLINE_HORIZON = 30;
@@ -212,11 +236,129 @@ export function buildPriorities(data: OrbitData, today: DateOnly, prefs: Notific
     }
   }
 
+  // Packages arriving soon.
+  if (prefs.deliveries ?? true) {
+    for (const o of data.orders) {
+      if (o.deliveredAt || !o.expectedDeliveryAt) continue;
+      const left = daysBetween(today, o.expectedDeliveryAt);
+      if (left < 0 || left > 2) continue;
+      out.push({
+        key: `delivery:${o.id}:${o.expectedDeliveryAt}`,
+        kind: "delivery_soon",
+        retailerId: o.retailerId,
+        title: o.items[0] ? o.items[0].name + (o.items.length > 1 ? ` + ${o.items.length - 1} more` : "") : "Your order",
+        status: left === 0 ? "Expected to arrive today" : left === 1 ? "Expected to arrive tomorrow" : "Expected to arrive in 2 days",
+        dueDate: o.expectedDeliveryAt,
+        amount: null,
+        estimated: true,
+        action: { label: "View Order", href: `/returns/purchase/?id=${o.id}` },
+        detailHref: `/returns/purchase/?id=${o.id}`,
+      });
+    }
+  }
+
+  // Refunds the store issued that the customer hasn't confirmed arriving.
+  if (prefs.refunds) {
+    for (const f of data.refunds) {
+      if (!f.confirmed || f.confirmed.by !== "retailer_email" || f.destination === "store_credit" || f.arrivedAt) continue;
+      const ago = daysBetween(f.confirmed.at, today);
+      if (ago < 2) continue; // give the bank a couple of days first
+      const o = data.orders.find((x) => x.id === f.orderId);
+      out.push({
+        key: `arrival:${f.id}`,
+        kind: "refund_arrival",
+        retailerId: o?.retailerId ?? "",
+        title: o?.items[0] ? `${o.items[0].name}${o.items.length > 1 ? ` + ${o.items.length - 1} more` : ""}` : "Refund",
+        status: `Issued ${ago === 1 ? "yesterday" : `${ago} days ago`}. Have you received it?`,
+        dueDate: null,
+        amount: f.confirmed.amount,
+        estimated: false,
+        action: { label: "Confirm Refund", href: `/returns/refund/?id=${f.id}` },
+        detailHref: `/returns/refund/?id=${f.id}`,
+      });
+    }
+  }
+
+  if (prefs.deals ?? true) {
+    const live = data.promotions.filter((p) => p.startsAt <= today && (p.endsAt == null || p.endsAt >= today) && !data.shopping.hiddenPromotionIds.includes(p.id) && !data.shopping.hiddenRetailerIds.includes(p.retailerId));
+    // Wishlist items on sale.
+    for (const w of data.wishlist) {
+      if (w.status !== "active" || (w.until && w.until < today)) continue;
+      const sale = live.find((p) => (!w.retailerId || w.retailerId === p.retailerId) && p.tags.some((t) => w.tags.includes(t)));
+      if (!sale) continue;
+      out.push({
+        key: `wish:${w.id}:${sale.id}`,
+        kind: "wishlist_sale",
+        retailerId: sale.retailerId,
+        title: w.text,
+        status: `${sale.discountPct ? `${sale.discountPct}% off` : "On sale"} now`,
+        dueDate: sale.endsAt,
+        amount: null,
+        estimated: false,
+        action: { label: "See Sale", href: `/promo/?id=${sale.id}` },
+        detailHref: `/promo/?id=${sale.id}`,
+      });
+    }
+    // Credit at a store that's having a sale.
+    for (const p of live) {
+      const credit = data.wallet.filter((w) => w.retailerId === p.retailerId && (w.balance ?? 0) > 0 && !(w.expiration.kind === "date" && w.expiration.date < today)).reduce((s, w) => s + (w.balance ?? 0), 0);
+      if (!credit || p.sponsored) continue;
+      out.push({
+        key: `creditsale:${p.id}`,
+        kind: "credit_sale",
+        retailerId: p.retailerId,
+        title: p.title,
+        status: `You already have $${credit} to spend here`,
+        dueDate: p.endsAt,
+        amount: credit,
+        estimated: false,
+        action: { label: "See Sale", href: `/promo/?id=${p.id}` },
+        detailHref: `/promo/?id=${p.id}`,
+      });
+    }
+    // Several favorite brands on sale.
+    const favs = new Set(live.filter((p) => data.shopping.favoriteRetailerIds.includes(p.retailerId)).map((p) => p.retailerId));
+    if (favs.size >= 3)
+      out.push({
+        key: `favs:${today.slice(0, 7)}:${favs.size}`,
+        kind: "favorites_sales",
+        retailerId: "",
+        title: `${countWord(favs.size)} of your favorite brands have sales`,
+        status: "See them together in Discover",
+        dueDate: null,
+        amount: null,
+        estimated: false,
+        action: { label: "Open Discover", href: "/?filter=favorites" },
+        detailHref: "/?filter=favorites",
+      });
+  }
+
+  // Optional spending goals the customer set themselves.
+  if (data.goals?.enabled) {
+    const month = insights(data, rangeFor("month", today));
+    for (const b of buildBuckets(month.purchases.map((x) => x.item), data.goals.monthly)) {
+      if (b.goal == null || b.amount <= b.goal) continue;
+      out.push({
+        key: `goal:${today.slice(0, 7)}:${b.kind}`,
+        kind: "goal_over",
+        retailerId: "",
+        title: `${b.label} this month`,
+        status: `You've spent more than your $${b.goal} target. Just so you know.`,
+        dueDate: null,
+        amount: b.amount,
+        estimated: false,
+        action: { label: "See Insights", href: "/insights/" },
+        detailHref: "/insights/",
+      });
+    }
+  }
+
   return out
     .filter((p) => !data.dismissed.includes(p.key))
     .map((p): Priority => {
       const daysLeft = p.dueDate ? daysBetween(today, p.dueDate) : null;
-      return { ...p, daysLeft, bucket: bucketFor(daysLeft), urgent: daysLeft != null && daysLeft <= 3 };
+      const bucket = UPDATE_KINDS.includes(p.kind) ? "updates" : bucketFor(daysLeft);
+      return { ...p, daysLeft, bucket, urgent: !UPDATE_KINDS.includes(p.kind) && daysLeft != null && daysLeft <= 3 };
     })
     .sort(
       (a, b) =>

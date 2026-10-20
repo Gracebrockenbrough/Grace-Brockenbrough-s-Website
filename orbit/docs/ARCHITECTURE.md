@@ -1,4 +1,9 @@
-# Orbit — Architecture & Stage 1 Plan
+# Orbit — Architecture & Plan
+
+> **Product direction (current).** One place for everything shopping: **Discover** (a personal sales feed built from promotional emails, with the Wishlist inside it), **Purchases** (orders, receipts, deliveries, returns and refunds in one list), **Wallet** (gift cards and store credit), and **Insights** (spending awareness with optional, color-coded targets). Proactive "Heads up" alerts connect them. Orbit is **read-only**: its AI reads shopping emails and fills in details; it never sends, buys, submits returns or acts for the customer. The product name lives in `src/lib/brand.ts` (e.g. switch to "Tally" there).
+>
+> Monetization the design already supports, without compromising trust: affiliate links (disclosed on the card), sponsored promotions (always labeled, never ranked above what the customer asked for, can be turned off), retailer partner codes, and a future premium tier.
+
 
 **Orbit · Returns & Wallet** — *Your shopping, taken care of.*
 
@@ -159,3 +164,26 @@ Store logos and brand colors are trademarks, so they arrive through a retailer p
 - Gift card distribution partner and payment processor; balance-check integrations.
 - Push/email notification delivery and the weekly summary send.
 - Verified policy records per retailer and region, with deep links to return portals.
+
+## Concept update: Discover, Wishlist, Purchases, Wallet, Insights
+
+| Tab | Route | What's there |
+|---|---|---|
+| **Discover** | `/` | Greeting, Ask Orbit, **Heads up** (top 3 alerts, `/attention/` for all), **Sales for you** feed with filters (All, Favorites, Wishlist, Codes), copyable codes with community verification (+points), hide a sale, share a code, preferences |
+| | `/wishlist/` | Add by **text, photo, voice or link**; exact products or broad interests; temporary interests; matching sales; credit at that store; bought / remove |
+| | `/promo/?id=` | A sale with your matching credit and wishlist items |
+| | `/preferences/`, `/welcome/` | Favorite and hidden brands, categories, minimum discount, sponsored on/off; first-run onboarding |
+| **Purchases** | `/returns/` | Search; filters **All, Deliveries, Returns, Refunds**; store and category filters; calendar at `/calendar/` |
+| | `/returns/purchase/?id=` | Adds expected delivery, carrier tracking links, **receipt vault** (upload or photograph), **save a return label**, **return tracking number**, and the **"I've received this refund"** checkbox |
+| **Wallet** | `/wallet/` | Apple Wallet-style stack; add by **photographing a card** (number typed for now); a card shows when its store has a sale |
+| **Insights** | `/insights/` | Month, quarter, year or custom; buckets by item type; **optional targets in green / yellow / red**; trends vs the previous period; by store; refunds netted |
+
+**Proactive alerts** (`priorities.ts`): return deadlines, drop-offs, refunds needing a check, refunds issued but not yet confirmed ("Have you received it?"), packages arriving, wishlist items on sale, credit at a store with a sale, several favorite brands on sale, and spending over a personal target. Money you could lose always ranks above opportunities.
+
+**Refunds** stay *pending* after the store's refund email until the customer ticks "I've received this refund". Orbit never connects to bank accounts.
+
+**Read-only AI.** Returns are guided only: Orbit prepares details and links to the retailer's portal. There are no "assisted" or "integrated" submission paths. See Profile → "What Orbit's AI can and can't do".
+
+### MVP vs future
+
+Working in the prototype: everything above, with fictional demo data. Future: live Gmail/Outlook sync, reading card numbers and receipts from photos (OCR), barcode scanning, image-based wishlist matching, live price tracking, carrier tracking integrations, retailer balance checks, community moderation for codes, affiliate and partner integrations.

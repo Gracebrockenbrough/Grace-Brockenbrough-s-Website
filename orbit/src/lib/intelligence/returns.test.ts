@@ -78,23 +78,30 @@ describe("returnFacts", () => {
 });
 
 describe("priorities", () => {
-  it("orders the to-do list by bucket, then due date, then money at stake", () => {
+  it("puts money you could lose first, then updates, then later deadlines", () => {
     const p = buildPriorities(data, TODAY);
-    expect(p.map((x) => `${x.bucket}:${x.retailerId}:${x.kind}`)).toEqual([
+    expect(p.slice(0, 3).map((x) => `${x.bucket}:${x.retailerId}:${x.kind}`)).toEqual([
       "overdue:sephora:refund_check",
       "soon:reformation:return_deadline",
       "week:madewell:drop_off",
-      "later:aritzia:credit_expiring",
-      "later:aritzia:return_deadline",
-      "later:aritzia:return_deadline",
-      "missing:everlane:missing_info",
     ]);
+    const buckets = p.map((x) => x.bucket);
+    const order = ["overdue", "soon", "week", "updates", "later", "missing"];
+    expect(buckets).toEqual([...buckets].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
     // Same date: the more expensive Aritzia item comes first.
-    expect(p[4].amount).toBeGreaterThan(p[5].amount!);
+    const ari = p.filter((x) => x.kind === "return_deadline" && x.retailerId === "aritzia");
+    expect(ari[0].amount).toBeGreaterThan(ari[1].amount!);
   });
 
-  it("carries the money on the line and never includes promotions", () => {
-    const p = buildPriorities(data, TODAY);
+  it("surfaces proactive updates from across the app", () => {
+    const kinds = buildPriorities(data, TODAY).filter((x) => x.bucket === "updates").map((x) => x.kind);
+    expect(kinds).toEqual(expect.arrayContaining(["delivery_soon", "refund_arrival", "wishlist_sale", "credit_sale", "favorites_sales"]));
+    const boots = buildPriorities(data, TODAY).find((x) => x.kind === "wishlist_sale" && x.title === "Leather Chelsea Boots");
+    expect(boots).toMatchObject({ status: "25% off now", detailHref: "/promo/?id=d-p-mad" });
+  });
+
+  it("carries the purchase price at stake for deadlines", () => {
+    const p = buildPriorities(data, TODAY).filter((x) => x.bucket !== "updates");
     expect(amountAtStake(p)).toBe(95 + 180 + 138 + 25 + 145 + 128 + 135);
     expect(p.find((x) => x.kind === "return_deadline" && x.retailerId === "reformation")).toMatchObject({ amount: 180, daysLeft: 3, estimated: false });
   });

@@ -7,7 +7,7 @@ import { BackBar, Shell } from "@/components/layout/shell";
 import { Button, ButtonLink, ExternalButton } from "@/components/ui/button";
 import { Card, Row, Rows } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
-import { Field, Input } from "@/components/ui/form";
+import { CheckRow, Field, Input } from "@/components/ui/form";
 import { Notice, Tag } from "@/components/ui/notice";
 import { Sheet } from "@/components/ui/sheet";
 import { EmptyState } from "@/components/ui/states";
@@ -136,19 +136,28 @@ function RefundView() {
               Add the Store&apos;s Refund Email
             </ButtonLink>
           )}
-          {!credit && (
+          {!credit && issued ? (
+            <div className="rounded-[18px] border border-line bg-card px-4">
+              <CheckRow checked={false} onChange={() => actions.markRefundArrived(refund.id, issued.amount)}>
+                <span className="block font-semibold">I&apos;ve received this refund</span>
+                <span className="block text-[14px] text-muted">
+                  Check {dest} for {money(issued.amount)}. It stays pending until you tick this.
+                </span>
+              </CheckRow>
+            </div>
+          ) : !credit ? (
             <Button
-              variant={issued ? "primary" : "ghost"}
-              size={issued ? "lg" : "md"}
+              variant="ghost"
+              size="md"
               className="w-full"
               onClick={() => {
-                setAmount(String(issued?.amount ?? refund.expected?.amount ?? ""));
+                setAmount(String(refund.expected?.amount ?? ""));
                 setSheet(true);
               }}
             >
-              It Arrived in My Account
+              It Already Arrived
             </Button>
-          )}
+          ) : null}
         </div>
       )}
 

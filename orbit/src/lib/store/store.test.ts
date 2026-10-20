@@ -12,7 +12,7 @@ describe("store workflow", () => {
 
   it("prepares a return without ever marking it submitted", () => {
     const id = actions.prepareReturn({ orderId: "d-o-ref", itemIds: ["d-i-ref-1"], reason: null, refundPreference: "original_payment", dropOff: "ups" });
-    expect(actions.getReturn(id)).toMatchObject({ status: "prepared", capability: "assisted", submission: { by: null, confirmedByRetailer: false } });
+    expect(actions.getReturn(id)).toMatchObject({ status: "prepared", capability: "guided", submission: { by: null, confirmedByRetailer: false } });
   });
 
   it("reporting submission creates an expected, unconfirmed refund net of fees", () => {
