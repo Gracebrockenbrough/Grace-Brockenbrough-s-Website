@@ -7,7 +7,7 @@
  * - Gift card and credit spending is shown separately and never subtracted, because those
  *   purchases are already counted once as purchases.
  */
-import type { DateOnly, ItemCategory } from "../domain/types";
+import type { DateOnly, ItemCategory, OrderItem } from "../domain/types";
 import { retailerOf } from "../store/selectors";
 import type { OrbitData } from "../store/state";
 
@@ -43,6 +43,8 @@ export interface Insights {
   byCategory: { key: string; label: string; amount: number }[];
   byRetailer: { key: string; label: string; amount: number }[];
   coverage: { label: string; count: number }[];
+  /** Every priced item counted, so buckets and lists use exactly the same purchases. */
+  purchases: { orderId: string; retailerId: string; date: DateOnly; item: OrderItem }[];
 }
 
 const inRange = (d: DateOnly | null, r: InsightRange) => d != null && d >= r.from && d <= r.to;
@@ -64,6 +66,7 @@ export function insights(d: OrbitData, range: InsightRange): Insights {
   const ret = new Map<string, number>();
   let gross = 0;
   let unpriced = 0;
+  const purchases: Insights["purchases"] = [];
 
   for (const o of orders) {
     for (const i of o.items) {
@@ -73,6 +76,7 @@ export function insights(d: OrbitData, range: InsightRange): Insights {
       }
       const v = i.unitPrice * i.quantity;
       gross += v;
+      purchases.push({ orderId: o.id, retailerId: o.retailerId, date: o.purchasedAt!, item: i });
       cat.set(i.category, (cat.get(i.category) ?? 0) + v);
       ret.set(o.retailerId, (ret.get(o.retailerId) ?? 0) + v);
     }
@@ -109,6 +113,7 @@ export function insights(d: OrbitData, range: InsightRange): Insights {
     byCategory: sorted(cat, (k) => categoryLabel[k as ItemCategory] ?? k),
     byRetailer: sorted(ret, (k) => retailerOf(d, k).name),
     coverage: [...sources.entries()].map(([k, count]) => ({ label: channelLabel[k] ?? k, count })),
+    purchases,
   };
 }
 

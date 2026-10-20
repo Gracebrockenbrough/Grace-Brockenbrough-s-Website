@@ -22,6 +22,7 @@ import type {
 } from "../domain/types";
 import { DEMO_PROFILE, buildDemoData } from "../demo/seed";
 import { buildBusyMonth } from "../demo/busy";
+import type { ItemKind } from "../intelligence/buckets";
 import { blankOrder, customRetailer, evidenceFromMessage, findDuplicate, isDuplicateMessage, mergeExtraction } from "../ingestion/dedupe";
 import { money, orderTotal } from "../domain/format";
 import { returnFacts } from "../intelligence/returns";
@@ -491,6 +492,20 @@ export const actions = {
 
   removeSaved(id: string) {
     setData((d) => ({ ...d, saved: d.saved.filter((x) => x.id !== id) }));
+  },
+
+  setGoalsEnabled(enabled: boolean) {
+    setData((d) => ({ ...d, goals: { monthly: d.goals?.monthly ?? {}, enabled } }));
+  },
+
+  /** Sets or clears (null) a monthly goal for one bucket. */
+  setGoal(kind: ItemKind, amount: number | null) {
+    setData((d) => {
+      const monthly = { ...(d.goals?.monthly ?? {}) };
+      if (amount == null || amount <= 0) delete monthly[kind];
+      else monthly[kind] = amount;
+      return { ...d, goals: { enabled: d.goals?.enabled ?? true, monthly } };
+    });
   },
 
   setPrefs(patch: Partial<NotificationPrefs>) {

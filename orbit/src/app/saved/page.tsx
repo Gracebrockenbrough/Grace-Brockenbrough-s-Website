@@ -62,7 +62,7 @@ export default function SavedPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={s.imageUrl} alt="" className="size-16 shrink-0 rounded-2xl object-cover" />
                     ) : (
-                      <ProductThumb category="other" tone={r.tone} />
+                      <ProductThumb category={r.category === "beauty" ? "beauty" : r.category === "shoes" ? "shoes" : "other"} name={s.name} tone={r.tone} />
                     )}
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13px] font-semibold text-muted">{r.name}</span>

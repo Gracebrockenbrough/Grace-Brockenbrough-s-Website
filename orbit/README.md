@@ -8,7 +8,7 @@ This is the **Stage 1 prototype**: a complete, clickable, mobile-first experienc
 cd orbit
 npm install
 npm run dev        # http://localhost:3000 (best at 390px wide)
-npm test           # 52 unit tests
+npm test           # 54 unit tests
 npm run build:prototype  # single-file clickable preview
 npm run build      # production build
 ```

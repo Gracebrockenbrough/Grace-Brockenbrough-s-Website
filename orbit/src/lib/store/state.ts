@@ -12,6 +12,7 @@ import type {
   ReturnRequest,
   WalletItem,
 } from "../domain/types";
+import type { ItemKind } from "../intelligence/buckets";
 
 /** Everything Orbit knows for one user. Mirrors the relational schema in supabase/migrations. */
 export interface OrbitData {
@@ -28,6 +29,8 @@ export interface OrbitData {
   prefs: NotificationPrefs;
   /** Priority keys the user dismissed. Prevents identical repeat reminders. */
   dismissed: string[];
+  /** Optional monthly spending goals per bucket. Off unless the customer turns them on. */
+  goals?: { enabled: boolean; monthly: Partial<Record<ItemKind, number>> };
 }
 
 /** Prototype-only switches for previewing states that are otherwise hard to reach. */

@@ -173,7 +173,7 @@ function PurchaseDetail() {
 
       {/* Product overview */}
       <header className="flex items-center gap-4 pb-5 pt-2">
-        <ProductThumb category={order.items[0]?.category ?? "other"} tone={retailer.tone} className="size-[84px] rounded-[20px]" count={order.items.length} />
+        <ProductThumb category={order.items[0]?.category ?? "other"} name={order.items[0]?.name} tone={retailer.tone} className="size-[84px] rounded-[20px]" count={order.items.length} />
         <div className="min-w-0">
           <p className="text-[14px] font-semibold text-muted">{retailer.name}</p>
           <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em]">{single ? single.name : `${order.items.length} items`}</h1>
@@ -243,7 +243,7 @@ function PurchaseDetail() {
           <Card className="divide-y divide-line">
             {items.map((a) => (
               <div key={a.item.id} className="flex items-center gap-3 p-3.5">
-                <ProductThumb category={a.item.category} tone={retailer.tone} className="size-12 rounded-xl" />
+                <ProductThumb category={a.item.category} name={a.item.name} tone={retailer.tone} className="size-12 rounded-xl" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{a.item.name}</p>
                   <p className="truncate text-[14px] text-muted">

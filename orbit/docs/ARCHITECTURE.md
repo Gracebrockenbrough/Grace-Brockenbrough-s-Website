@@ -56,7 +56,7 @@ Three tabs: **Today · Returns · Wallet**. Focused flows hide the tab bar.
 | `/ask/` | **Ask Orbit**: find purchases and credits from everyday descriptions, typed or spoken. No order number needed |
 | `/returns/` | **Returns**: filter tabs Needs your action · Awaiting retailer · Not delivered yet (counts and value), rows grouped by urgency |
 | `/returns/history/` | Completed returns, kept items, closed windows |
-| `/insights/` | **Shopping Insights** (from Profile): month / year / custom; purchases, issued refunds, net, credit used, by category and store, data coverage |
+| `/insights/` | **Shopping Insights** (from Profile): month / year / custom; purchases, issued refunds, net, credit used; "What you've bought" buckets (dresses, jeans, sweaters…) that fill as you buy, each opening its purchases; optional monthly goals per bucket; by store; data coverage |
 | `/saved/` | **Saved for Later** (from Profile): a private list with links back to the store and a note when you hold credit there |
 | `/returns/purchase/?id=` | **Order details**: product overview; return overview (current stage, verified vs estimated deadline, potential / expected / issued refund, one primary button); per-item returns; expandable return progress (8 stages), purchase details (copyable order and tracking numbers, charges, label), source emails & receipt, return policy |
 | `/returns/start/?order=&item=` · `?return=` | **Return Assistant**: 1 Choose items → 2 Details → 3 Review & approve → 4 Next steps; status view for returns already underway |
@@ -141,7 +141,7 @@ Store logos and brand colors are trademarks, so they arrive through a retailer p
 - Wallet: add, update balance (labeled "Updated by you"), 30-second code reveal, remove, Shop Store links to the official site.
 - Manual purchase entry, missing-delivery-date capture, delete purchase, delete all data.
 - Ask Orbit lookup; voice input where the browser supports speech recognition.
-- 52 unit tests (`npm test`), plus a scripted click-through audit of every main interaction.
+- 54 unit tests (`npm test`), plus a scripted click-through audit of every main interaction.
 
 ### Demo simulations (clearly labeled in the UI)
 - All people, orders, codes, balances and the "Sample inbox" are fictional. Seeded dates stay relative to today.

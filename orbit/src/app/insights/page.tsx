@@ -2,6 +2,7 @@
 
 import { ChartNoAxesColumn } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
+import { SpendBuckets } from "@/components/orbit/spend-buckets";
 import { Card, Row, Rows } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { Field, Input } from "@/components/ui/form";
@@ -126,7 +127,7 @@ export default function InsightsPage() {
             </Rows>
           </Card>
 
-          {r.byCategory.length > 0 && <Bars title="By category" rows={r.byCategory} />}
+          <SpendBuckets data={data} r={r} monthly={kind === "month"} today={today} />
           {r.byRetailer.length > 0 && <Bars title="By store" rows={r.byRetailer} />}
 
           <section className="mt-6 rounded-[18px] bg-ivory-deep px-4 py-3.5 text-[14px] text-muted">

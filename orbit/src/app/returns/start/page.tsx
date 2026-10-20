@@ -128,7 +128,7 @@ function Assistant({ view, existing, preselect, email }: { view: OrderView; exis
                   onChange={(v) => setSelected((s) => (v ? [...s, a.item.id] : s.filter((x) => x !== a.item.id)))}
                 >
                   <span className="flex items-center gap-3 py-2">
-                    <ProductThumb category={a.item.category} tone={retailer.tone} className="size-12 rounded-xl" />
+                    <ProductThumb category={a.item.category} name={a.item.name} tone={retailer.tone} className="size-12 rounded-xl" />
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{a.item.name}</span>
                       <span className="block text-[14px] text-muted">

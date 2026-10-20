@@ -97,3 +97,38 @@ describe("Ask Orbit, broader questions", () => {
     expect(ask("Where is my black dress?", data, TODAY).results[0].href).toBe("/returns/purchase/?id=d-o-ref");
   });
 });
+
+describe("spending buckets", () => {
+  it("sorts items into the kind of thing they are", async () => {
+    const { itemKind } = await import("./buckets");
+    const k = (name: string, category: "clothing" | "shoes" | "beauty" | "accessories" = "clothing") => itemKind({ name, category });
+    expect([k("Juliette Dress"), k("The Perfect Vintage Jean"), k("Denim Jacket"), k("Effortless Pant"), k("Wilfred Cocoon Sweater"), k("Silk Cami"), k("The Day Glove", "shoes"), k("Liquid Blush", "beauty"), k("Wool Scarf", "accessories")]).toEqual([
+      "dresses",
+      "jeans",
+      "outerwear",
+      "pants",
+      "knitwear",
+      "tops",
+      "shoes",
+      "beauty",
+      "accessories",
+    ]);
+  });
+
+  it("fills relative to the biggest bucket, or toward a goal when set", async () => {
+    const { buildBuckets } = await import("./buckets");
+    const items = [
+      { name: "Dress A", category: "clothing" as const, unitPrice: 100, quantity: 1 },
+      { name: "Dress B", category: "clothing" as const, unitPrice: 100, quantity: 1 },
+      { name: "Jeans", category: "clothing" as const, unitPrice: 50, quantity: 1 },
+    ];
+    const free = buildBuckets(items, null);
+    expect(free.map((b) => [b.kind, b.amount, b.count, b.fill])).toEqual([
+      ["dresses", 200, 2, 1],
+      ["jeans", 50, 1, 0.25],
+    ]);
+    const withGoal = buildBuckets(items, { dresses: 400, skirts: 60 });
+    expect(withGoal.find((b) => b.kind === "dresses")).toMatchObject({ goal: 400, fill: 0.5 });
+    expect(withGoal.find((b) => b.kind === "skirts")).toMatchObject({ amount: 0, fill: 0 });
+  });
+});
