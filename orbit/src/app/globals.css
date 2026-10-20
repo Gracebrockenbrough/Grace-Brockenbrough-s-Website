@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+@theme {
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-ivory: #f8f7f4;
+  --color-ivory-deep: #f1efea;
+  --color-navy: #19243b;
+  --color-navy-soft: #2a3752;
+  --color-muted: #6c7078;
+  --color-card: #ffffff;
+  --color-line: #e7e7e3;
+  --color-sage: #dde8dc;
+  --color-sage-ink: #35553c;
+  --color-terracotta: #b65d4f;
+  --color-terracotta-soft: #f5e7e3;
+  --color-sand: #f3ecdf;
+  --color-sand-ink: #6b5532;
+
+  --radius-card: 18px;
+  --shadow-card: 0 1px 2px rgb(25 36 59 / 0.04), 0 2px 8px rgb(25 36 59 / 0.04);
+  --shadow-lift: 0 10px 30px -12px rgb(25 36 59 / 0.35);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--color-ivory);
+    color: var(--color-navy);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 2px;
+    border-radius: 10px;
+  }
+  ::selection {
+    background: var(--color-sage);
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+@keyframes orbit-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes orbit-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes orbit-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes orbit-shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+
+@utility animate-in {
+  animation: orbit-fade-up 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@utility animate-sheet {
+  animation: orbit-sheet-up 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@utility animate-fade {
+  animation: orbit-fade 200ms ease-out both;
+}
+@utility skeleton {
+  background: linear-gradient(90deg, #efede8 0px, #f6f5f1 80px, #efede8 160px);
+  background-size: 400px 100%;
+  animation: orbit-shimmer 1.4s linear infinite;
+  border-radius: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
