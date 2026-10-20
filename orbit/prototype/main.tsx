@@ -1,7 +1,8 @@
 import { createRoot } from "react-dom/client";
 import type { ComponentType } from "react";
 import Today from "@/app/page";
-import Attention from "@/app/attention/page";
+import Ask from "@/app/ask/page";
+import History from "@/app/returns/history/page";
 import Returns from "@/app/returns/page";
 import Purchase from "@/app/returns/purchase/page";
 import Start from "@/app/returns/start/page";
@@ -18,7 +19,8 @@ import { usePathname } from "./shims/navigation";
 
 const routes: Record<string, ComponentType> = {
   "/": Today,
-  "/attention/": Attention,
+  "/ask/": Ask,
+  "/returns/history/": History,
   "/returns/": Returns,
   "/returns/purchase/": Purchase,
   "/returns/start/": Start,

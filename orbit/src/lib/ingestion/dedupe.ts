@@ -123,5 +123,6 @@ export function customRetailer(id: string, name: string): Retailer {
     returnCapability: "guided",
     giftPartner: false,
     tone: "slate",
+    category: "general",
   };
 }

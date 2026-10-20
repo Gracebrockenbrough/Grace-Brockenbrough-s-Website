@@ -1,99 +1,177 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { PackageOpen, Plus, Search, X } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { Archive, ChevronDown, ChevronRight, PackageOpen, Plus, Sparkles } from "lucide-react";
 import { PageHeader, Shell } from "@/components/layout/shell";
-import { PurchaseCard } from "@/components/orbit/purchase-card";
-import { ButtonLink, IconButton, IconLink } from "@/components/ui/button";
-import { FilterChips } from "@/components/ui/chips";
-import { Input } from "@/components/ui/form";
+import { FocusCard } from "@/components/orbit/focus-card";
+import { ReturnRow } from "@/components/orbit/return-row";
+import { ButtonLink, IconLink } from "@/components/ui/button";
+import { cn } from "@/components/ui/cn";
+import { MoreList } from "@/components/ui/more-list";
 import { EmptyState, ErrorState } from "@/components/ui/states";
-import { orderViews, type OrderView } from "@/lib/store/selectors";
+import { money } from "@/lib/domain/format";
+import { bucketFor, bucketMeta, type Bucket } from "@/lib/intelligence/priorities";
+import { returnTasks, type ReturnTask } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
-type Filter = "all" | "to_decide" | "returning" | "completed";
+const sum = (list: ReturnTask[]) => list.reduce((s, t) => s + (t.amount ?? 0), 0);
+const BUCKETS: Bucket[] = ["overdue", "soon", "week", "later", "missing"];
 
-const matches = (v: OrderView, f: Filter) =>
-  f === "all" || (f === "to_decide" && v.stage === "to_decide") || (f === "returning" && v.stage === "returning") || (f === "completed" && (v.stage === "completed" || v.stage === "kept"));
-
-const emptyCopy: Record<Filter, { title: string; body: string }> = {
-  all: { title: "No purchases yet", body: "Add an order confirmation and Orbit will keep track of the return window." },
-  to_decide: { title: "Nothing to decide", body: "Items you can still return will appear here." },
-  returning: { title: "No returns in progress", body: "When you start a return, you'll see every step here." },
-  completed: { title: "No completed returns yet", body: "Finished returns and confirmed refunds will appear here." },
-};
+/** A quiet, collapsed group for things that need nothing from you right now. */
+function Folded({ id, title, hint, tasks }: { id: string; title: string; hint: string; tasks: ReturnTask[] }) {
+  const [open, setOpen] = useState(false);
+  if (!tasks.length) return null;
+  return (
+    <section id={id} className="mt-7 scroll-mt-16">
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="flex min-h-12 w-full items-center gap-2 text-left">
+        <span className="flex-1">
+          <span className="block text-[17px] font-semibold">
+            {title} <span className="tabular font-normal text-muted">· {tasks.length}</span>
+          </span>
+          <span className="block text-[14px] text-muted">{hint}</span>
+        </span>
+        <span className="tabular text-[14px] text-muted">{money(sum(tasks))}</span>
+        <ChevronDown aria-hidden className={cn("size-5 text-muted transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2">
+          {tasks.map((t) => (
+            <ReturnRow key={t.view.order.id} t={t} showAction={t.group !== "transit"} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 export default function ReturnsPage() {
   const o = useOrbit();
-  const [filter, setFilter] = useState<Filter>("all");
-  const [searching, setSearching] = useState(false);
-  const [q, setQ] = useState("");
-
-  const views = useMemo(() => (o ? orderViews(o.data, o.today) : []), [o]);
   if (!o) return <Shell loading />;
 
-  const query = q.trim().toLowerCase();
-  const searched = query
-    ? views.filter((v) => [v.retailer.name, v.order.orderNumber ?? "", ...v.order.items.map((i) => i.name)].some((s) => s.toLowerCase().includes(query)))
-    : views;
-  const list = searched.filter((v) => matches(v, filter));
-  const count = (f: Filter) => searched.filter((v) => matches(v, f)).length;
+  const tasks = returnTasks(o.data, o.today);
+  const move = tasks.filter((t) => t.group === "move");
+  const waiting = tasks.filter((t) => t.group === "waiting");
+  const transit = tasks.filter((t) => t.group === "transit");
+  const history = tasks.filter((t) => t.group === "history");
+  const [first, ...rest] = move;
+
+  const header = (
+    <PageHeader
+      title="Returns"
+      subtitle="Unfinished business, most urgent first."
+      action={
+        <>
+          <IconLink href="/ask/" label="Ask Orbit to find a purchase">
+            <Sparkles aria-hidden className="size-[22px]" />
+          </IconLink>
+          <IconLink href="/add/" label="Add a purchase">
+            <Plus aria-hidden className="size-[22px]" />
+          </IconLink>
+        </>
+      }
+    />
+  );
+
+  if (o.preview.outage === "returns")
+    return (
+      <Shell>
+        {header}
+        <ErrorState title="We couldn't load your returns" onRetry={() => actions.setPreview({ outage: "none" })}>
+          Your wallet and saved labels are unaffected.
+        </ErrorState>
+      </Shell>
+    );
+
+  if (tasks.length === 0)
+    return (
+      <Shell>
+        {header}
+        <EmptyState icon={<PackageOpen aria-hidden />} title="No purchases yet" action={<ButtonLink href="/add/">Add a Purchase</ButtonLink>}>
+          Add an order confirmation and Orbit will keep track of the return window.
+        </EmptyState>
+      </Shell>
+    );
+
+  const stats = [
+    { id: "move", label: "Your move", n: move.length, amount: sum(move), strong: true },
+    { id: "waiting", label: "Waiting", n: waiting.length, amount: sum(waiting), strong: false },
+    { id: "transit", label: "On the way", n: transit.length, amount: sum(transit), strong: false },
+  ];
 
   return (
     <Shell>
-      <PageHeader
-        title="Your Purchases"
-        subtitle="Everything you've ordered, organized."
-        action={
-          <>
-            <IconButton label={searching ? "Close search" : "Search purchases"} onClick={() => { setSearching((s) => !s); setQ(""); }}>
-              {searching ? <X aria-hidden className="size-[22px]" /> : <Search aria-hidden className="size-[22px]" />}
-            </IconButton>
-            <IconLink href="/add/" label="Add a purchase">
-              <Plus aria-hidden className="size-[22px]" />
-            </IconLink>
-          </>
-        }
-      />
+      {header}
 
-      {searching && (
-        <div className="animate-in mb-4">
-          <label htmlFor="search" className="sr-only">Search by retailer, item or order number</label>
-          <Input id="search" autoFocus type="search" placeholder="Retailer, item or order number" value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
+      {/* At a glance */}
+      <div className="grid grid-cols-3 gap-2">
+        {stats.map((s) => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            className={cn("rounded-[18px] px-3 py-3", s.strong ? "bg-navy text-white" : "border border-line bg-card")}
+          >
+            <span className={cn("block text-[13px] font-semibold", s.strong ? "text-white/70" : "text-muted")}>{s.label}</span>
+            <span className="tabular block text-[24px] font-semibold leading-tight">{s.n}</span>
+            <span className={cn("tabular block text-[13px]", s.strong ? "text-white/70" : "text-muted")}>{money(s.amount)}</span>
+          </a>
+        ))}
+      </div>
+
+      {first ? (
+        <>
+          <div className="mt-6">
+            <FocusCard
+              emoji={first.emoji}
+              retailer={first.view.retailer}
+              label={first.label}
+              title={first.title}
+              why={first.why}
+              amount={first.amount}
+              daysLeft={first.daysLeft}
+              estimated={first.estimated}
+              action={{ label: first.actionLabel, href: first.href }}
+            />
+          </div>
+
+          <section id="move" className="scroll-mt-16">
+            {BUCKETS.map((b) => {
+              const list = rest.filter((t) => bucketFor(t.daysLeft) === b);
+              if (!list.length) return null;
+              return (
+                <div key={b} className="mt-7">
+                  <div className="mb-2.5 flex items-baseline justify-between gap-3">
+                    <h2 className="text-[17px] font-semibold">
+                      {bucketMeta[b].title} <span className="tabular font-normal text-muted">· {list.length}</span>
+                    </h2>
+                    <span className="tabular text-[14px] text-muted">{money(sum(list))}</span>
+                  </div>
+                  <MoreList limit={4}>
+                    {list.map((t) => (
+                      <ReturnRow key={t.view.order.id} t={t} />
+                    ))}
+                  </MoreList>
+                </div>
+              );
+            })}
+          </section>
+        </>
+      ) : (
+        <p id="move" className="mt-6 rounded-[18px] bg-sage px-4 py-3.5 text-[15px] font-medium text-sage-ink">
+          Nothing needs you right now. 🎉
+        </p>
       )}
 
-      <FilterChips
-        label="Filter purchases"
-        value={filter}
-        onChange={setFilter}
-        options={[
-          { value: "all", label: "All" },
-          { value: "to_decide", label: "To Decide", count: count("to_decide") },
-          { value: "returning", label: "Returning", count: count("returning") },
-          { value: "completed", label: "Completed" },
-        ]}
-      />
+      <Folded id="waiting" title="Waiting on stores" hint="Nothing to do. We'll flag anything that runs late." tasks={waiting} />
+      <Folded id="transit" title="On the way" hint="Return windows start when these arrive." tasks={transit} />
 
-      <div className="mt-5 space-y-3">
-        {o.preview.outage === "returns" ? (
-          <ErrorState title="We couldn't load your purchases" onRetry={() => actions.setPreview({ outage: "none" })}>
-            Your wallet and saved labels are unaffected.
-          </ErrorState>
-        ) : list.length ? (
-          list.map((v) => <PurchaseCard key={v.order.id} view={v} today={o.today} />)
-        ) : query ? (
-          <EmptyState icon={<Search aria-hidden />} title={`No results for "${q}"`}>Try a retailer name or order number.</EmptyState>
-        ) : (
-          <EmptyState
-            icon={<PackageOpen aria-hidden />}
-            title={emptyCopy[filter].title}
-            action={filter === "all" ? <ButtonLink href="/add/">Add a Purchase</ButtonLink> : undefined}
-          >
-            {emptyCopy[filter].body}
-          </EmptyState>
-        )}
-      </div>
+      {history.length > 0 && (
+        <Link href="/returns/history/" className="mt-8 flex min-h-14 items-center gap-3 rounded-[18px] px-1 text-muted hover:bg-ivory-deep">
+          <Archive aria-hidden className="size-5" />
+          <span className="flex-1 text-[15px] font-semibold">History · {history.length} done</span>
+          <ChevronRight aria-hidden className="size-5" />
+        </Link>
+      )}
     </Shell>
   );
 }

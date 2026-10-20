@@ -20,6 +20,7 @@ export const SEED_RETAILERS: Retailer[] = [
     returnCapability: "assisted",
     giftPartner: true,
     tone: "navy",
+    category: "fashion",
   },
   {
     id: "aritzia",
@@ -31,6 +32,7 @@ export const SEED_RETAILERS: Retailer[] = [
     returnCapability: "guided",
     giftPartner: true,
     tone: "sand",
+    category: "fashion",
   },
   {
     id: "sephora",
@@ -42,6 +44,7 @@ export const SEED_RETAILERS: Retailer[] = [
     returnCapability: "guided",
     giftPartner: true,
     tone: "ink",
+    category: "beauty",
   },
   {
     id: "zara",
@@ -53,6 +56,7 @@ export const SEED_RETAILERS: Retailer[] = [
     returnCapability: "guided",
     giftPartner: false,
     tone: "terracotta",
+    category: "fashion",
   },
   {
     id: "madewell",
@@ -64,6 +68,7 @@ export const SEED_RETAILERS: Retailer[] = [
     returnCapability: "assisted",
     giftPartner: true,
     tone: "slate",
+    category: "fashion",
   },
   {
     id: "everlane",
@@ -75,6 +80,7 @@ export const SEED_RETAILERS: Retailer[] = [
     returnCapability: "guided",
     giftPartner: false,
     tone: "sage",
+    category: "shoes",
   },
   {
     id: "cos",
@@ -86,6 +92,7 @@ export const SEED_RETAILERS: Retailer[] = [
     returnCapability: "guided",
     giftPartner: false,
     tone: "slate",
+    category: "fashion",
   },
   {
     id: "jcrew",
@@ -97,6 +104,7 @@ export const SEED_RETAILERS: Retailer[] = [
     returnCapability: "guided",
     giftPartner: false,
     tone: "navy",
+    category: "fashion",
   },
 ];
 

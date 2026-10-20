@@ -20,6 +20,7 @@ import type {
   WalletItem,
 } from "../domain/types";
 import { DEMO_PROFILE, buildDemoData } from "../demo/seed";
+import { buildBusyMonth } from "../demo/busy";
 import { blankOrder, customRetailer, evidenceFromMessage, findDuplicate, isDuplicateMessage, mergeExtraction } from "../ingestion/dedupe";
 import { money, orderTotal } from "../domain/format";
 import { returnFacts } from "../intelligence/returns";
@@ -247,19 +248,28 @@ export const actions = {
   },
 
   // ── Refunds ──────────────────────────────────────────────────────────
-  confirmRefundByCustomer(refundId: string, amount: number) {
+  /**
+   * The customer says the money reached their account. If the store already sent a
+   * refund email, this only records arrival; otherwise it also marks the refund issued.
+   */
+  markRefundArrived(refundId: string, amount: number) {
     setData((d) => {
       const refund = d.refunds.find((f) => f.id === refundId);
       return {
         ...d,
         refunds: d.refunds.map((f) =>
           f.id === refundId
-            ? { ...f, confirmed: { amount, at: today(), by: "customer", evidenceId: null }, milestones: [...f.milestones, { at: now(), label: "You confirmed the refund arrived", evidenceId: null }] }
+            ? {
+                ...f,
+                confirmed: f.confirmed ?? { amount, at: today(), by: "customer", evidenceId: null },
+                arrivedAt: today(),
+                milestones: [...f.milestones, { at: now(), label: "Arrived in your account (you confirmed)", evidenceId: null }],
+              }
             : f,
         ),
         returns: d.returns.map((r) =>
-          refund && r.id === refund.returnId
-            ? { ...r, status: "completed", history: [...r.history, { at: now(), status: "completed", note: "Refund confirmed by you." }] }
+          refund && r.id === refund.returnId && r.status !== "completed"
+            ? { ...r, status: "completed", history: [...r.history, { at: now(), status: "completed", note: "You confirmed the refund arrived." }] }
             : r,
         ),
       };
@@ -453,6 +463,17 @@ export const actions = {
 
   setPreview(patch: Partial<PreviewFlags>) {
     set((s) => ({ ...s, preview: { ...s.preview, ...patch } }));
+  },
+
+  /** Adds ~20 fictional orders to preview a busy month. */
+  loadBusyMonth() {
+    const extra = buildBusyMonth(today());
+    setData((d) => ({
+      ...d,
+      orders: [...d.orders.filter((o) => !o.id.startsWith("d-b-")), ...extra.orders],
+      returns: [...d.returns.filter((r) => !r.id.startsWith("d-b-")), ...extra.returns],
+      refunds: [...d.refunds.filter((f) => !f.id.startsWith("d-b-")), ...extra.refunds],
+    }));
   },
 
   resetDemo() {

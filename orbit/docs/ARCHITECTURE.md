@@ -35,7 +35,8 @@ Orbit is a mobile-first Next.js app over a set of small services that talk throu
 | Refund | store actions, `Refund` model | Expected and confirmed refunds kept separate; confirmed only by retailer evidence or the customer |
 | Wallet | `lib/services/balances.ts`, store actions | Credits tied to their issuer; verified vs last-known balances; codes hidden by default |
 | Gift | `lib/services/gifts.ts` | `GiftProvider` interface; demo provider only (no payments, no real cards) |
-| Notification | `lib/intelligence/priorities.ts` | Ranks deadlines, required actions, late refunds, expiring credit; dedupe keys; weekly summary |
+| Notification | `lib/intelligence/priorities.ts` | The to-do list: each item has a type, due date, money at stake and urgency bucket; sorted by date, then amount; dedupe keys; weekly summary |
+| Ask | `lib/intelligence/ask.ts` | Everyday-language lookup over the customer's own orders and credits (colors, synonyms, stores, "last month"); answers with deadlines and next steps |
 
 **Trust rules built into the code:**
 - `null` means unknown, everywhere. The deadline engine returns `unknown` with a reason rather than guessing.
@@ -50,9 +51,10 @@ Three tabs: **Today · Returns · Wallet**. Focused flows hide the tab bar.
 
 | Route | Screen |
 |---|---|
-| `/` | **Today**: greeting, up to 3 priorities, wallet total, latest completed refund |
-| `/attention/` | All priorities, with "Hide this reminder" |
-| `/returns/` | **Your Purchases**: search, chips (All · To Decide · Returning · Completed), purchase cards |
+| `/` | **Today**: Ask Orbit bar, money on the line, 7-day calendar strip, "Do this first", then a to-do timeline grouped Overdue / Next 3 days / This week / Coming up / Missing info |
+| `/ask/` | **Ask Orbit**: find purchases and credits from everyday descriptions, typed or spoken. No order number needed |
+| `/returns/` | **Returns**: at-a-glance counts (Your move · Waiting · On the way), "Do this first", compact rows by urgency; waiting and in-transit folded away |
+| `/returns/history/` | Completed returns, kept items, closed windows |
 | `/returns/purchase/?id=` | Purchase detail: status and next step, items, collapsed Order details / Return policy / Receipt & emails / Return portal, delete |
 | `/returns/start/?order=&item=` · `?return=` | **Return Assistant**: 1 Choose items → 2 Details → 3 Review & approve → 4 Next steps; status view for returns already underway |
 | `/returns/label/?id=` | QR code / label, ship-by date, drop-off locations, what to bring |
@@ -107,6 +109,21 @@ Highlights:
 
 ## 5. What's working, what's demo, what's future
 
+### Refunds without bank access
+
+Orbit never connects to bank accounts or card wallets. A refund has three states, and the UI names the source of each:
+1. **Received by the store**: from the store's email.
+2. **Issued**: from the store's refund email (most retailers send one). If none arrives by the expected date, it's flagged "Refund late" and the customer is prompted to follow up.
+3. **Arrived**: only when the customer taps "It arrived in my account". This step is optional.
+
+### Scaling to heavy shoppers
+
+Each screen leads with one "Do this first" item. Everything else is a one-line row (type marker, store, item, amount, countdown) grouped by urgency, with long groups folded behind "Show N more". Things that need nothing from the customer (waiting on the store, in transit) are collapsed, and finished items move to History. *Settings → Preview tools → Load a Busy Month* adds 19 orders to test this.
+
+### Brand logos
+
+Store logos and brand colors are trademarks, so they arrive through a retailer partner program: a partner supplies its logo and color, and the card shows them. Until then, cards use in-palette tones and a small store-type icon.
+
 ### Working now (real logic, in the browser)
 - All screens and flows, navigable at 390px and centered on desktop; loading, empty, error, outage and disconnected states.
 - **Deadline engine**: confirmed vs estimated vs unknown, category-specific windows, final sale, stale-policy flag. It never fabricates a date.
@@ -116,7 +133,8 @@ Highlights:
 - **Return workflow**: item-level selection, refund and drop-off choices, fee logic, prepare → reported submitted → retailer-confirmed via email → label → shipped → refund confirmed. Retailer emails move returns and refunds forward.
 - Wallet: add, update balance (labeled "Updated by you"), 30-second code reveal, remove, Shop Store links to the official site.
 - Manual purchase entry, missing-delivery-date capture, delete purchase, delete all data.
-- 29 unit tests (`npm test`).
+- Ask Orbit lookup; voice input where the browser supports speech recognition.
+- 37 unit tests (`npm test`).
 
 ### Demo simulations (clearly labeled in the UI)
 - All people, orders, codes, balances and the "Sample inbox" are fictional. Seeded dates stay relative to today.

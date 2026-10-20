@@ -2,10 +2,11 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Banknote, CircleCheck } from "lucide-react";
+import { Banknote, CircleCheck, Mail } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { Button, ButtonLink, ExternalButton } from "@/components/ui/button";
 import { Card, Row, Rows } from "@/components/ui/card";
+import { cn } from "@/components/ui/cn";
 import { Field, Input } from "@/components/ui/form";
 import { Notice, Tag } from "@/components/ui/notice";
 import { Sheet } from "@/components/ui/sheet";
@@ -14,8 +15,13 @@ import { daysBetween, formatDate } from "@/lib/domain/dates";
 import { money } from "@/lib/domain/format";
 import { retailerOf, returnStatusText } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
-import { cn } from "@/components/ui/cn";
 
+/**
+ * Orbit never connects to bank accounts. What it can know:
+ *   1. the store received the return (store email),
+ *   2. the store issued the refund (store's refund email),
+ *   3. the money arrived (only if the customer tells us).
+ */
 function RefundView() {
   const id = useSearchParams().get("id");
   const o = useOrbit();
@@ -29,23 +35,28 @@ function RefundView() {
     return (
       <Shell nav={false}>
         <BackBar fallback="/returns/" />
-        <EmptyState icon={<Banknote aria-hidden />} title="Refund not found" action={<ButtonLink href="/returns/">Back to Purchases</ButtonLink>} />
+        <EmptyState icon={<Banknote aria-hidden />} title="Refund not found" action={<ButtonLink href="/returns/">Back to Returns</ButtonLink>} />
       </Shell>
     );
 
   const { today } = o;
   const retailer = retailerOf(o.data, order.retailerId);
   const request = o.data.returns.find((r) => r.id === refund.returnId);
-  const late = refund.expected?.by && !refund.confirmed ? daysBetween(refund.expected.by, today) : 0;
+  const issued = refund.confirmed;
+  const arrived = refund.arrivedAt ?? (issued?.by === "customer" ? issued.at : null);
+  const late = refund.expected?.by && !issued ? daysBetween(refund.expected.by, today) : 0;
   const received = request && (request.status === "received" || request.status === "completed");
   const credit = refund.destination === "store_credit";
+  const dest = refund.destinationLabel ?? "your original payment method";
 
-  // Timeline: confirmed milestones, then what we're still waiting for.
   const steps = [
-    ...refund.milestones.map((m) => ({ label: m.label, date: m.at.slice(0, 10), done: true, evidence: m.evidenceId != null })),
-    ...(!received && !refund.confirmed ? [{ label: `Received by ${retailer.name}`, date: null, done: false, evidence: false }] : []),
-    ...(!refund.confirmed
-      ? [{ label: credit ? "Store credit issued" : "Refund issued", date: refund.expected?.by ?? null, done: false, evidence: false }]
+    ...refund.milestones.filter((m) => !/arrived/i.test(m.label)).map((m) => ({ label: m.label, sub: formatDate(m.at.slice(0, 10), today) + (m.evidenceId ? " · from the store's email" : ""), done: true })),
+    ...(!received && !issued ? [{ label: `${retailer.name} receives it`, sub: "We'll see this in their email", done: false }] : []),
+    ...(!issued
+      ? [{ label: credit ? "Store credit issued" : "Refund issued", sub: refund.expected?.by ? `Expected by ${formatDate(refund.expected.by, today)} · from the store's email` : "We'll see this in their email", done: false }]
+      : []),
+    ...(!credit
+      ? [{ label: "Arrives in your account", sub: arrived ? `${formatDate(arrived, today)} · you confirmed` : "Banks usually take 3–5 business days. Only you can confirm this.", done: Boolean(arrived) }]
       : []),
   ];
 
@@ -54,31 +65,34 @@ function RefundView() {
       <BackBar fallback={`/returns/purchase/?id=${order.id}`} title={`${retailer.name} ${credit ? "credit" : "refund"}`} />
 
       <div className="pb-5 pt-3">
-        {refund.confirmed ? (
+        {arrived ? (
           <Tag tone="success">
-            <CircleCheck aria-hidden className="size-3.5" />
-            {refund.confirmed.by === "retailer_email" ? `Confirmed by ${retailer.name}` : "Confirmed by you"}
+            <CircleCheck aria-hidden className="size-3.5" /> Arrived
+          </Tag>
+        ) : issued ? (
+          <Tag tone="success">
+            <CircleCheck aria-hidden className="size-3.5" /> Issued by {retailer.name}
           </Tag>
         ) : late > 0 ? (
-          <Tag tone="urgent">{late === 1 ? "1 day" : `${late} days`} later than expected</Tag>
+          <Tag tone="urgent">No refund email · {late === 1 ? "1 day" : `${late} days`} late</Tag>
         ) : (
-          <Tag>Expected · not received</Tag>
+          <Tag>Waiting for {retailer.name}</Tag>
         )}
-        <p className="tabular mt-3 text-[44px] font-semibold leading-none tracking-[-0.03em]">
-          {money(refund.confirmed?.amount ?? refund.expected?.amount ?? null)}
-        </p>
+        <p className="tabular mt-3 text-[44px] font-semibold leading-none tracking-[-0.03em]">{money(issued?.amount ?? refund.expected?.amount ?? null)}</p>
         <p className="mt-2 text-[16px] text-muted">
-          {refund.confirmed
-            ? `${credit ? "Issued as store credit" : `Refunded to ${refund.destinationLabel ?? "your original payment"}`} on ${formatDate(refund.confirmed.at, today)}`
+          {issued
+            ? credit
+              ? `Issued as ${retailer.name} store credit on ${formatDate(issued.at, today)}`
+              : `${retailer.name} issued it to ${dest} on ${formatDate(issued.at, today)}`
             : refund.expected?.by
-              ? `Expected by ${formatDate(refund.expected.by, today)} to ${refund.destinationLabel ?? "your original payment"}`
-              : refund.expected?.basis ?? "Expected once the retailer processes your return"}
+              ? `Expected by ${formatDate(refund.expected.by, today)}, to ${dest}`
+              : refund.expected?.basis ?? "Expected once the store processes your return"}
         </p>
       </div>
 
       {late > 0 && (
-        <Notice tone="warning" className="mb-5" title="This refund is late">
-          {received ? `${retailer.name} received your return, but we haven't seen a refund confirmation.` : `We haven't seen a refund confirmation from ${retailer.name}.`} Banks can take a few business days to show refunds, so check your statement first.
+        <Notice tone="warning" className="mb-5" title="Time to follow up">
+          {received ? `${retailer.name} has your return` : "Your return should have arrived"}, but they haven&apos;t sent a refund email yet. Check your statement first; if it isn&apos;t there, contact them with your order number{order.orderNumber ? ` (${order.orderNumber})` : ""}.
         </Notice>
       )}
 
@@ -91,53 +105,71 @@ function RefundView() {
               <span aria-hidden className={cn("mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border-2", s.done ? "border-navy bg-navy" : "border-line bg-card")} />
               <span>
                 <span className={cn("block text-[16px] font-medium", !s.done && "text-muted")}>{s.label}</span>
-                <span className="block text-[14px] text-muted">
-                  {s.done ? (s.date ? formatDate(s.date, today) : "") + (s.evidence ? " · from email" : "") : s.date ? `Expected by ${formatDate(s.date, today)}` : "Waiting"}
-                </span>
+                <span className="block text-[14px] text-muted">{s.sub}</span>
               </span>
             </li>
           ))}
         </ol>
       </Card>
 
+      <p className="mt-3 flex gap-2 px-1 text-[14px] text-muted">
+        <Mail aria-hidden className="mt-0.5 size-4 shrink-0" />
+        Orbit doesn&apos;t connect to your bank. We follow the store&apos;s emails, and you can tell us when the money lands.
+      </p>
+
       <Card className="mt-5 px-4">
         <Rows>
           <Row label="Expected" hint={refund.expected?.basis}>
             {refund.expected ? `${money(refund.expected.amount)}${refund.expected.by ? ` by ${formatDate(refund.expected.by, today)}` : ""}` : "Unknown"}
           </Row>
-          <Row label="Confirmed">{refund.confirmed ? `${money(refund.confirmed.amount)} on ${formatDate(refund.confirmed.at, today)}` : "Not yet"}</Row>
+          <Row label="Issued">{issued ? `${money(issued.amount)} · ${issued.by === "retailer_email" ? "store email" : "you confirmed"}` : "Not yet"}</Row>
           <Row label="Refund to">{refund.destinationLabel ?? "Unknown"}</Row>
           {request && <Row label="Return status">{returnStatusText(request)}</Row>}
         </Rows>
       </Card>
 
-      {!refund.confirmed && (
+      {!arrived && (
         <div className="mt-6 space-y-2">
           {late > 0 && retailer.supportUrl && <ExternalButton href={retailer.supportUrl}>Contact {retailer.name}</ExternalButton>}
-          <Button variant="secondary" onClick={() => { setAmount(String(refund.expected?.amount ?? "")); setSheet(true); }}>
-            I&apos;ve Received It
-          </Button>
+          {!issued && (
+            <ButtonLink href="/add/?mode=paste" variant={late > 0 ? "secondary" : "primary"}>
+              Add the Store&apos;s Refund Email
+            </ButtonLink>
+          )}
+          {!credit && (
+            <Button
+              variant={issued ? "primary" : "ghost"}
+              size={issued ? "lg" : "md"}
+              className="w-full"
+              onClick={() => {
+                setAmount(String(issued?.amount ?? refund.expected?.amount ?? ""));
+                setSheet(true);
+              }}
+            >
+              It Arrived in My Account
+            </Button>
+          )}
         </div>
       )}
 
       <Sheet
         open={sheet}
         onOpenChange={setSheet}
-        title="Confirm your refund"
-        description="Check the amount on your statement. We'll mark this refund as confirmed by you."
+        title="Did the money arrive?"
+        description="Check your bank or card statement. We'll mark this refund as complete."
         footer={
           <Button
             disabled={!(Number(amount) > 0)}
             onClick={() => {
-              actions.confirmRefundByCustomer(refund.id, Number(amount));
+              actions.markRefundArrived(refund.id, Number(amount));
               setSheet(false);
             }}
           >
-            Confirm {Number(amount) > 0 ? money(Number(amount)) : "Refund"}
+            Yes, {Number(amount) > 0 ? money(Number(amount)) : "It"} Arrived
           </Button>
         }
       >
-        <Field label="Amount received" htmlFor="amt" hint={refund.expected?.amount ? `Expected ${money(refund.expected.amount)}` : undefined}>
+        <Field label="Amount on your statement" htmlFor="amt" hint={refund.expected?.amount ? `Expected ${money(refund.expected.amount)}` : undefined}>
           <Input id="amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
         </Field>
       </Sheet>

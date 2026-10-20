@@ -173,7 +173,10 @@ export default function SettingsPage() {
               ]}
             />
           </div>
-          <div className="py-3">
+          <div className="space-y-2 py-3">
+            <Button variant="secondary" size="md" className="w-full" onClick={() => actions.loadBusyMonth()}>
+              Load a Busy Month (+19 Orders)
+            </Button>
             <Button variant="secondary" size="md" className="w-full" onClick={() => actions.resetDemo()}>
               Reset Demo Data
             </Button>

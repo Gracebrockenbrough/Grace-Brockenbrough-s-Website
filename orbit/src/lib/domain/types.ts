@@ -29,6 +29,9 @@ export type ReturnCapability = "guided" | "assisted" | "integrated";
 
 export type CardTone = "navy" | "sage" | "terracotta" | "sand" | "slate" | "ink";
 
+/** What kind of store this is. Drives the small icon on wallet cards. */
+export type StoreCategory = "fashion" | "beauty" | "shoes" | "accessories" | "home" | "general";
+
 export interface Retailer {
   id: string;
   name: string;
@@ -43,6 +46,7 @@ export interface Retailer {
   /** Participates in Send a Gift (demo partners only for now). */
   giftPartner: boolean;
   tone: CardTone;
+  category: StoreCategory;
 }
 
 export type WindowStart = "delivery" | "purchase" | "shipment" | "unknown";
@@ -225,8 +229,13 @@ export interface Refund {
   destinationLabel: string | null;
   /** What we expect, and why. Never shown as received. */
   expected: { amount: number | null; by: DateOnly | null; basis: string } | null;
-  /** Only set from retailer evidence or explicit customer confirmation. */
+  /**
+   * The refund was issued. Orbit has no bank access, so this comes from the
+   * retailer's refund email, or from the customer telling us it arrived.
+   */
   confirmed: { amount: number; at: DateOnly; by: "retailer_email" | "customer"; evidenceId: string | null } | null;
+  /** The customer confirmed the money actually reached their account (optional). */
+  arrivedAt?: DateOnly | null;
   milestones: { at: Timestamp; label: string; evidenceId: string | null }[];
 }
 

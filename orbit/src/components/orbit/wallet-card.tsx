@@ -3,6 +3,7 @@ import type { DateOnly, Retailer, WalletItem } from "@/lib/domain/types";
 import { cn } from "../ui/cn";
 import { balanceStatusText } from "./balance";
 import { tones } from "./retail";
+import { CategoryIcon } from "./category-icon";
 import { daysBetween, formatDate } from "@/lib/domain/dates";
 
 /** Wallet card face. Codes are never printed here; only the last four characters. */
@@ -22,7 +23,12 @@ export function WalletCardFace({ item, retailer, today, className, size = "full"
       </svg>
       <div className="relative flex h-full flex-col">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-[20px] font-semibold tracking-[-0.02em]">{retailer.name}</p>
+          <p className="flex min-w-0 items-center gap-2 text-[20px] font-semibold tracking-[-0.02em]">
+            <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-current/10">
+              <CategoryIcon category={retailer.category} className="size-4" />
+            </span>
+            <span className="truncate">{retailer.name}</span>
+          </p>
           <p className="tabular text-[22px] font-semibold tracking-[-0.02em]">{expired ? "Expired" : money(item.balance)}</p>
         </div>
         <div className="mt-0.5 flex items-start justify-between gap-3 text-[14px] opacity-85">

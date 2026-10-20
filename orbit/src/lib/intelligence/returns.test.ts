@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildDemoData } from "../demo/seed";
 import type { Order, ReturnPolicy } from "../domain/types";
-import { buildPriorities, orderAssessments, weeklySummary } from "./priorities";
+import { amountAtStake, buildPriorities, dueText, orderAssessments, weeklySummary } from "./priorities";
 import { assessDeadline, assessItem, returnFacts } from "./returns";
 
 const TODAY = "2026-10-20";
@@ -78,10 +78,25 @@ describe("returnFacts", () => {
 });
 
 describe("priorities", () => {
-  it("ranks the confirmed Reformation deadline first and skips promotions", () => {
+  it("orders the to-do list by bucket, then due date, then money at stake", () => {
     const p = buildPriorities(data, TODAY);
-    expect(p[0]).toMatchObject({ retailerId: "reformation", kind: "return_deadline", action: { label: "Prepare Return" } });
-    expect(p.map((x) => x.kind)).toEqual(expect.arrayContaining(["refund_attention", "return_action", "credit_expiring", "missing_info"]));
+    expect(p.map((x) => `${x.bucket}:${x.retailerId}:${x.kind}`)).toEqual([
+      "overdue:sephora:refund_late",
+      "soon:reformation:return_deadline",
+      "week:madewell:drop_off",
+      "later:aritzia:credit_expiring",
+      "later:aritzia:return_deadline",
+      "later:aritzia:return_deadline",
+      "missing:everlane:missing_info",
+    ]);
+    // Same date: the more expensive Aritzia item comes first.
+    expect(p[4].amount).toBeGreaterThan(p[5].amount!);
+  });
+
+  it("carries the money on the line and never includes promotions", () => {
+    const p = buildPriorities(data, TODAY);
+    expect(amountAtStake(p)).toBe(95 + 180 + 138 + 25 + 145 + 128 + 135);
+    expect(p.find((x) => x.kind === "return_deadline" && x.retailerId === "reformation")).toMatchObject({ amount: 180, daysLeft: 3, estimated: false });
   });
 
   it("does not repeat dismissed reminders", () => {
@@ -92,10 +107,20 @@ describe("priorities", () => {
 
   it("respects notification preferences", () => {
     const p = buildPriorities(data, TODAY, { ...data.prefs, refunds: false });
-    expect(p.find((x) => x.kind === "refund_attention")).toBeUndefined();
+    expect(p.find((x) => x.kind === "refund_late")).toBeUndefined();
   });
 
   it("writes a calm weekly summary", () => {
     expect(weeklySummary(data, TODAY)).toMatch(/returns need attention this week\. .*refund/);
+  });
+
+  it("formats due text", () => {
+    expect([dueText({ daysLeft: -4 }), dueText({ daysLeft: 0 }), dueText({ daysLeft: 1 }), dueText({ daysLeft: 9 }), dueText({ daysLeft: null })]).toEqual([
+      "4 days late",
+      "Today",
+      "Tomorrow",
+      "9 days",
+      "No date yet",
+    ]);
   });
 });

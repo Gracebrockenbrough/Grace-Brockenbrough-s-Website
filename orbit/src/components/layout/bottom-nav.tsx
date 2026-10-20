@@ -6,7 +6,7 @@ import { Sun, Undo2, WalletCards } from "lucide-react";
 import { cn } from "../ui/cn";
 
 const tabs = [
-  { href: "/", label: "Today", icon: Sun, match: (p: string) => p === "/" || p.startsWith("/attention") },
+  { href: "/", label: "Today", icon: Sun, match: (p: string) => p === "/" || p.startsWith("/ask") },
   { href: "/returns/", label: "Returns", icon: Undo2, match: (p: string) => p.startsWith("/returns") || p.startsWith("/add") },
   { href: "/wallet/", label: "Wallet", icon: WalletCards, match: (p: string) => p.startsWith("/wallet") || p.startsWith("/gift") },
 ];
