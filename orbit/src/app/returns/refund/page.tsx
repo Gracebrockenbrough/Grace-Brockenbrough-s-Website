@@ -74,7 +74,7 @@ function RefundView() {
             <CircleCheck aria-hidden className="size-3.5" /> Issued by {retailer.name}
           </Tag>
         ) : late > 0 ? (
-          <Tag tone="urgent">No refund email · {late === 1 ? "1 day" : `${late} days`} late</Tag>
+          <Tag tone="warning">Refund needs checking · expected {late === 1 ? "1 day" : `${late} days`} ago</Tag>
         ) : (
           <Tag>Waiting for {retailer.name}</Tag>
         )}
@@ -91,8 +91,8 @@ function RefundView() {
       </div>
 
       {late > 0 && (
-        <Notice tone="warning" className="mb-5" title="Time to follow up">
-          {received ? `${retailer.name} has your return` : "Your return should have arrived"}, but they haven&apos;t sent a refund email yet. Check your statement first; if it isn&apos;t there, contact them with your order number{order.orderNumber ? ` (${order.orderNumber})` : ""}.
+        <Notice tone="warning" className="mb-5" title="Refund needs checking">
+          {received ? `${retailer.name} has your return` : "Your return should have arrived"}, but we haven&apos;t seen a refund email from them. The refund may already be on your statement. If it isn&apos;t, contact them with your order number{order.orderNumber ? ` (${order.orderNumber})` : ""}.
         </Notice>
       )}
 

@@ -8,6 +8,7 @@ import type {
   Refund,
   Retailer,
   ReturnPolicy,
+  SavedProduct,
   ReturnRequest,
   WalletItem,
 } from "../domain/types";
@@ -21,6 +22,7 @@ export interface OrbitData {
   refunds: Refund[];
   wallet: WalletItem[];
   gifts: GiftTransfer[];
+  saved: SavedProduct[];
   evidence: Evidence[];
   connections: ConnectedAccount[];
   prefs: NotificationPrefs;
@@ -32,10 +34,12 @@ export interface OrbitData {
 export interface PreviewFlags {
   emptyAccount: boolean;
   outage: "none" | "wallet" | "returns";
+  /** Make the next sample-inbox sync fail, to preview the error state. */
+  failNextSync?: boolean;
 }
 
 export interface PersistedState {
-  version: 1;
+  version: 2;
   /** Date the seeded demo data was last aligned to. */
   anchor: DateOnly;
   data: OrbitData;
@@ -46,5 +50,5 @@ export const EMPTY_PREVIEW: PreviewFlags = { emptyAccount: false, outage: "none"
 
 /** A copy of `data` with no purchases or credits, for previewing first-run states. */
 export function emptied(data: OrbitData): OrbitData {
-  return { ...data, orders: [], returns: [], refunds: [], wallet: [], gifts: [], evidence: [], dismissed: [] };
+  return { ...data, orders: [], returns: [], refunds: [], wallet: [], gifts: [], saved: [], evidence: [], dismissed: [] };
 }

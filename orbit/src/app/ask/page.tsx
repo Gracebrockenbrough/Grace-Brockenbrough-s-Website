@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Mic, Search, Sparkles, X } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Mic, Search, Sparkles, X } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { RetailerMark } from "@/components/orbit/retail";
 import { ButtonLink, ExternalButton } from "@/components/ui/button";
@@ -160,15 +161,16 @@ function AskPage() {
               const retailer = retailerOf(o.data, r.retailerId);
               return (
                 <Card key={r.id} as="article" className={cn("p-4", i === 0 && "shadow-[var(--shadow-lift)]")}>
-                  <div className="flex items-center gap-2.5">
-                    <RetailerMark retailer={retailer} />
+                  <Link href={r.href} className="-m-1 flex items-center gap-2.5 rounded-xl p-1 hover:bg-ivory-deep">
+                    {r.retailerId ? <RetailerMark retailer={retailer} /> : <span className="flex size-8 items-center justify-center rounded-[10px] bg-ivory-deep"><Sparkles aria-hidden className="size-4" /></span>}
                     <p className="min-w-0 flex-1 truncate text-[16px] font-semibold">{r.title}</p>
                     {i === 0 && results.length > 1 && <span className="text-[13px] font-semibold text-muted">Best match</span>}
-                  </div>
+                    <ChevronRight aria-hidden className="size-4 shrink-0 text-muted" />
+                  </Link>
                   <p className="mt-2 text-[16px] leading-snug">{r.answer}</p>
                   {r.note && <p className="mt-1 text-[14px] text-sand-ink">{r.note}</p>}
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {r.actions.map((a, j) =>
+                    {r.actions.filter((a) => a.href !== r.href || r.actions.length === 1).map((a, j) =>
                       a.href.startsWith("http") ? (
                         <ExternalButton key={a.href} href={a.href} variant="secondary" size="sm">
                           {a.label}

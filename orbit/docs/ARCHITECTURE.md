@@ -51,11 +51,14 @@ Three tabs: **Today · Returns · Wallet**. Focused flows hide the tab bar.
 
 | Route | Screen |
 |---|---|
-| `/` | **Today**: Ask Orbit bar, money on the line, 7-day calendar strip, "Do this first", then a to-do timeline grouped Overdue / Next 3 days / This week / Coming up / Missing info |
+| `/` | **Today**: greeting, Ask Orbit, potential return value, up to three "Needs attention" items, interactive week calendar, subtle link to the shopping overview |
+| `/attention/` | Every to-do, grouped Overdue / Next 3 days / This week / Later deadlines / Deadline unknown |
 | `/ask/` | **Ask Orbit**: find purchases and credits from everyday descriptions, typed or spoken. No order number needed |
-| `/returns/` | **Returns**: at-a-glance counts (Your move · Waiting · On the way), "Do this first", compact rows by urgency; waiting and in-transit folded away |
+| `/returns/` | **Returns**: filter tabs Needs your action · Awaiting retailer · Not delivered yet (counts and value), rows grouped by urgency |
 | `/returns/history/` | Completed returns, kept items, closed windows |
-| `/returns/purchase/?id=` | Purchase detail: status and next step, items, collapsed Order details / Return policy / Receipt & emails / Return portal, delete |
+| `/insights/` | **Shopping Insights** (from Profile): month / year / custom; purchases, issued refunds, net, credit used, by category and store, data coverage |
+| `/saved/` | **Saved for Later** (from Profile): a private list with links back to the store and a note when you hold credit there |
+| `/returns/purchase/?id=` | **Order details**: product overview; return overview (current stage, verified vs estimated deadline, potential / expected / issued refund, one primary button); per-item returns; expandable return progress (8 stages), purchase details (copyable order and tracking numbers, charges, label), source emails & receipt, return policy |
 | `/returns/start/?order=&item=` · `?return=` | **Return Assistant**: 1 Choose items → 2 Details → 3 Review & approve → 4 Next steps; status view for returns already underway |
 | `/returns/label/?id=` | QR code / label, ship-by date, drop-off locations, what to bring |
 | `/returns/refund/?id=` | Refund tracking: expected vs confirmed, timeline, contact retailer, confirm receipt |
@@ -65,7 +68,7 @@ Three tabs: **Today · Returns · Wallet**. Focused flows hide the tab bar.
 | `/wallet/gift/` | Send a Gift: store → amount → recipient → message → review → confirm (demo) |
 | `/gift/claim/?id=` | Recipient view: open gift, add to Orbit Wallet |
 | `/add/` | Add a purchase: forward, paste email, upload, manual |
-| `/settings/` | Profile, email connections and consent, notifications and weekly summary, privacy and data deletion, preview tools |
+| `/settings/` | **Profile**: Shopping Insights, Saved for Later, email connections (demo / not connected / connecting / connected / syncing / sync failed / reconnection required) with retry, notifications, privacy, preview tools |
 
 Detail routes use query parameters so the app can be exported statically and records created on the device still resolve.
 
@@ -109,6 +112,10 @@ Highlights:
 
 ## 5. What's working, what's demo, what's future
 
+### One source of truth
+
+`lib/store/selectors.ts` decides every order's current stage (one of eight: decide → initiate → awaiting approval → ready to drop off → in transit → received → refund pending → refund confirmed), its next action, deadline, and amounts. Today's to-dos (`priorities.ts`), Returns rows, order details, calendar events (`calendar.ts`), Insights (`insights.ts`) and Ask Orbit (`ask.ts`) all read from it, and every row links to the record by id. Money is always labeled by kind: purchase price (actual), potential, expected, issued, or last known.
+
 ### Refunds without bank access
 
 Orbit never connects to bank accounts or card wallets. A refund has three states, and the UI names the source of each:
@@ -134,7 +141,7 @@ Store logos and brand colors are trademarks, so they arrive through a retailer p
 - Wallet: add, update balance (labeled "Updated by you"), 30-second code reveal, remove, Shop Store links to the official site.
 - Manual purchase entry, missing-delivery-date capture, delete purchase, delete all data.
 - Ask Orbit lookup; voice input where the browser supports speech recognition.
-- 37 unit tests (`npm test`).
+- 52 unit tests (`npm test`), plus a scripted click-through audit of every main interaction.
 
 ### Demo simulations (clearly labeled in the UI)
 - All people, orders, codes, balances and the "Sample inbox" are fictional. Seeded dates stay relative to today.

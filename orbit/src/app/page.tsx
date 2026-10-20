@@ -4,19 +4,16 @@ import Link from "next/link";
 import { ChevronRight, CircleCheck, Unplug } from "lucide-react";
 import { Shell, TopBar } from "@/components/layout/shell";
 import { AskBar } from "@/components/orbit/ask-bar";
-import { FocusCard } from "@/components/orbit/focus-card";
-import { TaskRow } from "@/components/orbit/task-row";
-import { WeekStrip } from "@/components/orbit/week-strip";
+import { PriorityRow } from "@/components/orbit/priority-row";
+import { WeekCalendar } from "@/components/orbit/week-calendar";
 import { ButtonLink, TextLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MoreList } from "@/components/ui/more-list";
 import { Notice } from "@/components/ui/notice";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { money, plural } from "@/lib/domain/format";
-import type { DateOnly } from "@/lib/domain/types";
-import { amountAtStake, bucketMeta, buildPriorities, groupByBucket, kindMeta } from "@/lib/intelligence/priorities";
-import { retailerOf, walletTotals } from "@/lib/store/selectors";
-import type { OrbitData } from "@/lib/store/state";
+import { calendarEvents } from "@/lib/intelligence/calendar";
+import { buildPriorities, potentialReturnValue } from "@/lib/intelligence/priorities";
+import { retailerOf } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
 function greeting(name: string) {
@@ -29,35 +26,34 @@ export default function TodayPage() {
   if (!o) return <Shell loading />;
   const { data, today, preview, profile } = o;
 
-  const todos = preview.outage === "returns" ? [] : buildPriorities(data, today);
-  const [first, ...rest] = todos;
-  const week = todos.filter((p) => p.daysLeft != null && p.daysLeft <= 7);
-  const atStake = amountAtStake(todos);
-  const weekStake = amountAtStake(week);
+  const outage = preview.outage === "returns";
+  const todos = outage ? [] : buildPriorities(data, today);
+  const top = todos.slice(0, 3);
+  const potential = potentialReturnValue(todos);
   const inbox = data.connections.find((c) => c.id === "sample_inbox");
   const isEmpty = data.orders.length === 0 && data.wallet.length === 0;
+  const inboxProblem = inbox && (inbox.status === "disconnected" || inbox.status === "sync_failed" || inbox.status === "reauth_required");
 
   return (
     <Shell>
       <TopBar />
-      <div className="pb-5 pt-3">
+      <div className="pb-4 pt-2">
         <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.025em]">{greeting(profile.firstName)}</h1>
         <p className="mt-1 text-[17px] text-muted">
-          {isEmpty
-            ? "Let's bring your purchases into Orbit."
-            : week.length
-              ? `${plural(week.length, "thing")} to do this week.`
-              : todos.length
-                ? "Nothing due this week."
-                : "You're all caught up."}
+          {isEmpty ? "Let's bring your purchases into Orbit." : todos.length ? `${plural(todos.length, "thing")} ${todos.length === 1 ? "needs" : "need"} your attention.` : "You're all caught up."}
         </p>
       </div>
 
       <AskBar />
 
-      {inbox?.status === "disconnected" && !isEmpty && (
-        <Notice tone="warning" className="mt-4" title="Email disconnected" action={<TextLink href="/settings/#email">Reconnect</TextLink>}>
-          New orders and refunds won&apos;t appear automatically.
+      {inboxProblem && !isEmpty && (
+        <Notice
+          tone="warning"
+          className="mt-4"
+          title={inbox.status === "sync_failed" ? "Email sync failed" : inbox.status === "reauth_required" ? "Email needs reconnecting" : "Email disconnected"}
+          action={<TextLink href="/settings/#email">{inbox.status === "sync_failed" ? "Retry sync" : "Reconnect"}</TextLink>}
+        >
+          New orders and refund emails won&apos;t appear until this is fixed.
         </Notice>
       )}
 
@@ -67,104 +63,65 @@ export default function TodayPage() {
             Forward an order confirmation or upload a receipt, and Orbit will track the return window for you.
           </EmptyState>
         </Card>
-      ) : preview.outage === "returns" ? (
+      ) : outage ? (
         <div className="mt-6">
-          <ErrorState title="Your to-do list is temporarily unavailable" onRetry={() => actions.setPreview({ outage: "none" })}>
+          <ErrorState title="Your to-dos are temporarily unavailable" onRetry={() => actions.setPreview({ outage: "none" })}>
             Your wallet still works. We&apos;ll bring deadlines back as soon as we reconnect.
           </ErrorState>
         </div>
-      ) : todos.length === 0 ? (
-        <Card className="mt-6 flex items-center gap-3 p-4">
-          <span className="flex size-11 items-center justify-center rounded-full bg-sage text-sage-ink">
-            <CircleCheck aria-hidden className="size-5" />
-          </span>
-          <div>
-            <p className="font-semibold">You&apos;re all caught up</p>
-            <p className="text-[15px] text-muted">No deadlines, labels or late refunds. We&apos;ll tell you when something needs you.</p>
-          </div>
-        </Card>
       ) : (
         <>
-          {/* Money on the line + the week ahead */}
-          <section aria-labelledby="stake" className="mt-6 rounded-[22px] bg-ivory-deep p-4">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p id="stake" className="text-[14px] font-semibold text-muted">Money on the line</p>
-                <p className="tabular text-[34px] font-semibold leading-none tracking-[-0.03em]">{money(atStake)}</p>
+          {potential.count > 0 && (
+            <Link href="/attention/" className="mt-5 block rounded-[20px] bg-ivory-deep px-4 py-3.5 hover:bg-[#ebe8e1]">
+              <span className="block text-[14px] font-semibold text-muted">Potential return value</span>
+              <span className="flex items-end justify-between gap-3">
+                <span className="tabular text-[30px] font-semibold leading-tight tracking-[-0.03em]">{money(potential.amount)}</span>
+                <ChevronRight aria-hidden className="mb-1.5 size-5 text-muted" />
+              </span>
+              <span className="block text-[14px] text-muted">
+                From {plural(potential.count, "purchase")} with return deadlines in the next 2 weeks.
+              </span>
+            </Link>
+          )}
+
+          <section aria-labelledby="attention" className="mt-6">
+            <div className="mb-2.5 flex items-baseline justify-between">
+              <h2 id="attention" className="text-[17px] font-semibold">
+                Needs attention
+              </h2>
+              {todos.length > top.length && <TextLink href="/attention/">See all {todos.length}</TextLink>}
+            </div>
+            {top.length ? (
+              <div className="space-y-2.5">
+                {top.map((p, i) => (
+                  <PriorityRow key={p.key} p={p} retailer={retailerOf(data, p.retailerId)} today={today} prominent={i === 0} />
+                ))}
               </div>
-              <p className="pb-0.5 text-right text-[14px] text-muted">
-                <span className="tabular font-semibold text-navy">{money(weekStake)}</span> due in 7 days
-                <br />
-                across {plural(todos.length, "to-do")}
-              </p>
-            </div>
-            <div className="mt-4">
-              <WeekStrip items={todos} today={today} />
-            </div>
+            ) : (
+              <Card className="flex items-center gap-3 p-4">
+                <span className="flex size-11 items-center justify-center rounded-full bg-sage text-sage-ink">
+                  <CircleCheck aria-hidden className="size-5" />
+                </span>
+                <p className="text-[15px] text-muted">No deadlines, labels or refunds need you right now.</p>
+              </Card>
+            )}
           </section>
 
-          {/* The single most urgent thing */}
-          <div className="mt-6">
-            <FocusCard
-              emoji={kindMeta[first.kind].emoji}
-              retailer={retailerOf(data, first.retailerId)}
-              label={kindMeta[first.kind].label.replace(/ by$/, "")}
-              title={first.title}
-              why={first.status}
-              amount={first.amount}
-              daysLeft={first.daysLeft}
-              estimated={first.estimated && first.kind !== "refund_late"}
-              action={first.action}
-            />
+          <div className="mt-8">
+            <WeekCalendar events={calendarEvents(data, today)} today={today} data={data} />
           </div>
-
-          {/* Everything else, by urgency */}
-          {groupByBucket(rest).map(({ bucket, items }) => (
-            <section key={bucket} aria-labelledby={`b-${bucket}`} className="mt-7">
-              <div className="mb-2.5 flex items-baseline justify-between gap-3">
-                <h2 id={`b-${bucket}`} className="text-[17px] font-semibold">
-                  {bucketMeta[bucket].title} <span className="tabular font-normal text-muted">· {items.length}</span>
-                </h2>
-                <span className="tabular text-[14px] text-muted">{money(amountAtStake(items))}</span>
-              </div>
-              <MoreList limit={3}>
-                {items.map((p) => (
-                  <TaskRow key={p.key} p={p} retailer={retailerOf(data, p.retailerId)} today={today} />
-                ))}
-              </MoreList>
-            </section>
-          ))}
         </>
       )}
 
-      {!isEmpty && <WalletPeek data={data} today={today} outage={preview.outage === "wallet"} />}
+      {!isEmpty && (
+        <Link href="/settings/" className="mt-8 flex min-h-16 items-center gap-3 border-t border-line pt-4 text-left">
+          <span className="min-w-0 flex-1">
+            <span className="block text-[16px] font-semibold">Your shopping overview</span>
+            <span className="block text-[14px] text-muted">Spending, credits, and things you&apos;ve saved</span>
+          </span>
+          <ChevronRight aria-hidden className="size-5 text-muted" />
+        </Link>
+      )}
     </Shell>
-  );
-}
-
-function WalletPeek({ data, today, outage }: { data: OrbitData; today: DateOnly; outage: boolean }) {
-  const t = walletTotals(data, today);
-  if (outage)
-    return (
-      <div className="mt-8">
-        <ErrorState title="Wallet is temporarily unavailable" onRetry={() => actions.setPreview({ outage: "none" })}>
-          Your returns still work. Your cards are safe.
-        </ErrorState>
-      </div>
-    );
-  return (
-    <Link href="/wallet/" className="mt-8 flex min-h-16 items-center gap-4 rounded-[18px] border border-line bg-card px-4 py-3 shadow-[var(--shadow-card)] hover:bg-ivory-deep">
-      <span aria-hidden className="flex size-11 items-center justify-center rounded-[14px] bg-terracotta-soft text-[21px]">
-        💳
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-semibold text-muted">Wallet</span>
-        <span className="block text-[16px] font-semibold">
-          <span className="tabular">{money(t.total)}</span> to spend at {plural(t.retailers, "store")}
-        </span>
-        {t.unverified.length > 0 && <span className="block text-[13px] text-sand-ink">{t.unverified.length} balance not verified recently</span>}
-      </span>
-      <ChevronRight aria-hidden className="size-5 text-muted/60" />
-    </Link>
   );
 }

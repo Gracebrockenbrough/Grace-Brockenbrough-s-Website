@@ -81,7 +81,7 @@ describe("priorities", () => {
   it("orders the to-do list by bucket, then due date, then money at stake", () => {
     const p = buildPriorities(data, TODAY);
     expect(p.map((x) => `${x.bucket}:${x.retailerId}:${x.kind}`)).toEqual([
-      "overdue:sephora:refund_late",
+      "overdue:sephora:refund_check",
       "soon:reformation:return_deadline",
       "week:madewell:drop_off",
       "later:aritzia:credit_expiring",
@@ -107,7 +107,7 @@ describe("priorities", () => {
 
   it("respects notification preferences", () => {
     const p = buildPriorities(data, TODAY, { ...data.prefs, refunds: false });
-    expect(p.find((x) => x.kind === "refund_late")).toBeUndefined();
+    expect(p.find((x) => x.kind === "refund_check")).toBeUndefined();
   });
 
   it("writes a calm weekly summary", () => {
@@ -120,7 +120,7 @@ describe("priorities", () => {
       "Today",
       "Tomorrow",
       "9 days",
-      "No date yet",
+      "Deadline unknown",
     ]);
   });
 });

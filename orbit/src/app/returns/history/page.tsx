@@ -2,30 +2,31 @@
 
 import { Archive } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
-import { ReturnRow } from "@/components/orbit/return-row";
+import { OrderRow } from "@/components/orbit/order-row";
 import { EmptyState } from "@/components/ui/states";
-import { returnTasks } from "@/lib/store/selectors";
+import { orderViews } from "@/lib/store/selectors";
 import { useOrbit } from "@/lib/store/store";
 
 export default function HistoryPage() {
   const o = useOrbit();
   if (!o) return <Shell loading />;
-  const done = returnTasks(o.data, o.today)
-    .filter((t) => t.group === "history")
-    .sort((a, b) => (b.view.order.purchasedAt ?? "").localeCompare(a.view.order.purchasedAt ?? ""));
+  const done = orderViews(o.data, o.today)
+    .filter((v) => v.current.group === "history")
+    .sort((a, b) => (b.order.purchasedAt ?? "").localeCompare(a.order.purchasedAt ?? ""));
   return (
     <Shell>
-      <BackBar fallback="/returns/" />
-      <h1 className="pb-1 pt-2 text-[28px] font-semibold tracking-[-0.02em]">History</h1>
-      <p className="pb-5 text-[16px] text-muted">Finished returns, things you kept, and windows that closed.</p>
+      <BackBar fallback="/returns/" title="Completed" />
+      <p className="pb-5 pt-1 text-[16px] text-muted">Finished returns, things you kept, and return windows that closed.</p>
       {done.length ? (
-        <div className="space-y-2">
-          {done.map((t) => (
-            <ReturnRow key={t.view.order.id} t={t} showAction={false} />
+        <div className="space-y-2.5">
+          {done.map((v) => (
+            <OrderRow key={v.order.id} v={v} showAction={false} />
           ))}
         </div>
       ) : (
-        <EmptyState icon={<Archive aria-hidden />} title="Nothing here yet">Completed returns will show up here.</EmptyState>
+        <EmptyState icon={<Archive aria-hidden />} title="Nothing here yet">
+          Completed returns will show up here.
+        </EmptyState>
       )}
     </Shell>
   );

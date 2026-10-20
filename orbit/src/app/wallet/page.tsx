@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Gift, Plus, WalletCards } from "lucide-react";
 import { PageHeader, Shell } from "@/components/layout/shell";
-import { WalletCardFace } from "@/components/orbit/wallet-card";
+import { WalletTile } from "@/components/orbit/wallet-tile";
 import { ButtonLink, IconLink } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
 import { EmptyState, ErrorState } from "@/components/ui/states";
@@ -13,9 +13,6 @@ import type { WalletItem } from "@/lib/domain/types";
 import { isExpired, retailerOf, walletTotals } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
-/** Visible strip of each stacked card, in px. */
-const STRIP = 84;
-const CARD_H = 212;
 
 export default function WalletPage() {
   const o = useOrbit();
@@ -66,7 +63,7 @@ export default function WalletPage() {
           <section aria-label="Total known balance" className="pb-6">
             <p className="text-[15px] text-muted">Total known balance</p>
             <p className="tabular mt-0.5 text-[40px] font-semibold leading-none tracking-[-0.03em]">{money(t.total)}</p>
-            <p className="mt-2 text-[15px] text-muted">Across {plural(t.retailers, "retailer")}. Each balance can only be spent at its own store.</p>
+            <p className="mt-2 text-[15px] text-muted">Across {plural(t.retailers, "store")}. Each balance can only be spent at its own store, so this isn&apos;t cash.</p>
             {t.unverified.length > 0 && (
               <Notice tone="warning" className="mt-4">
                 {t.unverified.map((w) => retailerOf(data, w.retailerId).name).join(", ")} {t.unverified.length === 1 ? "balance hasn't" : "balances haven't"} been verified recently.
@@ -74,17 +71,12 @@ export default function WalletPage() {
             )}
           </section>
 
-          <ul aria-label="Cards" className="relative">
-            {active.map((w, i) => {
-              const r = retailerOf(data, w.retailerId);
-              return (
-                <li key={w.id} className="relative transition-transform duration-200 hover:-translate-y-1" style={{ marginTop: i ? -(CARD_H - STRIP) : 0, zIndex: i + 1 }}>
-                  <Link href={`/wallet/card/?id=${w.id}`} aria-label={`${r.name}, ${money(w.balance)}`} className="block rounded-[20px]">
-                    <WalletCardFace item={w} retailer={r} today={today} className="h-[212px] aspect-auto" />
-                  </Link>
-                </li>
-              );
-            })}
+          <ul aria-label="Cards" className="grid grid-cols-2 gap-3">
+            {active.map((w) => (
+              <li key={w.id}>
+                <WalletTile item={w} retailer={retailerOf(data, w.retailerId)} today={today} />
+              </li>
+            ))}
           </ul>
         </>
       )}

@@ -158,6 +158,8 @@ export interface Order {
   currency: Currency;
   items: OrderItem[];
   tracking: { carrier: string; number: string } | null;
+  /** Money breakdown from the order email. Each is null when the email didn't say. */
+  charges: { subtotal: number | null; shipping: number | null; tax: number | null; discount: number | null; total: number | null };
   /** A deadline the retailer itself communicated (e.g. in the order email). */
   statedReturnDeadline: { date: DateOnly; evidenceId: string } | null;
   evidenceIds: string[];
@@ -268,6 +270,8 @@ export interface WalletItem {
   transferable: Tri;
   from: string | null;
   sourceOrderId: string | null;
+  /** Recorded balance changes, newest last. Spending is recorded, never inferred. */
+  history: { at: DateOnly; amount: number; label: string }[];
   addedAt: Timestamp;
   demo: boolean;
 }
@@ -293,11 +297,28 @@ export interface GiftTransfer {
 
 export type ConnectorId = "gmail" | "outlook" | "sample_inbox";
 
+export type ConnectionStatus = "connected" | "disconnected" | "unavailable" | "connecting" | "syncing" | "sync_failed" | "reauth_required";
+
 export interface ConnectedAccount {
   id: ConnectorId;
-  status: "connected" | "disconnected" | "unavailable";
+  status: ConnectionStatus;
   address: string | null;
+  /** When the last sync finished successfully. */
   lastSyncedAt: Timestamp | null;
+  lastError?: string | null;
+}
+
+// ─── Saved for later ─────────────────────────────────────────────────────
+
+/** A personal list. Never populated by Orbit, never sponsored. */
+export interface SavedProduct {
+  id: string;
+  name: string;
+  retailerId: string;
+  url: string;
+  imageUrl: string | null;
+  note: string | null;
+  addedAt: Timestamp;
 }
 
 export interface NotificationPrefs {

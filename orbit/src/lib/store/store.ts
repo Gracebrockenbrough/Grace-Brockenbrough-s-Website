@@ -7,6 +7,7 @@
 import { useSyncExternalStore } from "react";
 import { daysBetween, toDateOnly } from "../domain/dates";
 import type {
+  ConnectionStatus,
   ConnectorId,
   DateOnly,
   DropOffKind,
@@ -30,7 +31,7 @@ import type { Extraction, RawMessage } from "../ingestion/types";
 import { shiftSeedDates } from "./shift";
 import { EMPTY_PREVIEW, emptied, type OrbitData, type PersistedState, type PreviewFlags } from "./state";
 
-const KEY = "orbit:v1";
+const KEY = "orbit:v2";
 const listeners = new Set<() => void>();
 let state: PersistedState | null = null;
 
@@ -39,7 +40,7 @@ const now = () => new Date().toISOString();
 export const today = (): DateOnly => toDateOnly(new Date());
 
 function fresh(): PersistedState {
-  return { version: 1, anchor: today(), data: buildDemoData(today()), preview: EMPTY_PREVIEW };
+  return { version: 2, anchor: today(), data: buildDemoData(today()), preview: EMPTY_PREVIEW };
 }
 
 function load(): PersistedState {
@@ -47,7 +48,7 @@ function load(): PersistedState {
     const raw = window.localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as PersistedState;
-      if (parsed.version === 1) {
+      if (parsed.version === 2) {
         const shift = daysBetween(parsed.anchor, today());
         return { ...parsed, anchor: today(), data: shiftSeedDates(parsed.data, shift), preview: parsed.preview ?? EMPTY_PREVIEW };
       }
@@ -383,16 +384,26 @@ export const actions = {
   },
 
   // ── Wallet ───────────────────────────────────────────────────────────
-  addWalletItem(item: Omit<WalletItem, "id" | "addedAt" | "demo" | "currency">): string {
+  addWalletItem(item: Omit<WalletItem, "id" | "addedAt" | "demo" | "currency" | "history">): string {
     const id = uid("w");
-    setData((d) => ({ ...d, wallet: [...d.wallet, { ...item, id, currency: "USD", addedAt: now(), demo: false }] }));
+    const history = item.balance != null ? [{ at: today(), amount: item.balance, label: "Added to Orbit" }] : [];
+    setData((d) => ({ ...d, wallet: [...d.wallet, { ...item, id, currency: "USD", history, addedAt: now(), demo: false }] }));
     return id;
   },
 
   updateBalance(id: string, balance: number) {
     setData((d) => ({
       ...d,
-      wallet: d.wallet.map((w) => (w.id === id ? { ...w, balance, balanceStatus: { kind: "user_reported", at: now() } } : w)),
+      wallet: d.wallet.map((w) =>
+        w.id === id
+          ? {
+              ...w,
+              balance,
+              balanceStatus: { kind: "user_reported", at: now() },
+              history: w.balance != null && w.balance !== balance ? [...w.history, { at: today(), amount: balance - w.balance, label: "Balance updated by you" }] : w.history,
+            }
+          : w,
+      ),
     }));
   },
 
@@ -427,6 +438,7 @@ export const actions = {
       transferable: false,
       from: g.senderName,
       sourceOrderId: null,
+      history: [{ at: today(), amount: g.amount, label: `Gift from ${g.senderName} (demo)` }],
       addedAt: now(),
       demo: true,
     };
@@ -439,18 +451,46 @@ export const actions = {
   },
 
   // ── Connections, notifications, data ─────────────────────────────────
-  setConnection(id: ConnectorId, status: "connected" | "disconnected") {
+  setConnection(id: ConnectorId, status: ConnectionStatus, lastError: string | null = null) {
     setData((d) => ({
       ...d,
-      connections: d.connections.map((c) => (c.id === id ? { ...c, status, lastSyncedAt: status === "connected" ? now() : c.lastSyncedAt } : c)),
+      connections: d.connections.map((c) => (c.id === id ? { ...c, status, lastError, lastSyncedAt: status === "connected" && !c.lastSyncedAt ? now() : c.lastSyncedAt } : c)),
     }));
   },
 
-  /** Imports any sample-inbox messages not yet seen. Clearly a demo inbox, never a live account. */
-  syncSampleInbox(): ImportResult[] {
+  /**
+   * Syncs the clearly labeled sample inbox. It goes through the same states a real
+   * mailbox would (syncing, failed, connected), but only ever reads fictional emails.
+   */
+  async syncSampleInbox(): Promise<ImportResult[] | null> {
+    actions.setConnection("sample_inbox", "syncing");
+    await new Promise((r) => setTimeout(r, 900));
+    if (get().preview.failNextSync) {
+      set((s) => ({ ...s, preview: { ...s.preview, failNextSync: false } }));
+      actions.setConnection("sample_inbox", "sync_failed", "The mail server didn't respond. Nothing was changed.");
+      return null;
+    }
     const results = sampleMessages(today()).map((m) => actions.importMessage({ ...m, channel: "sample_inbox" }));
-    setData((d) => ({ ...d, connections: d.connections.map((c) => (c.id === "sample_inbox" ? { ...c, lastSyncedAt: now() } : c)) }));
+    setData((d) => ({ ...d, connections: d.connections.map((c) => (c.id === "sample_inbox" ? { ...c, status: "connected", lastError: null, lastSyncedAt: now() } : c)) }));
     return results;
+  },
+
+  async connectSampleInbox() {
+    actions.setConnection("sample_inbox", "connecting");
+    await new Promise((r) => setTimeout(r, 700));
+    actions.setConnection("sample_inbox", "connected");
+  },
+
+  // ── Saved for later ──────────────────────────────────────────────────
+  addSaved(input: { name: string; retailerName: string; url: string; imageUrl: string | null; note: string | null }): string {
+    const retailerId = actions.ensureRetailer(input.retailerName);
+    const id = uid("s");
+    setData((d) => ({ ...d, saved: [{ id, name: input.name.trim(), retailerId, url: input.url.trim(), imageUrl: input.imageUrl, note: input.note, addedAt: now() }, ...d.saved] }));
+    return id;
+  },
+
+  removeSaved(id: string) {
+    setData((d) => ({ ...d, saved: d.saved.filter((x) => x.id !== id) }));
   },
 
   setPrefs(patch: Partial<NotificationPrefs>) {

@@ -52,6 +52,7 @@ export function buildBusyMonth(today: DateOnly): { orders: Order[]; returns: Ret
       currency: "USD",
       items: [{ id: itemId, name, variant, quantity: 1, unitPrice: price, category, finalSale: false }],
       tracking: null,
+      charges: { subtotal: price, shipping: 0, tax: null, discount: null, total: null },
       statedReturnDeadline: null,
       evidenceIds: [],
       fieldSources: {},

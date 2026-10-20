@@ -31,6 +31,7 @@ export function shiftSeedDates(data: OrbitData, days: number): OrbitData {
     returns: pick(data.returns),
     refunds: pick(data.refunds),
     wallet: pick(data.wallet),
+    saved: pick(data.saved ?? []),
     evidence: pick(data.evidence),
     connections: shiftDeep(data.connections, days),
     dismissed: shiftDeep(data.dismissed, days),

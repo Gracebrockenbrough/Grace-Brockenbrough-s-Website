@@ -82,6 +82,7 @@ export function mergeExtraction(order: Order, x: Extraction, evidenceId: string,
     }));
     next.fieldSources.items = source(x.items[0], evidenceId);
   }
+  if (x.total && next.charges.total == null) next.charges = { ...next.charges, total: x.total.value };
   if (x.tracking && !order.tracking) next.tracking = { carrier: x.tracking.value.carrier ?? "Carrier unknown", number: x.tracking.value.number };
   if (x.statedReturnDeadline) next.statedReturnDeadline = { date: x.statedReturnDeadline.value, evidenceId };
 
@@ -102,6 +103,7 @@ export function blankOrder(id: string, retailerId: string, createdAt: string): O
     currency: "USD",
     items: [],
     tracking: null,
+    charges: { subtotal: null, shipping: null, tax: null, discount: null, total: null },
     statedReturnDeadline: null,
     evidenceIds: [],
     fieldSources: {},

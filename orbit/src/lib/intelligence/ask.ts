@@ -11,9 +11,11 @@ import { daysBetween, formatDate } from "../domain/dates";
 import { creditTypeLabel, money } from "../domain/format";
 import type { DateOnly, ItemCategory } from "../domain/types";
 import { orderView, retailerOf, type OrderView } from "../store/selectors";
+import { categoryLabel, insights, rangeFor } from "./insights";
+import { buildPriorities, dueDateText, kindMeta } from "./priorities";
 import type { OrbitData } from "../store/state";
 
-export type AskIntent = "deadline" | "return" | "label" | "refund" | "credit" | "find";
+export type AskIntent = "deadline" | "return" | "label" | "refund" | "credit" | "find" | "agenda" | "spend";
 
 export interface AskAction {
   label: string;
@@ -25,6 +27,8 @@ export interface AskResult {
   kind: "item" | "credit";
   retailerId: string;
   title: string;
+  /** The record this result is about. */
+  href: string;
   /** The plain-language answer. */
   answer: string;
   /** Extra context, e.g. why this is only a close match. */
@@ -88,10 +92,12 @@ const nounOf = (word: string) => Object.entries(NOUNS).find(([, v]) => v.include
 
 export function detectIntent(q: string): AskIntent {
   const s = q.toLowerCase();
+  if (/\bhow much\b.*\b(spend|spent|spending)\b|\bspending\b/.test(s)) return "spend";
+  if (/\b(what|which|any|show)\b.*\b(returns?|deadlines?|due)\b.*\b(this week|today|soon|upcoming|coming up)\b/.test(s)) return "agenda";
   if (/\b(when|deadline|last day|how long|due|too late|still return)\b/.test(s)) return "deadline";
   if (/\b(label|qr|drop ?off|code to)\b/.test(s)) return "label";
   if (/\b(refund|money back|paid back|reimburse)/.test(s)) return "refund";
-  if (/\b(gift ?card|credit|balance|how much .* (have|left)|store money)\b/.test(s)) return "credit";
+  if (/\b(gift ?cards?|credits?|balances?|how much .* (have|left)|store money)\b/.test(s)) return "credit";
   if (/\b(return|send (it )?back|take (it )?back)\b/.test(s)) return "return";
   return "find";
 }
@@ -102,9 +108,12 @@ function itemAnswer(v: OrderView, itemId: string, today: DateOnly, intent: AskIn
   const r = a.activeReturn;
   let answer: string;
 
-  if (r?.status === "label_ready") {
+  if (intent === "label" && !r?.artifacts.length && a.stage === "to_decide") {
+    answer = `There's no label yet. Start the return and ${v.retailer.name} will send one.`;
+    actions.push({ label: "Start Return", href: `/returns/start/?order=${v.order.id}&item=${itemId}` });
+  } else if (r?.status === "label_ready") {
     answer = r.shipBy ? `Your return label is ready. Drop it off by ${formatDate(r.shipBy, today)}.` : "Your return label is ready to drop off.";
-    actions.push({ label: "Show QR code", href: `/returns/label/?id=${r.id}` });
+    actions.push({ label: r.artifacts.some((x) => x.kind === "qr_code") ? "Show QR Code" : "View Label", href: `/returns/label/?id=${r.id}` });
   } else if (r && v.refund && (r.status === "received" || r.status === "shipped")) {
     const late = v.refund.expected?.by ? daysBetween(v.refund.expected.by, today) : 0;
     answer =
@@ -116,11 +125,17 @@ function itemAnswer(v: OrderView, itemId: string, today: DateOnly, intent: AskIn
     answer = r.status === "prepared" ? "You started a return but haven't sent it to the store yet." : "Your return is in progress.";
     actions.push({ label: "See return", href: `/returns/start/?return=${r.id}` });
   } else if (a.stage === "completed") {
-    answer = "You've already returned this.";
+    const f = v.refund;
+    answer = f?.confirmed
+      ? f.confirmed.by === "retailer_email"
+        ? `${v.retailer.name} issued ${f.destination === "store_credit" ? "store credit" : "your refund"} of ${money(f.confirmed.amount)} on ${formatDate(f.confirmed.at, today)}, according to their email.${f.destination === "store_credit" ? "" : f.arrivedAt ? " You confirmed it arrived." : " Orbit can't see your bank, so check your statement to confirm it arrived."}`
+        : `You confirmed the refund of ${money(f.confirmed.amount)} arrived.`
+      : "You've already returned this.";
+    if (f) actions.push({ label: "View Refund", href: `/returns/refund/?id=${f.id}` });
   } else if (a.stage === "kept") {
     answer = "You marked this as kept.";
   } else if (a.stage === "on_the_way") {
-    answer = "It hasn't been delivered yet. The return window starts when it arrives.";
+    answer = `Not delivered yet${v.order.shippedAt ? `. Shipped ${formatDate(v.order.shippedAt, today)}${v.order.tracking ? ` via ${v.order.tracking.carrier}` : ""}` : ""}. The return window starts when it arrives.`;
   } else {
     const d = a.deadline;
     if (d.kind === "confirmed" || d.kind === "estimated") {
@@ -132,9 +147,10 @@ function itemAnswer(v: OrderView, itemId: string, today: DateOnly, intent: AskIn
     } else {
       answer = "We don't know the return deadline yet. Adding the delivery date will fix that.";
     }
+    if (intent === "find" && v.order.deliveredAt) answer = `Delivered ${formatDate(v.order.deliveredAt, today)}. ${answer}`;
     if (a.stage === "to_decide") actions.push({ label: "Start return", href: `/returns/start/?order=${v.order.id}&item=${itemId}` });
   }
-  if (intent === "find" || actions.length === 0 || intent === "deadline") actions.push({ label: "View order", href: `/returns/purchase/?id=${v.order.id}` });
+  if (actions.length === 0) actions.push({ label: "View Order", href: `/returns/purchase/?id=${v.order.id}` });
   return { answer, actions };
 }
 
@@ -145,6 +161,48 @@ export function ask(query: string, data: OrbitData, today: DateOnly): { intent: 
   const nouns = words.map(nounOf).filter(Boolean) as string[];
   const recentDays = /yesterday|this week|last week|few days/.test(query.toLowerCase()) ? 14 : /last month|few weeks|recently/.test(query.toLowerCase()) ? 45 : null;
   const results: AskResult[] = [];
+
+  if (intent === "agenda") {
+    const week = buildPriorities(data, today).filter((p) => p.daysLeft != null && p.daysLeft <= 7);
+    return {
+      intent,
+      results: week.map((p, i) => ({
+        id: p.key,
+        kind: "item",
+        retailerId: p.retailerId,
+        title: p.title,
+        href: p.detailHref,
+        answer: `${kindMeta[p.kind].label}. ${dueDateText(p, today) ?? ""}${p.amount != null ? ` · ${money(p.amount)}` : ""}.`,
+        note: p.estimated && p.kind === "return_deadline" ? "Estimated date." : null,
+        actions: [p.action],
+        score: 100 - i,
+      })),
+    };
+  }
+
+  if (intent === "spend") {
+    const year = !/\bmonth\b/.test(query.toLowerCase());
+    const r = insights(data, rangeFor(year ? "year" : "month", today));
+    const cat = Object.entries(CATEGORY_WORDS).find(([, ws]) => words.some((w) => ws.includes(w)))?.[0] ?? (nouns.length ? null : null);
+    const amount = cat ? r.byCategory.find((c) => c.key === cat)?.amount ?? 0 : r.gross;
+    const what = cat ? `on ${categoryLabel[cat as ItemCategory].toLowerCase()}` : "in total";
+    return {
+      intent,
+      results: [
+        {
+          id: "spend",
+          kind: "item",
+          retailerId: "",
+          title: `Spending ${year ? "this year" : "this month"}`,
+          href: "/insights/",
+          answer: `You've recorded ${money(amount)} ${what} ${year ? "this year" : "this month"}, before tax and shipping. Confirmed refunds aren't subtracted here.`,
+          note: "Only includes orders Orbit knows about.",
+          actions: [{ label: "Open Shopping Insights", href: "/insights/" }],
+          score: 100,
+        },
+      ],
+    };
+  }
 
   for (const order of data.orders) {
     const retailer = retailerOf(data, order.retailerId);
@@ -181,6 +239,7 @@ export function ask(query: string, data: OrbitData, today: DateOnly): { intent: 
         kind: "item",
         retailerId: order.retailerId,
         title: `${item.name}${item.variant ? ` · ${item.variant}` : ""}`,
+        href: `/returns/purchase/?id=${order.id}`,
         answer: `${retailer.name}, ${ordered}${order.orderNumber ? `, order ${order.orderNumber}` : ""}. ${answer}`,
         note,
         actions,
@@ -201,6 +260,7 @@ export function ask(query: string, data: OrbitData, today: DateOnly): { intent: 
       kind: "credit",
       retailerId: w.retailerId,
       title: `${r.name} ${creditTypeLabel[w.type].toLowerCase()}`,
+      href: `/wallet/card/?id=${w.id}`,
       answer: `You have ${money(w.balance)} to spend at ${r.name}${w.balanceStatus.kind === "verified" ? "" : " (balance not verified recently)"}.${w.expiration.kind === "date" ? ` Use it by ${formatDate(w.expiration.date, today)}.` : ""}`,
       note: null,
       actions: [
@@ -215,8 +275,10 @@ export function ask(query: string, data: OrbitData, today: DateOnly): { intent: 
 }
 
 export const ASK_EXAMPLES = [
-  "I ordered a red dress, when do I return it?",
-  "the jeans I need to drop off",
-  "did I get my Sephora money back?",
-  "how much gift card money do I have?",
+  "Where is my black dress?",
+  "What returns do I have this week?",
+  "Find the label for my jeans",
+  "Did Sephora issue my refund?",
+  "What gift cards do I have?",
+  "How much did I spend on clothing this year?",
 ];

@@ -111,8 +111,8 @@ function LabelView() {
             ))}
             <p className="px-4 py-2.5 text-[13px] text-muted">Example locations for this demo.</p>
           </Card>
-          <ExternalButton href={`https://www.google.com/maps/search/${encodeURIComponent(`${carrier} drop off near me`)}`} variant="secondary" size="md" className="mt-3 w-full">
-            Find {carrier} Locations Nearby
+          <ExternalButton href={`https://www.google.com/maps/search/${encodeURIComponent(request.dropOff === "store" ? `${retailer.name} store near me` : `${carrier} drop off near me`)}`} variant="secondary" size="md" className="mt-3 w-full">
+            Get Directions
           </ExternalButton>
         </section>
       )}

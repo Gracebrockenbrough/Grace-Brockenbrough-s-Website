@@ -7,6 +7,7 @@ import { BackBar, Shell } from "@/components/layout/shell";
 import { BalanceStatus, balanceStatusText } from "@/components/orbit/balance";
 import { CopyRow } from "@/components/orbit/copy";
 import { WalletCardFace } from "@/components/orbit/wallet-card";
+import { QrCode } from "@/components/orbit/qr";
 import { Button, ButtonLink, ExternalButton, TextLink } from "@/components/ui/button";
 import { Card, Row, Rows } from "@/components/ui/card";
 import { Disclosure } from "@/components/ui/disclosure";
@@ -30,6 +31,7 @@ function CardDetail() {
   const [balanceSheet, setBalanceSheet] = useState(false);
   const [removeSheet, setRemoveSheet] = useState(false);
   const [newBalance, setNewBalance] = useState("");
+  const [noCode, setNoCode] = useState(false);
 
   // Codes hide again automatically.
   useEffect(() => {
@@ -64,7 +66,10 @@ function CardDetail() {
       </div>
 
       <div className="mt-5 text-center">
-        <p className="text-[15px] text-muted">{creditTypeLabel[item.type]}{item.from ? ` from ${item.from}` : ""}</p>
+        <p className="text-[15px] text-muted">
+          {creditTypeLabel[item.type]}
+          {item.from ? ` from ${item.from}` : ""} · {item.balanceStatus.kind === "verified" ? "Balance" : "Last known balance"}
+        </p>
         <p className="tabular text-[40px] font-semibold leading-tight tracking-[-0.03em]">{money(item.balance)}</p>
         <BalanceStatus item={item} today={today} />
       </div>
@@ -81,45 +86,66 @@ function CardDetail() {
         </Notice>
       )}
 
-      <div className="mt-5">
+      <div className="mt-5 grid grid-cols-2 gap-2">
         {retailer.websiteUrl ? (
-          <ExternalButton href={retailer.websiteUrl}>Shop {retailer.name}</ExternalButton>
+          <ExternalButton href={retailer.websiteUrl} size="md" className="w-full px-3">
+            Shop {retailer.name}
+          </ExternalButton>
         ) : (
-          <Notice tone="info">We don&apos;t have {retailer.name}&apos;s website on file.</Notice>
-        )}
-      </div>
-
-      {/* Code, hidden by default */}
-      <Card className="mt-5 px-4 pb-2 pt-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">{item.type === "promotional_credit" ? "Promo code" : "Card number"}</p>
-          {revealed && <p className="tabular text-[13px] text-muted">Hides in {revealLeft}s</p>}
-        </div>
-        {item.secret ? (
-          revealed ? (
-            <div className="divide-y divide-line">
-              <CopyRow label={item.type === "promotional_credit" ? "Code" : "Number"} value={item.secret.code} />
-              {item.secret.pin && <CopyRow label="PIN" value={item.secret.pin} />}
-            </div>
-          ) : (
-            <div className="flex min-h-14 items-center justify-between gap-3 py-2">
-              <p className="tabular text-[17px] tracking-[0.2em] text-muted">•••• •••• {item.secret.code.replace(/\s/g, "").slice(-4)}</p>
-              <Button variant="secondary" size="sm" icon={<Eye aria-hidden className="size-4" />} onClick={() => setConfirmReveal(true)}>
-                Reveal
-              </Button>
-            </div>
-          )
-        ) : (
-          <p className="py-3 text-[15px] text-muted">No code saved. {item.redemption}</p>
-        )}
-        {revealed && (
-          <Button variant="ghost" size="sm" className="mb-2 w-full" icon={<EyeOff aria-hidden className="size-4" />} onClick={() => setRevealLeft(0)}>
-            Hide Now
+          <Button size="md" disabled className="w-full">
+            No website on file
           </Button>
         )}
-      </Card>
+        <Button
+          variant="secondary"
+          size="md"
+          className="w-full"
+          icon={revealed ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
+          onClick={() => (revealed ? setRevealLeft(0) : item.secret ? setConfirmReveal(true) : setNoCode(true))}
+        >
+          {revealed ? "Hide Code" : "Show Code"}
+        </Button>
+      </div>
+
+      {revealed && item.secret && (
+        <Card className="animate-in mt-4 px-4 pb-3 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">{item.type === "promotional_credit" ? "Promo code" : "Card number"}</p>
+            <p className="tabular text-[13px] text-muted">Hides in {revealLeft}s</p>
+          </div>
+          <div className="mx-auto mt-3 w-40">
+            <QrCode value={item.secret.code.replace(/\s/g, "")} label={`Scannable code for ${retailer.name}`} />
+          </div>
+          {item.demo && <p className="mt-2 text-center text-[13px] text-muted">Demo code. It won&apos;t work at checkout.</p>}
+          <div className="divide-y divide-line">
+            <CopyRow label={item.type === "promotional_credit" ? "Code" : "Number"} value={item.secret.code} />
+            {item.secret.pin && <CopyRow label="PIN" value={item.secret.pin} />}
+          </div>
+          <p className="mt-1 text-[14px] text-muted">{item.redemption}</p>
+        </Card>
+      )}
 
       <Card className="mt-5 overflow-hidden">
+        <Disclosure title="Transaction history" summary={item.history.length ? `${item.history.length} recorded` : "None recorded"}>
+          {item.history.length === 0 ? (
+            <p className="text-[15px] text-muted">No balance changes recorded. Spending at the store only shows here if you update the balance or the store emails you.</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {[...item.history].reverse().map((h, i) => (
+                <li key={i} className="flex items-center justify-between gap-3 py-2.5">
+                  <span>
+                    <span className="block text-[15px]">{h.label}</span>
+                    <span className="block text-[13px] text-muted">{formatDate(h.at, today)}</span>
+                  </span>
+                  <span className={`tabular font-semibold ${h.amount < 0 ? "" : "text-sage-ink"}`}>
+                    {h.amount < 0 ? "−" : "+"}
+                    {money(Math.abs(h.amount))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Disclosure>
         <Disclosure title="How to use it" summary={item.redemption.split(".")[0]}>
           <p className="text-[15px]">{item.redemption}</p>
         </Disclosure>
@@ -143,7 +169,7 @@ function CardDetail() {
             </ul>
           )}
         </Disclosure>
-        <Disclosure title="Balance history" summary={status.text}>
+        <Disclosure title="Balance & verification" summary={status.text}>
           <Rows>
             <Row label="Balance">{money(item.balance)}</Row>
             <Row label="Status">{status.text}</Row>
@@ -180,6 +206,10 @@ function CardDetail() {
         }
       >
         <p className="text-[14px] text-muted">In the full app, revealing a code requires Face ID, Touch ID or your device passcode, and codes are stored encrypted.</p>
+      </Sheet>
+
+      <Sheet open={noCode} onOpenChange={setNoCode} title="No code saved" description={`This ${creditTypeLabel[item.type].toLowerCase()} doesn't have a code in Orbit.`}>
+        <p className="text-[15px]">{item.redemption}</p>
       </Sheet>
 
       <Sheet

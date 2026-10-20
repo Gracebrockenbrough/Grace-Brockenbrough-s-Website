@@ -2,22 +2,22 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CalendarDays, FileText, Link2, ScrollText, Trash } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, Check, ChevronRight, Copy, FileText, ListChecks, Mail, ScrollText, Trash } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
-import { DeadlineLine } from "@/components/orbit/deadline";
 import { ProductThumb } from "@/components/orbit/retail";
 import { Button, ButtonLink, ExternalButton, TextLink } from "@/components/ui/button";
 import { Card, Row, Rows } from "@/components/ui/card";
+import { cn } from "@/components/ui/cn";
 import { Disclosure } from "@/components/ui/disclosure";
 import { Field, Input } from "@/components/ui/form";
 import { Notice, Tag } from "@/components/ui/notice";
 import { Sheet } from "@/components/ui/sheet";
 import { EmptyState } from "@/components/ui/states";
 import { formatDate } from "@/lib/domain/dates";
-import { capabilityLabel, dropOffLabel, money, orderTotal, refundMethodLabel } from "@/lib/domain/format";
+import { dropOffLabel, money, orderTotal, refundMethodLabel } from "@/lib/domain/format";
 import type { DateOnly, Evidence, FieldSource, ReturnPolicy } from "@/lib/domain/types";
-import type { Deadline } from "@/lib/intelligence/returns";
-import { orderView, type OrderView } from "@/lib/store/selectors";
+import { STAGES, orderView, refundOutlook, stageIndex, type MoneyKind } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
 const evidenceLabel: Record<Evidence["kind"], string> = {
@@ -34,38 +34,48 @@ const evidenceLabel: Record<Evidence["kind"], string> = {
 };
 
 function sourceHint(src: FieldSource | undefined, evidence: Evidence[]) {
-  if (!src) return "Not found in your emails";
+  if (!src) return undefined;
   if (src.method === "user") return "Added by you";
   const ev = evidence.find((e) => e.id === src.evidenceId);
-  const conf = src.confidence === "high" ? "" : ` · ${src.confidence} confidence`;
-  return `${ev ? evidenceLabel[ev.kind] : "Email"}${conf}`;
+  return `${ev ? evidenceLabel[ev.kind] : "Email"}${src.confidence === "high" ? "" : ` · ${src.confidence} confidence`}`;
 }
 
-function Unknown() {
-  return <span className="font-normal text-muted">Unknown</span>;
+function Missing({ children = "Not in your emails" }: { children?: string }) {
+  return <span className="font-normal text-muted">{children}</span>;
 }
 
-const tri = (v: boolean | null, yes: string, no: string) => (v == null ? <Unknown /> : v ? yes : no);
-
-function DeadlineExplainer({ deadline, view, today }: { deadline: Deadline | null; view: OrderView; today: DateOnly }) {
-  if (!deadline) return null;
-  const name = view.retailer.name;
-  switch (deadline.kind) {
-    case "confirmed":
-      return <p className="mt-2 text-[15px] text-muted">Confirmed in your order email from {name}.</p>;
-    case "estimated":
-      return (
-        <p className="mt-2 text-[15px] text-muted">
-          Estimated from {name}&apos;s standard policy. Your item may have different terms, so confirm on {name}&apos;s site if you&apos;re close to the deadline.
-          {deadline.staleAfter && " This policy hasn't been re-checked recently."}
-        </p>
-      );
-    case "not_started":
-      return <p className="mt-2 text-[15px] text-muted">{deadline.reason}</p>;
-    case "unknown":
-      return <p className="mt-2 text-[15px] text-muted">{deadline.reason} We won&apos;t guess a date.</p>;
-  }
+function CopyValue({ value, label }: { value: string; label: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="tabular">{value}</span>
+      <button
+        type="button"
+        aria-label={`Copy ${label}`}
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(value);
+            setDone(true);
+            setTimeout(() => setDone(false), 1500);
+          } catch {
+            // Clipboard blocked; the value stays visible to copy by hand.
+          }
+        }}
+        className="-my-2 -mr-2 inline-flex size-10 items-center justify-center rounded-full text-muted hover:bg-ivory-deep hover:text-navy"
+      >
+        {done ? <Check aria-hidden className="size-4 text-sage-ink" /> : <Copy aria-hidden className="size-4" />}
+      </button>
+    </span>
+  );
 }
+
+const moneyTag: Record<MoneyKind, { label: string; tone: "neutral" | "success" | "warning" }> = {
+  potential: { label: "Potential", tone: "neutral" },
+  expected: { label: "Expected", tone: "warning" },
+  confirmed: { label: "Issued", tone: "success" },
+  actual: { label: "Actual", tone: "success" },
+  last_known: { label: "Last known", tone: "warning" },
+};
 
 function PolicySection({ policy, retailerName, today }: { policy: ReturnPolicy | null; retailerName: string; today: DateOnly }) {
   if (!policy)
@@ -75,7 +85,8 @@ function PolicySection({ policy, retailerName, today }: { policy: ReturnPolicy |
       </Notice>
     );
   const startLabel = { delivery: "Delivery date", purchase: "Purchase date", shipment: "Ship date", unknown: "Unknown" }[policy.windowStartsAt];
-  const fee = (n: number | null) => (n == null ? <Unknown /> : n === 0 ? "Free" : money(n));
+  const fee = (n: number | null) => (n == null ? <Missing>Not confirmed</Missing> : n === 0 ? "Free" : money(n));
+  const tri = (v: boolean | null) => (v == null ? <Missing>Not confirmed</Missing> : v ? "Yes" : "No");
   return (
     <>
       {policy.verification === "sample" && (
@@ -84,7 +95,7 @@ function PolicySection({ policy, retailerName, today }: { policy: ReturnPolicy |
         </Notice>
       )}
       <Rows>
-        <Row label="Return window">{policy.windowDays ? `${policy.windowDays} days` : <Unknown />}</Row>
+        <Row label="Return window">{policy.windowDays ? `${policy.windowDays} days` : <Missing>Not confirmed</Missing>}</Row>
         <Row label="Window starts">{startLabel}</Row>
         <Row label="Refund">{policy.refundMethods.map((m) => refundMethodLabel[m]).join(" or ")}</Row>
         <Row label="Mail return fee" hint={policy.fees.waivedForStoreCredit ? "Free if you choose store credit" : undefined}>
@@ -92,8 +103,8 @@ function PolicySection({ policy, retailerName, today }: { policy: ReturnPolicy |
         </Row>
         <Row label="In-store return">{fee(policy.fees.inStore)}</Row>
         <Row label="Drop-off">{policy.dropOff.map((d) => dropOffLabel[d]).join(", ")}</Row>
-        <Row label="Box needed">{tri(policy.shipping.boxRequired, "Yes", "No")}</Row>
-        <Row label="Printer needed">{tri(policy.shipping.qrCodeAvailable ? false : policy.shipping.printingRequired, "Yes", "No")}</Row>
+        <Row label="Box needed">{tri(policy.shipping.boxRequired)}</Row>
+        <Row label="Printer needed">{tri(policy.shipping.qrCodeAvailable ? false : policy.shipping.printingRequired)}</Row>
         <Row label="Last checked">{formatDate(policy.lastCheckedAt, today)}</Row>
       </Rows>
       {policy.exceptions.length > 0 && (
@@ -116,6 +127,7 @@ function PurchaseDetail() {
   const o = useOrbit();
   const [dateSheet, setDateSheet] = useState(false);
   const [deleteSheet, setDeleteSheet] = useState(false);
+  const [receipt, setReceipt] = useState<Evidence | null>(null);
   const [date, setDate] = useState("");
 
   if (!o) return <Shell loading nav={false} />;
@@ -124,129 +136,197 @@ function PurchaseDetail() {
     return (
       <Shell>
         <BackBar fallback="/returns/" />
-        <EmptyState icon={<FileText aria-hidden />} title="Purchase not found" action={<ButtonLink href="/returns/">Back to Purchases</ButtonLink>}>
+        <EmptyState icon={<FileText aria-hidden />} title="Purchase not found" action={<ButtonLink href="/returns/">Back to Returns</ButtonLink>}>
           It may have been deleted.
         </EmptyState>
       </Shell>
     );
 
   const { today, data } = o;
-  const view = orderView(data, order, today);
-  const { retailer, policy, items, action } = view;
+  const v = orderView(data, order, today);
+  const { retailer, policy, items, current: c } = v;
   const evidence = data.evidence.filter((e) => order.evidenceIds.includes(e.id));
-  const unknownStart = view.deadline?.kind === "unknown" && view.deadline.missing === "start_date";
+  const outlook = refundOutlook(v);
   const openItems = items.filter((i) => i.stage === "to_decide");
   const kept = items.filter((i) => i.stage === "kept");
-  const title = order.items.length === 1 ? order.items[0].name : `${order.items.length} items`;
+  const single = order.items.length === 1 ? order.items[0] : null;
+  const needsDelivery = v.deadline?.kind === "unknown" && v.deadline.missing === "start_date";
+  const r = v.activeReturn ?? v.latestReturn;
+  const artifact = r?.artifacts[0] ?? null;
+  const step = stageIndex(v);
+  const ch = order.charges;
+  const itemsSubtotal = orderTotal(order);
+
+  const deadlineRow = (() => {
+    const d = v.deadline;
+    if (c.key === "drop_off" && r?.shipBy) return { value: `Drop off by ${formatDate(r.shipBy, today)}`, tag: { label: "From retailer", tone: "success" as const } };
+    if (!d) return null;
+    if (d.kind === "confirmed") return { value: formatDate(d.date, today), tag: { label: `Confirmed by ${retailer.name}`, tone: "success" as const } };
+    if (d.kind === "estimated") return { value: formatDate(d.date, today), tag: { label: "Estimated", tone: "warning" as const } };
+    if (d.kind === "not_started") return { value: "Starts at delivery", tag: null };
+    return { value: "Deadline unknown", tag: { label: "Needs info", tone: "warning" as const } };
+  })();
 
   return (
     <Shell>
-      <BackBar fallback="/returns/" />
+      <BackBar fallback="/returns/" title="Order details" />
 
+      {/* Product overview */}
       <header className="flex items-center gap-4 pb-5 pt-2">
-        <ProductThumb category={order.items[0]?.category ?? "other"} tone={retailer.tone} className="size-[72px]" />
+        <ProductThumb category={order.items[0]?.category ?? "other"} tone={retailer.tone} className="size-[84px] rounded-[20px]" count={order.items.length} />
         <div className="min-w-0">
-          <p className="text-[14px] font-semibold uppercase tracking-[0.06em] text-muted">{retailer.name}</p>
-          <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.02em]">{title}</h1>
-          <p className="tabular text-[16px] text-muted">{money(orderTotal(order))}</p>
+          <p className="text-[14px] font-semibold text-muted">{retailer.name}</p>
+          <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em]">{single ? single.name : `${order.items.length} items`}</h1>
+          <p className="tabular mt-0.5 text-[18px] font-semibold">{money(single ? single.unitPrice : itemsSubtotal)}</p>
+          {single && (single.variant || single.quantity > 1) && (
+            <p className="text-[15px] text-muted">{[single.variant, single.quantity > 1 ? `Qty ${single.quantity}` : null].filter(Boolean).join(" · ")}</p>
+          )}
         </div>
       </header>
 
-      {/* Status & next step */}
-      <Card className="p-5">
-        <p className="text-[17px] font-semibold">{view.status}</p>
-        {view.stage !== "returning" && view.stage !== "completed" && (
-          <>
-            <DeadlineLine deadline={view.deadline} today={today} className="mt-1" />
-            <DeadlineExplainer deadline={view.deadline} view={view} today={today} />
-          </>
-        )}
-        {view.activeReturn && (
-          <p className="mt-1 text-[15px] text-muted">
-            {capabilityLabel[view.activeReturn.capability].name} return · started {formatDate(view.activeReturn.createdAt.slice(0, 10), today)}
-          </p>
-        )}
+      {/* Return overview */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-[17px] font-semibold">Return</h2>
+          <Tag tone={c.indicator === "done" ? "success" : c.indicator === "unknown" || c.indicator === "refund_check" ? "warning" : c.daysLeft != null && c.daysLeft <= 3 ? "urgent" : "neutral"}>{c.label}</Tag>
+        </div>
+        <p className="mt-1 text-[15px] text-muted">{c.why}</p>
+        <Rows className="mt-2">
+          {deadlineRow && (
+            <Row label={c.key === "drop_off" ? "Drop-off deadline" : "Return deadline"} hint={deadlineRow.tag ? <Tag tone={deadlineRow.tag.tone} className="mt-1">{deadlineRow.tag.label}</Tag> : undefined}>
+              {deadlineRow.value}
+            </Row>
+          )}
+          <Row label={outlook.kind === "confirmed" ? "Refund" : "Expected refund"} hint={<Tag tone={moneyTag[outlook.kind].tone} className="mt-1">{moneyTag[outlook.kind].label}</Tag>}>
+            {outlook.amount != null ? money(outlook.amount) : <Missing>Not known yet</Missing>}
+            <span className="block text-[13px] font-normal text-muted">{outlook.methodLabel}</span>
+          </Row>
+          <Row label="Return method">{r?.dropOff ? (r.dropOff === "store" ? `${retailer.name} store` : `${dropOffLabel[r.dropOff]} drop-off`) : <Missing>Choose when you start</Missing>}</Row>
+        </Rows>
 
-        <div className="mt-4 space-y-2">
-          {unknownStart ? (
-            <>
-              <Button onClick={() => setDateSheet(true)} icon={<CalendarDays aria-hidden className="size-5" />}>
-                Add Delivery Date
-              </Button>
-              <ButtonLink href={`/returns/start/?order=${order.id}`} variant="secondary" size="md" className="w-full">
-                Start Return Anyway
-              </ButtonLink>
-            </>
-          ) : action.label !== "View Details" ? (
-            <ButtonLink href={action.href} variant={action.primary ? "primary" : "secondary"}>
-              {action.label}
-            </ButtonLink>
+        <div className="mt-3 space-y-2">
+          {needsDelivery ? (
+            <Button onClick={() => setDateSheet(true)} icon={<CalendarDays aria-hidden className="size-5" />}>
+              Add Delivery Date
+            </Button>
+          ) : c.action.label !== "View Details" ? (
+            <ButtonLink href={c.action.href}>{c.action.label}</ButtonLink>
           ) : retailer.websiteUrl ? (
             <ExternalButton href={retailer.supportUrl || retailer.websiteUrl} variant="secondary">
               Contact {retailer.name}
             </ExternalButton>
           ) : null}
+          {needsDelivery && (
+            <ButtonLink href={`/returns/start/?order=${order.id}`} variant="secondary" size="md" className="w-full">
+              Start Return Anyway
+            </ButtonLink>
+          )}
           {openItems.length > 0 && (
             <Button variant="ghost" size="md" className="w-full" onClick={() => actions.keepItems(order.id, openItems.map((i) => i.item.id))}>
               I&apos;m Keeping {openItems.length > 1 ? "These" : "It"}
             </Button>
           )}
-          {kept.length > 0 && openItems.length === 0 && (
+          {kept.length > 0 && openItems.length === 0 && !v.activeReturn && (
             <Button variant="ghost" size="md" className="w-full" onClick={() => actions.undoKeep(order.id)}>
-              Undo “Keeping”
+              Undo &ldquo;Keeping&rdquo;
             </Button>
           )}
         </div>
       </Card>
 
-      {/* Items */}
+      {/* Items (multi-item orders): return them individually */}
       {order.items.length > 1 && (
-        <section className="mt-6">
-          <h2 className="mb-2 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Items</h2>
-          <Card as="section" className="divide-y divide-line">
+        <section className="mt-6" aria-labelledby="items">
+          <h2 id="items" className="mb-2 text-[17px] font-semibold">
+            Items <span className="font-normal text-muted">· {order.items.length}</span>
+          </h2>
+          <Card className="divide-y divide-line">
             {items.map((a) => (
-              <div key={a.item.id} className="flex items-start gap-3 p-4">
+              <div key={a.item.id} className="flex items-center gap-3 p-3.5">
                 <ProductThumb category={a.item.category} tone={retailer.tone} className="size-12 rounded-xl" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold">{a.item.name}</p>
-                  <p className="text-[14px] text-muted">
-                    {[a.item.variant, a.item.quantity > 1 ? `Qty ${a.item.quantity}` : null].filter(Boolean).join(" · ")}
+                  <p className="truncate font-semibold">{a.item.name}</p>
+                  <p className="truncate text-[14px] text-muted">
+                    {[a.item.variant, a.item.quantity > 1 ? `Qty ${a.item.quantity}` : null, { to_decide: "Can be returned", returning: "Returning", completed: "Returned", kept: "Keeping", on_the_way: "Not delivered yet", not_returnable: a.eligibility === "ineligible" ? "Final sale" : "Window closed" }[a.stage]].filter(Boolean).join(" · ")}
                   </p>
-                  {a.stage === "to_decide" && <DeadlineLine deadline={a.deadline} today={today} className="mt-1 text-[14px]" />}
-                  {a.stage === "returning" && <p className="mt-1 text-[14px] font-medium">Returning</p>}
-                  {a.stage === "kept" && <p className="mt-1 text-[14px] text-muted">Keeping</p>}
                 </div>
-                <p className="tabular font-medium">{money(a.item.unitPrice)}</p>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="tabular font-semibold">{money(a.item.unitPrice)}</span>
+                  {a.stage === "to_decide" && (
+                    <Link href={`/returns/start/?order=${order.id}&item=${a.item.id}`} className="inline-flex min-h-9 items-center gap-0.5 text-[14px] font-semibold text-navy hover:underline">
+                      Return this <ChevronRight aria-hidden className="size-4" />
+                    </Link>
+                  )}
+                </div>
               </div>
             ))}
           </Card>
         </section>
       )}
 
-      {/* Secondary details, collapsed */}
+      {/* Secondary details */}
       <Card className="mt-6 overflow-hidden">
-        <Disclosure title="Order details" summary={order.orderNumber ? `Order ${order.orderNumber}` : "Order number not found"} icon={<FileText aria-hidden className="size-5" />}>
+        {step >= 0 && (
+          <Disclosure title="Return progress" summary={`Step ${step + 1} of ${STAGES.length}: ${STAGES[step].label}`} icon={<ListChecks aria-hidden className="size-5" />}>
+            <ol>
+              {STAGES.map((s, i) => (
+                <li key={s.key} className="relative flex gap-3 pb-4 last:pb-0">
+                  {i < STAGES.length - 1 && <span aria-hidden className={cn("absolute left-[9px] top-6 h-[calc(100%-16px)] w-0.5", i < step ? "bg-navy" : "bg-line")} />}
+                  <span aria-hidden className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2", i < step ? "border-navy bg-navy text-white" : i === step ? "border-navy bg-card" : "border-line bg-card")}>
+                    {i < step && <Check className="size-3" />}
+                  </span>
+                  <span className={cn("text-[15px]", i === step ? "font-semibold" : i < step ? "" : "text-muted")}>
+                    {s.label}
+                    {i === step && <span className="sr-only"> (current)</span>}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            {r && r.history.length > 0 && (
+              <div className="mt-4 border-t border-line pt-3">
+                <p className="mb-1 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Activity</p>
+                <ul className="space-y-1.5 text-[14px]">
+                  {[...r.history].reverse().map((h, i) => (
+                    <li key={i} className="flex justify-between gap-3">
+                      <span>{h.note}</span>
+                      <span className="shrink-0 text-muted">{formatDate(h.at.slice(0, 10), today)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Disclosure>
+        )}
+
+        <Disclosure title="Purchase details" summary={order.orderNumber ? `Order ${order.orderNumber}` : "Order number not found"} icon={<FileText aria-hidden className="size-5" />}>
           <Rows>
             <Row label="Order number" hint={sourceHint(order.fieldSources.orderNumber, evidence)}>
-              {order.orderNumber ?? <Unknown />}
+              {order.orderNumber ? <CopyValue value={order.orderNumber} label="order number" /> : <Missing />}
             </Row>
-            <Row label="Retailer">{retailer.name}</Row>
-            <Row label="Purchased" hint={order.purchasedAt ? sourceHint(order.fieldSources.purchasedAt, evidence) : undefined}>
-              {order.purchasedAt ? formatDate(order.purchasedAt, today) : <Unknown />}
+            <Row label="Ordered" hint={sourceHint(order.fieldSources.purchasedAt, evidence)}>
+              {order.purchasedAt ? formatDate(order.purchasedAt, today) : <Missing />}
             </Row>
-            <Row label="Shipped" hint={order.shippedAt ? sourceHint(order.fieldSources.shippedAt, evidence) : undefined}>
-              {order.shippedAt ? formatDate(order.shippedAt, today) : <Unknown />}
+            <Row label="Shipped" hint={sourceHint(order.fieldSources.shippedAt, evidence)}>
+              {order.shippedAt ? formatDate(order.shippedAt, today) : <Missing />}
             </Row>
-            <Row label="Delivered" hint={order.deliveredAt ? sourceHint(order.fieldSources.deliveredAt, evidence) : undefined}>
-              {order.deliveredAt ? formatDate(order.deliveredAt, today) : <Unknown />}
+            <Row label="Delivered" hint={sourceHint(order.fieldSources.deliveredAt, evidence)}>
+              {order.deliveredAt ? formatDate(order.deliveredAt, today) : <Missing>Not confirmed</Missing>}
             </Row>
-            {order.tracking && (
-              <Row label="Tracking">
-                {order.tracking.carrier} <span className="tabular block text-[13px] font-normal text-muted">{order.tracking.number}</span>
-              </Row>
-            )}
-            <Row label="Return eligibility">
-              {items.some((i) => i.eligibility === "ineligible") ? "Final sale" : items.some((i) => i.eligibility === "window_closed") ? "Window closed" : items.some((i) => i.eligibility === "unknown") ? <Unknown /> : "Eligible"}
+            <Row label="Carrier">{order.tracking?.carrier ?? <Missing />}</Row>
+            <Row label="Tracking number">{order.tracking ? <CopyValue value={order.tracking.number} label="tracking number" /> : <Missing />}</Row>
+            <Row label="Item subtotal">{ch.subtotal != null ? money(ch.subtotal) : itemsSubtotal != null ? money(itemsSubtotal) : <Missing />}</Row>
+            <Row label="Shipping">{ch.shipping != null ? (ch.shipping === 0 ? "Free" : money(ch.shipping)) : <Missing />}</Row>
+            <Row label="Tax">{ch.tax != null ? money(ch.tax) : <Missing />}</Row>
+            <Row label="Discounts">{ch.discount != null ? money(ch.discount) : <Missing>None recorded</Missing>}</Row>
+            <Row label="Order total">{ch.total != null ? money(ch.total) : <Missing />}</Row>
+            <Row label="Return label">
+              {artifact && r ? (
+                <Link href={`/returns/label/?id=${r.id}`} className="font-semibold underline-offset-4 hover:underline">
+                  {artifact.kind === "qr_code" ? "Show QR code" : "View label"}
+                </Link>
+              ) : (
+                <Missing>{v.activeReturn ? "Not issued yet" : "None"}</Missing>
+              )}
             </Row>
           </Rows>
           {!order.deliveredAt && (
@@ -256,47 +336,35 @@ function PurchaseDetail() {
           )}
         </Disclosure>
 
-        <Disclosure
-          title="Return policy"
-          summary={policy?.windowDays ? `${policy.windowDays} days from ${policy.windowStartsAt}` : "Not on file"}
-          icon={<ScrollText aria-hidden className="size-5" />}
-        >
-          <PolicySection policy={policy} retailerName={retailer.name} today={today} />
-        </Disclosure>
-
-        <Disclosure title="Receipt & emails" summary={evidence.length ? `${evidence.length} saved` : "None saved"} icon={<FileText aria-hidden className="size-5" />}>
+        <Disclosure title="Source emails & receipt" summary={evidence.length ? `${evidence.length} saved` : "None saved"} icon={<Mail aria-hidden className="size-5" />}>
           {evidence.length === 0 ? (
-            <p className="text-[15px] text-muted">No receipts or emails are attached to this order.</p>
+            <p className="text-[15px] text-muted">No emails or receipts are attached to this order.</p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {evidence.map((e) => (
-                <li key={e.id} className="rounded-2xl bg-ivory p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[15px] font-semibold">{e.title}</p>
-                    {e.channel === "sample_inbox" && <Tag>Sample</Tag>}
-                  </div>
-                  <p className="text-[13px] text-muted">
-                    {evidenceLabel[e.kind]} · {formatDate(e.receivedAt.slice(0, 10), today)}
-                  </p>
-                  {e.excerpt && <p className="mt-1.5 text-[14px] leading-snug">{e.excerpt}</p>}
+                <li key={e.id}>
+                  <button type="button" onClick={() => setReceipt(e)} className="flex w-full items-center gap-3 rounded-2xl bg-ivory px-3 py-2.5 text-left hover:bg-ivory-deep">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-semibold">{e.kind === "order_confirmation" ? "Receipt · " : ""}{e.title}</span>
+                      <span className="block text-[13px] text-muted">
+                        {evidenceLabel[e.kind]} · {formatDate(e.receivedAt.slice(0, 10), today)}
+                        {e.channel === "sample_inbox" ? " · Sample" : ""}
+                      </span>
+                    </span>
+                    <ChevronRight aria-hidden className="size-4 text-muted" />
+                  </button>
                 </li>
               ))}
             </ul>
           )}
         </Disclosure>
 
-        <Disclosure title="Return portal" summary={retailer.returnsUrl ? `${retailer.name} returns` : "Not available"} icon={<Link2 aria-hidden className="size-5" />}>
-          {retailer.returnsUrl ? (
-            <>
-              <p className="mb-3 text-[15px] text-muted">
-                Opens {retailer.name}&apos;s website. In this prototype it opens the homepage; verified deep links are added per retailer.
-              </p>
-              <ExternalButton href={retailer.returnsUrl} variant="secondary" size="md" className="w-full">
-                Open {retailer.name}
-              </ExternalButton>
-            </>
-          ) : (
-            <p className="text-[15px] text-muted">We don&apos;t have a return link for this retailer yet.</p>
+        <Disclosure title="Return policy" summary={policy?.windowDays ? `${policy.windowDays} days from ${policy.windowStartsAt}` : "Not on file"} icon={<ScrollText aria-hidden className="size-5" />}>
+          <PolicySection policy={policy} retailerName={retailer.name} today={today} />
+          {retailer.returnsUrl && (
+            <ExternalButton href={retailer.returnsUrl} variant="secondary" size="md" className="mt-3 w-full">
+              Open {retailer.name} Returns
+            </ExternalButton>
           )}
         </Disclosure>
       </Card>
@@ -306,6 +374,17 @@ function PurchaseDetail() {
           Delete this purchase
         </Button>
       </div>
+
+      <Sheet open={receipt != null} onOpenChange={(x) => !x && setReceipt(null)} title={receipt?.title ?? ""} description={receipt ? `${evidenceLabel[receipt.kind]} from ${receipt.from ?? "unknown sender"}` : undefined}>
+        {receipt && (
+          <div className="space-y-3">
+            <p className="rounded-2xl bg-card p-4 text-[15px] leading-relaxed">{receipt.excerpt ?? "No preview saved."}</p>
+            <p className="text-[13px] text-muted">
+              Received {formatDate(receipt.receivedAt.slice(0, 10), today)}. {receipt.channel === "sample_inbox" ? "This is a fictional sample email." : "The full message is stored privately."}
+            </p>
+          </div>
+        )}
+      </Sheet>
 
       <Sheet
         open={dateSheet}

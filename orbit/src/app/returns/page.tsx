@@ -1,60 +1,37 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Archive, ChevronDown, ChevronRight, PackageOpen, Plus, Sparkles } from "lucide-react";
+import { Archive, ChevronRight, PackageOpen, Plus, Search } from "lucide-react";
 import { PageHeader, Shell } from "@/components/layout/shell";
-import { FocusCard } from "@/components/orbit/focus-card";
-import { ReturnRow } from "@/components/orbit/return-row";
+import { OrderRow } from "@/components/orbit/order-row";
 import { ButtonLink, IconLink } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
-import { MoreList } from "@/components/ui/more-list";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { money } from "@/lib/domain/format";
+import { useSessionState } from "@/lib/hooks/useSessionState";
 import { bucketFor, bucketMeta, type Bucket } from "@/lib/intelligence/priorities";
-import { returnTasks, type ReturnTask } from "@/lib/store/selectors";
+import { orderViews, type OrderView, type TaskGroup } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
-const sum = (list: ReturnTask[]) => list.reduce((s, t) => s + (t.amount ?? 0), 0);
+type Tab = Exclude<TaskGroup, "history">;
+const TABS: { id: Tab; label: string; empty: string; hint: string }[] = [
+  { id: "action", label: "Needs your action", empty: "Nothing needs you right now.", hint: "Soonest deadline first." },
+  { id: "awaiting", label: "Awaiting retailer", empty: "No returns are waiting on a store.", hint: "Nothing to do. We'll flag anything that runs late." },
+  { id: "not_delivered", label: "Not delivered yet", empty: "Everything you ordered has arrived.", hint: "Return windows start when these arrive." },
+];
 const BUCKETS: Bucket[] = ["overdue", "soon", "week", "later", "missing"];
-
-/** A quiet, collapsed group for things that need nothing from you right now. */
-function Folded({ id, title, hint, tasks }: { id: string; title: string; hint: string; tasks: ReturnTask[] }) {
-  const [open, setOpen] = useState(false);
-  if (!tasks.length) return null;
-  return (
-    <section id={id} className="mt-7 scroll-mt-16">
-      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="flex min-h-12 w-full items-center gap-2 text-left">
-        <span className="flex-1">
-          <span className="block text-[17px] font-semibold">
-            {title} <span className="tabular font-normal text-muted">· {tasks.length}</span>
-          </span>
-          <span className="block text-[14px] text-muted">{hint}</span>
-        </span>
-        <span className="tabular text-[14px] text-muted">{money(sum(tasks))}</span>
-        <ChevronDown aria-hidden className={cn("size-5 text-muted transition-transform", open && "rotate-180")} />
-      </button>
-      {open && (
-        <div className="mt-2 space-y-2">
-          {tasks.map((t) => (
-            <ReturnRow key={t.view.order.id} t={t} showAction={t.group !== "transit"} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
+const sum = (list: OrderView[]) => list.reduce((s, v) => s + (v.amount ?? 0), 0);
 
 export default function ReturnsPage() {
   const o = useOrbit();
+  const [tab, setTab] = useSessionState<Tab>("returns-tab", "action");
   if (!o) return <Shell loading />;
 
-  const tasks = returnTasks(o.data, o.today);
-  const move = tasks.filter((t) => t.group === "move");
-  const waiting = tasks.filter((t) => t.group === "waiting");
-  const transit = tasks.filter((t) => t.group === "transit");
-  const history = tasks.filter((t) => t.group === "history");
-  const [first, ...rest] = move;
+  const views = orderViews(o.data, o.today);
+  const by = (g: TaskGroup) => views.filter((v) => v.current.group === g);
+  const history = by("history");
+  const list = by(tab);
+  const current = TABS.find((t) => t.id === tab)!;
 
   const header = (
     <PageHeader
@@ -62,8 +39,8 @@ export default function ReturnsPage() {
       subtitle="Unfinished business, most urgent first."
       action={
         <>
-          <IconLink href="/ask/" label="Ask Orbit to find a purchase">
-            <Sparkles aria-hidden className="size-[22px]" />
+          <IconLink href="/ask/" label="Search purchases with Ask Orbit">
+            <Search aria-hidden className="size-[22px]" />
           </IconLink>
           <IconLink href="/add/" label="Add a purchase">
             <Plus aria-hidden className="size-[22px]" />
@@ -83,7 +60,7 @@ export default function ReturnsPage() {
       </Shell>
     );
 
-  if (tasks.length === 0)
+  if (views.length === 0)
     return (
       <Shell>
         {header}
@@ -93,82 +70,69 @@ export default function ReturnsPage() {
       </Shell>
     );
 
-  const stats = [
-    { id: "move", label: "Your move", n: move.length, amount: sum(move), strong: true },
-    { id: "waiting", label: "Waiting", n: waiting.length, amount: sum(waiting), strong: false },
-    { id: "transit", label: "On the way", n: transit.length, amount: sum(transit), strong: false },
-  ];
-
   return (
     <Shell>
       {header}
 
-      {/* At a glance */}
-      <div className="grid grid-cols-3 gap-2">
-        {stats.map((s) => (
-          <a
-            key={s.id}
-            href={`#${s.id}`}
-            className={cn("rounded-[18px] px-3 py-3", s.strong ? "bg-navy text-white" : "border border-line bg-card")}
-          >
-            <span className={cn("block text-[13px] font-semibold", s.strong ? "text-white/70" : "text-muted")}>{s.label}</span>
-            <span className="tabular block text-[24px] font-semibold leading-tight">{s.n}</span>
-            <span className={cn("tabular block text-[13px]", s.strong ? "text-white/70" : "text-muted")}>{money(s.amount)}</span>
-          </a>
-        ))}
+      <div role="tablist" aria-label="Filter returns" className="grid grid-cols-3 gap-2">
+        {TABS.map((t) => {
+          const items = by(t.id);
+          const sel = t.id === tab;
+          return (
+            <button
+              key={t.id}
+              role="tab"
+              type="button"
+              aria-selected={sel}
+              aria-controls="returns-list"
+              onClick={() => setTab(t.id)}
+              className={cn("rounded-[18px] px-3 py-3 text-left transition-colors", sel ? "bg-navy text-white" : "border border-line bg-card hover:bg-ivory-deep")}
+            >
+              <span className={cn("block text-[13px] font-semibold leading-tight", sel ? "text-white/75" : "text-muted")}>{t.label}</span>
+              <span className="tabular block pt-1 text-[24px] font-semibold leading-tight">{items.length}</span>
+              <span className={cn("tabular block text-[13px]", sel ? "text-white/75" : "text-muted")}>{money(sum(items))}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {first ? (
-        <>
-          <div className="mt-6">
-            <FocusCard
-              emoji={first.emoji}
-              retailer={first.view.retailer}
-              label={first.label}
-              title={first.title}
-              why={first.why}
-              amount={first.amount}
-              daysLeft={first.daysLeft}
-              estimated={first.estimated}
-              action={{ label: first.actionLabel, href: first.href }}
-            />
-          </div>
-
-          <section id="move" className="scroll-mt-16">
-            {BUCKETS.map((b) => {
-              const list = rest.filter((t) => bucketFor(t.daysLeft) === b);
-              if (!list.length) return null;
-              return (
-                <div key={b} className="mt-7">
-                  <div className="mb-2.5 flex items-baseline justify-between gap-3">
-                    <h2 className="text-[17px] font-semibold">
-                      {bucketMeta[b].title} <span className="tabular font-normal text-muted">· {list.length}</span>
-                    </h2>
-                    <span className="tabular text-[14px] text-muted">{money(sum(list))}</span>
-                  </div>
-                  <MoreList limit={4}>
-                    {list.map((t) => (
-                      <ReturnRow key={t.view.order.id} t={t} />
-                    ))}
-                  </MoreList>
+      <div id="returns-list" role="tabpanel" aria-label={current.label} className="mt-5">
+        <p className="mb-1 text-[14px] text-muted">{current.hint}</p>
+        {list.length === 0 ? (
+          <p className="mt-3 rounded-[18px] bg-sage px-4 py-3.5 text-[15px] font-medium text-sage-ink">{current.empty}</p>
+        ) : tab === "action" ? (
+          BUCKETS.map((b) => {
+            const group = list.filter((v) => bucketFor(v.current.daysLeft) === b);
+            if (!group.length) return null;
+            return (
+              <section key={b} className="mt-5" aria-labelledby={`rb-${b}`}>
+                <div className="mb-2.5 flex items-baseline justify-between gap-3">
+                  <h2 id={`rb-${b}`} className="text-[17px] font-semibold">
+                    {bucketMeta[b].title} <span className="tabular font-normal text-muted">· {group.length}</span>
+                  </h2>
+                  <span className="tabular text-[14px] text-muted">{money(sum(group))}</span>
                 </div>
-              );
-            })}
-          </section>
-        </>
-      ) : (
-        <p id="move" className="mt-6 rounded-[18px] bg-sage px-4 py-3.5 text-[15px] font-medium text-sage-ink">
-          Nothing needs you right now. 🎉
-        </p>
-      )}
-
-      <Folded id="waiting" title="Waiting on stores" hint="Nothing to do. We'll flag anything that runs late." tasks={waiting} />
-      <Folded id="transit" title="On the way" hint="Return windows start when these arrive." tasks={transit} />
+                <div className="space-y-2.5">
+                  {group.map((v) => (
+                    <OrderRow key={v.order.id} v={v} />
+                  ))}
+                </div>
+              </section>
+            );
+          })
+        ) : (
+          <div className="mt-3 space-y-2.5">
+            {list.map((v) => (
+              <OrderRow key={v.order.id} v={v} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {history.length > 0 && (
-        <Link href="/returns/history/" className="mt-8 flex min-h-14 items-center gap-3 rounded-[18px] px-1 text-muted hover:bg-ivory-deep">
+        <Link href="/returns/history/" className="mt-8 flex min-h-14 items-center gap-3 border-t border-line pt-3 text-muted hover:text-navy">
           <Archive aria-hidden className="size-5" />
-          <span className="flex-1 text-[15px] font-semibold">History · {history.length} done</span>
+          <span className="flex-1 text-[15px] font-semibold">Completed · {history.length}</span>
           <ChevronRight aria-hidden className="size-5" />
         </Link>
       )}

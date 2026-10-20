@@ -1,18 +1,82 @@
-import { daysBetween } from "../domain/dates";
-import type { DateOnly, Order, Refund, Retailer, ReturnPolicy, ReturnRequest, WalletItem } from "../domain/types";
-import { assessItem, isActiveReturn, orderStage, soonestDeadline, type Deadline, type ItemAssessment, type OrderStage } from "../intelligence/returns";
+/**
+ * Shared selectors: the single place where an order's status, next action,
+ * deadline and amounts are decided. Today, Returns, order details, the calendar
+ * and Ask Orbit all read from here, so they can never disagree.
+ */
+import { daysBetween, formatDate } from "../domain/dates";
+import { money } from "../domain/format";
+import type { DateOnly, Order, Refund, RefundMethod, Retailer, ReturnPolicy, ReturnRequest, WalletItem } from "../domain/types";
+import { assessItem, isActiveReturn, orderStage, returnFacts, soonestDeadline, type Deadline, type ItemAssessment, type OrderStage } from "../intelligence/returns";
 import { needsVerification } from "../services/balances";
 import type { OrbitData } from "./state";
 
 export const retailerOf = (d: OrbitData, id: string): Retailer =>
-  d.retailers.find((r) => r.id === id) ?? { id, name: "Unknown retailer", websiteUrl: "", returnsUrl: "", supportUrl: "", balanceCheckUrl: null, returnCapability: "guided", giftPartner: false, tone: "slate", category: "general" };
+  d.retailers.find((r) => r.id === id) ?? {
+    id,
+    name: "Unknown retailer",
+    websiteUrl: "",
+    returnsUrl: "",
+    supportUrl: "",
+    balanceCheckUrl: null,
+    returnCapability: "guided",
+    giftPartner: false,
+    tone: "slate",
+    category: "general",
+  };
 
 export const policyOf = (d: OrbitData, retailerId: string): ReturnPolicy | null => d.policies.find((p) => p.retailerId === retailerId) ?? null;
 
-export interface NextAction {
-  label: "Start Return" | "Continue Return" | "View QR Code" | "View Label" | "Track Refund" | "View Return" | "View Details";
-  href: string;
-  primary: boolean;
+export const orderHref = (orderId: string) => `/returns/purchase/?id=${orderId}`;
+
+// ─── Return stages ───────────────────────────────────────────────────────
+
+export type StageKey = "decide" | "initiate" | "awaiting_approval" | "drop_off" | "in_transit" | "received" | "refund_pending" | "refund_confirmed";
+
+/** The eight customer-facing return stages, in order. Only the current one is shown in lists. */
+export const STAGES: { key: StageKey; label: string }[] = [
+  { key: "decide", label: "Decide whether to return" },
+  { key: "initiate", label: "Return needs initiating" },
+  { key: "awaiting_approval", label: "Awaiting retailer approval" },
+  { key: "drop_off", label: "Ready to drop off" },
+  { key: "in_transit", label: "Return in transit" },
+  { key: "received", label: "Received by retailer" },
+  { key: "refund_pending", label: "Refund pending" },
+  { key: "refund_confirmed", label: "Refund confirmed" },
+];
+
+/** Which list an order belongs in on the Returns screen. */
+export type TaskGroup = "action" | "awaiting" | "not_delivered" | "history";
+
+/** Visual indicator used everywhere for the same kind of need. */
+export type Indicator =
+  | "decide"
+  | "initiate"
+  | "approval"
+  | "drop_off"
+  | "transit"
+  | "refund"
+  | "refund_check"
+  | "done"
+  | "unknown"
+  | "not_delivered"
+  | "credit"
+  | "delivered"
+  | "started";
+
+export interface Stage {
+  key: StageKey | null;
+  /** "Decide whether to return", "Refund needs checking", "Not delivered yet"… */
+  label: string;
+  group: TaskGroup;
+  indicator: Indicator;
+  /** Date the next action is due by, and how that date is known. */
+  dueDate: DateOnly | null;
+  daysLeft: number | null;
+  dueLabel: string | null;
+  estimated: boolean;
+  /** One plain sentence on why this needs attention (or doesn't). */
+  why: string;
+  action: { label: string; href: string };
 }
 
 export interface OrderView {
@@ -25,37 +89,98 @@ export interface OrderView {
   activeReturn: ReturnRequest | null;
   latestReturn: ReturnRequest | null;
   refund: Refund | null;
-  status: string;
-  action: NextAction;
+  /** The items the current task is about (the returning items, or those still to decide). */
+  focusItems: Order["items"];
+  title: string;
+  /** Value of the focus items. Actual purchase price, so not a promise of refund. */
+  amount: number | null;
+  current: Stage;
 }
 
-const statusText: Record<OrderStage, string> = {
-  on_the_way: "On the way",
-  to_decide: "Delivered",
-  returning: "Return in progress",
-  completed: "Return complete",
-  kept: "Kept",
-  not_returnable: "Not returnable",
-};
+function sumItems(items: Order["items"]): number | null {
+  if (!items.length) return null;
+  let s = 0;
+  for (const i of items) {
+    if (i.unitPrice == null) return null;
+    s += i.unitPrice * i.quantity;
+  }
+  return Math.round(s * 100) / 100;
+}
 
 export function returnStatusText(r: ReturnRequest): string {
   switch (r.status) {
     case "prepared":
-      return "Prepared. Not submitted yet";
+      return "Return needs initiating";
     case "reported_submitted":
-      return r.submission.confirmedByRetailer ? "Confirmed. Waiting for your label" : "Submitted by you. Awaiting retailer confirmation";
+      return r.submission.confirmedByRetailer ? "Retailer confirmed. Waiting for label" : "Awaiting retailer approval";
     case "approval_pending":
-      return "Waiting for retailer approval";
+      return "Awaiting retailer approval";
     case "label_ready":
-      return "Label ready. Drop off needed";
+      return "Ready to drop off";
     case "shipped":
-      return "On its way back";
+      return "Return in transit";
     case "received":
-      return "Received by retailer. Refund pending";
+      return "Received by retailer";
     case "completed":
       return "Return complete";
     case "cancelled":
       return "Cancelled";
+  }
+}
+
+function stageFor(v: Omit<OrderView, "current">, today: DateOnly): Stage {
+  const { order, activeReturn: r, refund, retailer } = v;
+  const left = (x: DateOnly | null) => (x ? daysBetween(today, x) : null);
+  const by = (verb: string, x: DateOnly | null) => (x ? `${verb} ${formatDate(x, today)}` : null);
+  const detail = orderHref(order.id);
+  const dl = v.deadline && "date" in v.deadline ? v.deadline.date : null;
+  const est = v.deadline?.kind === "estimated";
+  const base = { dueDate: null, daysLeft: null, dueLabel: null, estimated: false };
+
+  if (r) {
+    switch (r.status) {
+      case "prepared":
+        return { key: "initiate", label: "Return needs initiating", group: "action", indicator: "initiate", dueDate: dl, daysLeft: left(dl), dueLabel: by("Start by", dl), estimated: est, why: `Prepared, but not sent to ${retailer.name} yet.`, action: { label: "Continue Return", href: `/returns/start/?return=${r.id}` } };
+      case "reported_submitted":
+      case "approval_pending":
+        return { ...base, key: "awaiting_approval", label: r.submission.confirmedByRetailer ? "Retailer confirmed" : "Awaiting retailer approval", group: "awaiting", indicator: "approval", why: r.submission.confirmedByRetailer ? `${retailer.name} confirmed. A label should follow.` : `Waiting for ${retailer.name} to confirm your request.`, action: { label: "View Return", href: `/returns/start/?return=${r.id}` } };
+      case "label_ready": {
+        const qr = r.artifacts.some((a) => a.kind === "qr_code");
+        const store = r.dropOff === "store";
+        return { key: "drop_off", label: "Ready to drop off", group: "action", indicator: "drop_off", dueDate: r.shipBy, daysLeft: left(r.shipBy), dueLabel: by("Drop off by", r.shipBy), estimated: false, why: qr ? "Your QR code is ready. Take the package to a drop-off point." : store ? `Bring the item to a ${retailer.name} store.` : "Your label is ready. Drop the package off.", action: { label: store && !qr ? "Get Directions" : qr ? "Show QR Code" : "View Label", href: `/returns/label/?id=${r.id}` } };
+      }
+      case "shipped":
+        return { ...base, key: "in_transit", label: "Return in transit", group: "awaiting", indicator: "transit", why: `On its way back to ${retailer.name}.`, action: refund ? { label: "Track Refund", href: `/returns/refund/?id=${refund.id}` } : { label: "View Return", href: `/returns/start/?return=${r.id}` } };
+      case "received": {
+        if (refund?.confirmed) break; // falls through to "refund confirmed" below
+        const expected = refund?.expected?.by ?? null;
+        const overdue = expected != null && daysBetween(expected, today) > 0;
+        const track = refund ? `/returns/refund/?id=${refund.id}` : detail;
+        return overdue
+          ? { key: "refund_pending", label: "Refund needs checking", group: "action", indicator: "refund_check", dueDate: expected, daysLeft: left(expected), dueLabel: by("Expected", expected), estimated: true, why: `No refund email from ${retailer.name} yet. Check your statement before following up.`, action: { label: "Check Refund", href: track } }
+          : { key: "refund_pending", label: "Refund pending", group: "awaiting", indicator: "refund", dueDate: expected, daysLeft: left(expected), dueLabel: by("Expected", expected), estimated: true, why: `${retailer.name} has your return. Waiting for their refund email.`, action: { label: "Track Refund", href: track } };
+      }
+    }
+  }
+
+  // Finished returns.
+  const done = v.latestReturn;
+  if (done && (done.status === "completed" || (done.status === "received" && refund?.confirmed))) {
+    const credit = refund?.destination === "store_credit";
+    return { ...base, key: "refund_confirmed", label: credit ? "Store credit issued" : "Refund confirmed", group: "history", indicator: "done", why: refund?.confirmed ? `${credit ? "Credit" : "Refund"} issued ${formatDate(refund.confirmed.at, today)}.` : "Return complete.", action: refund ? { label: "View Refund", href: `/returns/refund/?id=${refund.id}` } : { label: "View Details", href: detail } };
+  }
+
+  switch (v.stage) {
+    case "to_decide":
+      if (!dl)
+        return { ...base, key: "decide", label: "Deadline unknown", group: "action", indicator: "unknown", why: v.deadline?.kind === "unknown" ? v.deadline.reason : "We don't know the return deadline.", action: { label: "Add Details", href: detail } };
+      return { key: "decide", label: "Decide whether to return", group: "action", indicator: "decide", dueDate: dl, daysLeft: left(dl), dueLabel: by("Decide by", dl), estimated: est, why: v.deadline?.kind === "confirmed" ? `Last day to return, confirmed by ${retailer.name}.` : "Last day to return, estimated from the store's policy.", action: { label: "Start Return", href: `/returns/start/?order=${order.id}` } };
+    case "on_the_way":
+      return { ...base, label: "Not delivered yet", key: null, group: "not_delivered", indicator: "not_delivered", why: "The return window starts when it arrives.", action: { label: "View Details", href: detail } };
+    case "kept":
+      return { ...base, label: "Kept", key: null, group: "history", indicator: "done", why: "You're keeping this.", action: { label: "View Details", href: detail } };
+    default:
+      return { ...base, label: v.items.some((i) => i.eligibility === "ineligible") ? "Final sale" : "Return window closed", key: null, group: "history", indicator: "done", why: "This can no longer be returned.", action: { label: "View Details", href: detail } };
   }
 }
 
@@ -68,61 +193,61 @@ export function orderView(d: OrbitData, order: Order, today: DateOnly): OrderVie
   const activeReturn = returns.find(isActiveReturn) ?? null;
   const latestReturn = activeReturn ?? returns[returns.length - 1] ?? null;
   const refund = latestReturn ? d.refunds.find((f) => f.returnId === latestReturn.id) ?? null : null;
+  const focusItems = latestReturn ? order.items.filter((i) => latestReturn.itemIds.includes(i.id)) : items.filter((a) => a.stage === "to_decide").map((a) => a.item);
+  const named = focusItems.length ? focusItems : order.items;
+  const title = named[0] ? named[0].name + (named.length > 1 ? ` + ${named.length - 1} more` : "") : "Items not listed";
 
-  let action: NextAction;
-  const detail = `/returns/purchase/?id=${order.id}`;
-  if (activeReturn) {
-    const s = activeReturn.status;
-    if (s === "prepared") action = { label: "Continue Return", href: `/returns/start/?return=${activeReturn.id}`, primary: true };
-    else if (s === "label_ready")
-      action = {
-        label: activeReturn.artifacts.some((a) => a.kind === "qr_code") ? "View QR Code" : "View Label",
-        href: `/returns/label/?id=${activeReturn.id}`,
-        primary: true,
-      };
-    else if ((s === "shipped" || s === "received") && refund) action = { label: "Track Refund", href: `/returns/refund/?id=${refund.id}`, primary: true };
-    else action = { label: "View Return", href: `/returns/start/?return=${activeReturn.id}`, primary: true };
-  } else if (stage === "to_decide") {
-    action = { label: "Start Return", href: `/returns/start/?order=${order.id}`, primary: true };
-  } else if (stage === "completed" && refund) {
-    action = { label: "Track Refund", href: `/returns/refund/?id=${refund.id}`, primary: false };
-  } else {
-    action = { label: "View Details", href: detail, primary: false };
-  }
-
-  return {
-    order,
-    retailer,
-    policy,
-    items,
-    stage,
-    deadline: soonestDeadline(items),
-    activeReturn,
-    latestReturn,
-    refund,
-    status: activeReturn
-      ? returnStatusText(activeReturn)
-      : stage === "to_decide" && order.shipmentStatus !== "delivered"
-        ? order.shipmentStatus === "unknown"
-          ? "Delivery not confirmed"
-          : "Shipped"
-        : statusText[stage],
-    action,
-  };
+  const partial = { order, retailer, policy, items, stage, deadline: soonestDeadline(items), activeReturn, latestReturn, refund, focusItems, title, amount: sumItems(named) };
+  return { ...partial, current: stageFor(partial, today) };
 }
 
 export function orderViews(d: OrbitData, today: DateOnly): OrderView[] {
-  const rank: Record<OrderStage, number> = { returning: 0, to_decide: 1, on_the_way: 2, completed: 3, kept: 4, not_returnable: 5 };
   return d.orders
     .map((o) => orderView(d, o, today))
-    .sort((a, b) => {
-      const s = rank[a.stage] - rank[b.stage];
-      if (s) return s;
-      const da = a.deadline && "daysLeft" in a.deadline ? a.deadline.daysLeft : 999;
-      const db = b.deadline && "daysLeft" in b.deadline ? b.deadline.daysLeft : 999;
-      if (da !== db) return da - db;
-      return (b.order.purchasedAt ?? "").localeCompare(a.order.purchasedAt ?? "");
-    });
+    .sort((a, b) => (a.current.daysLeft ?? 999) - (b.current.daysLeft ?? 999) || (b.amount ?? 0) - (a.amount ?? 0));
+}
+
+/** Index of the current stage in STAGES, or -1 when the order isn't in a return. */
+export function stageIndex(v: OrderView): number {
+  return v.current.key ? STAGES.findIndex((s) => s.key === v.current.key) : -1;
+}
+
+// ─── Money classification ────────────────────────────────────────────────
+
+export type MoneyKind = "actual" | "expected" | "potential" | "last_known" | "confirmed";
+
+export interface RefundOutlook {
+  amount: number | null;
+  method: RefundMethod | "unknown" | null;
+  methodLabel: string;
+  kind: MoneyKind;
+  note: string;
+}
+
+/** What the customer could get back, and how sure we are. */
+export function refundOutlook(v: OrderView): RefundOutlook {
+  const f = v.refund;
+  if (f?.confirmed)
+    return {
+      amount: f.confirmed.amount,
+      method: f.destination,
+      methodLabel: f.destinationLabel ?? "Original payment",
+      kind: "confirmed",
+      note: f.confirmed.by === "retailer_email" ? `Issued by ${v.retailer.name}` : "Confirmed by you",
+    };
+  if (f?.expected)
+    return { amount: f.expected.amount, method: f.destination, methodLabel: f.destinationLabel ?? "Original payment", kind: "expected", note: f.expected.basis };
+  const r = v.activeReturn;
+  const pref = r?.refundPreference ?? v.policy?.refundMethods[0] ?? null;
+  const fee = returnFacts(v.policy, { dropOff: r?.dropOff ?? v.policy?.dropOff[0] ?? null, refund: pref }).fee;
+  const amount = v.amount == null ? null : fee == null ? v.amount : Math.max(0, v.amount - fee);
+  return {
+    amount,
+    method: pref,
+    methodLabel: pref === "store_credit" ? `${v.retailer.name} store credit` : pref === "original_payment" ? "Original payment method" : "Not known yet",
+    kind: "potential",
+    note: fee == null ? "Item price. Return fees aren't confirmed." : fee > 0 ? `Item price minus a ${money(fee)} return fee.` : "Item price. No return fee.",
+  };
 }
 
 // ─── Wallet ──────────────────────────────────────────────────────────────
@@ -139,71 +264,7 @@ export function isExpired(w: WalletItem, today: DateOnly) {
   return w.expiration.kind === "date" && daysBetween(today, w.expiration.date) < 0;
 }
 
-// ─── Return tasks (Returns screen) ───────────────────────────────────────
-
-export type TaskGroup = "move" | "waiting" | "transit" | "history";
-
-export interface ReturnTask {
-  view: OrderView;
-  group: TaskGroup;
-  emoji: string;
-  /** "Decide by Oct 23", "Drop off by Oct 25", "Refund late". */
-  label: string;
-  dueDate: DateOnly | null;
-  daysLeft: number | null;
-  amount: number | null;
-  estimated: boolean;
-  /** "Juliette Dress" or "Hydrating Serum + 1 more". */
-  title: string;
-  /** One line on why it needs attention. */
-  why: string;
-  /** Where tapping the row goes. */
-  href: string;
-  actionLabel: string;
-}
-
-/** Turns an order into the single thing it needs, so long lists stay scannable. */
-export function returnTask(d: OrbitData, v: OrderView, today: DateOnly): ReturnTask {
-  const fmt = (x: DateOnly) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${x}T12:00:00Z`));
-  const left = (x: DateOnly | null) => (x ? daysBetween(today, x) : null);
-  const r = v.activeReturn;
-  const items = r ? v.order.items.filter((i) => r.itemIds.includes(i.id)) : v.items.filter((a) => a.stage === "to_decide").map((a) => a.item);
-  const sum = items.reduce<number | null>((s, i) => (s == null || i.unitPrice == null ? null : s + i.unitPrice * i.quantity), 0);
-  const named = items.length ? items : v.order.items;
-  const title = named[0] ? named[0].name + (named.length > 1 ? ` + ${named.length - 1} more` : "") : "Items not listed";
-  const dl = v.deadline && "date" in v.deadline ? v.deadline.date : null;
-  const estimated = v.deadline?.kind === "estimated";
-  const base = { view: v, amount: items.length ? sum : null, title, estimated: false, why: v.status };
-
-  if (r?.status === "prepared")
-    return { ...base, estimated, why: "Prepared, but not sent to the store yet.", group: "move", emoji: "✍️", label: "Finish return", dueDate: dl, daysLeft: left(dl), href: v.action.href, actionLabel: "Finish return" };
-  if (r?.status === "label_ready")
-    return { ...base, why: "Your label is ready. Drop the package off.", group: "move", emoji: "🏷️", label: r.shipBy ? `Drop off by ${fmt(r.shipBy)}` : "Drop off", dueDate: r.shipBy, daysLeft: left(r.shipBy), href: v.action.href, actionLabel: "Show QR code" };
-  if (r && (r.status === "shipped" || r.status === "received") && v.refund) {
-    const by = v.refund.confirmed ? null : v.refund.expected?.by ?? null;
-    const late = by != null && daysBetween(by, today) > 0;
-    return late
-      ? { ...base, estimated: true, why: "No refund email from the store yet.", group: "move", emoji: "💸", label: "Refund late", dueDate: by, daysLeft: left(by), href: v.action.href, actionLabel: "Follow up" }
-      : { ...base, group: "waiting", emoji: "⏳", label: by ? `Refund expected ${fmt(by)}` : `${v.retailer.name} processing`, dueDate: by, daysLeft: left(by), href: v.action.href, actionLabel: "Track" };
-  }
-  if (r) return { ...base, group: "waiting", emoji: "⏳", label: r.submission.confirmedByRetailer ? "Waiting for label" : "Waiting for confirmation", dueDate: null, daysLeft: null, href: v.action.href, actionLabel: "View" };
-
-  if (v.stage === "to_decide") {
-    if (!dl) return { ...base, why: "We need the delivery date to set a deadline.", group: "move", emoji: "🔍", label: "Deadline unknown", dueDate: null, daysLeft: null, href: `/returns/purchase/?id=${v.order.id}`, actionLabel: "Add details" };
-    return { ...base, estimated, why: "Last day to return it.", group: "move", emoji: "📦", label: `Decide by ${fmt(dl)}`, dueDate: dl, daysLeft: left(dl), href: v.action.href, actionLabel: "Start return" };
-  }
-  const total = v.order.items.reduce<number | null>((s, i) => (s == null || i.unitPrice == null ? null : s + i.unitPrice * i.quantity), 0);
-  if (v.stage === "on_the_way") return { ...base, amount: total, group: "transit", emoji: "🚚", label: "On the way", dueDate: null, daysLeft: null, href: `/returns/purchase/?id=${v.order.id}`, actionLabel: "View" };
-  const done = v.stage === "completed" ? "✅" : v.stage === "kept" ? "🛍️" : "🔒";
-  return { ...base, amount: total, group: "history", emoji: done, label: v.status, dueDate: null, daysLeft: null, href: `/returns/purchase/?id=${v.order.id}`, actionLabel: "View" };
-}
-
-export function returnTasks(d: OrbitData, today: DateOnly): ReturnTask[] {
-  return d.orders
-    .map((o) => returnTask(d, orderView(d, o, today), today))
-    .sort((a, b) => {
-      const da = a.daysLeft ?? 999;
-      const db = b.daysLeft ?? 999;
-      return da - db || (b.amount ?? 0) - (a.amount ?? 0);
-    });
+/** Recorded balance at a retailer, for contextual notes ("You have $150 in recorded Reformation credit"). */
+export function creditAt(d: OrbitData, retailerId: string, today: DateOnly): number {
+  return d.wallet.filter((w) => w.retailerId === retailerId && !isExpired(w, today)).reduce((s, w) => s + (w.balance ?? 0), 0);
 }
