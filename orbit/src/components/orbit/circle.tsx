@@ -11,19 +11,19 @@ import { retailerOf } from "@/lib/store/selectors";
 import type { OrbitData } from "@/lib/store/state";
 import { actions } from "@/lib/store/store";
 import { cn } from "../ui/cn";
-import { Collage, Photo, type Palette } from "./art";
+import { BagsSketch, Collage, Photo, type Palette } from "./art";
 import { ItemArt, KIND_COLOR } from "./item-art";
 import { RetailerMark } from "./retail";
 
 export const visibilityLabel: Record<Visibility, string> = { private: "Only you", friends: "Friends", public: "Everyone" };
 
 const AVATAR: Record<string, string> = {
-  rose: "bg-[#FCE3DC] text-[#B64E3A]",
-  sky: "bg-[#E3EAF5] text-[#2E5C9E]",
-  sage: "bg-[#DDF0D8] text-[#28794E]",
-  ink: "bg-[#25213C] text-white",
-  apricot: "bg-[#FFE7C5] text-[#A05B16]",
-  orchid: "bg-[#ECE1FA] text-[#7948AF]",
+  rose: "bg-[#F2EFEA] text-navy ring-1 ring-[#C23A2B]/50",
+  sky: "bg-[#F2EFEA] text-navy ring-1 ring-navy/20",
+  sage: "bg-[#F2EFEA] text-navy ring-1 ring-navy/20",
+  ink: "bg-navy text-white",
+  apricot: "bg-[#F2EFEA] text-navy ring-1 ring-navy/20",
+  orchid: "bg-[#F2EFEA] text-navy ring-1 ring-[#7948AF]/40",
 };
 
 export function Avatar({ name, palette, className }: { name: string; palette: string; className?: string }) {
@@ -69,12 +69,13 @@ export function Carousel({ images, className, aspect = "aspect-[4/5]" }: { image
   );
 }
 
+/** Post types as small editorial kickers, not candy-colored pills. */
 const TYPE: Record<SocialPost["type"], { label: string; chip: string }> = {
-  haul: { label: "Haul", chip: "bg-circle-soft text-circle" },
-  styled: { label: "Styled it", chip: "bg-you-soft text-you" },
-  store_favorite: { label: "Store favorite", chip: "bg-wallet-soft text-wallet" },
-  review: { label: "Honest review", chip: "bg-returns-soft text-returns" },
-  collection: { label: "Collection", chip: "bg-[#E3EAF5] text-[#2E5C9E]" },
+  haul: { label: "Haul", chip: "text-[#C23A2B]" },
+  styled: { label: "Styled it", chip: "text-navy" },
+  store_favorite: { label: "Store favorite", chip: "text-navy" },
+  review: { label: "Honest review", chip: "text-navy" },
+  collection: { label: "Collection", chip: "text-navy" },
 };
 
 const SIZING = { small: "Runs small", true: "True to size", large: "Runs large" } as const;
@@ -143,7 +144,7 @@ export function FeedPost({ post, author, data, following }: { post: SocialPost; 
       <div className="min-w-0 flex-1 leading-tight">
         <p className="truncate text-[15px] font-bold">{author.name}</p>
         <p className="truncate text-[13px] text-muted">
-          <span className={cn("mr-1 rounded-full px-2 py-px text-[12px] font-bold", t.chip)}>{t.label}</span>
+          <span className={cn("mr-1.5 text-[11px] font-bold uppercase tracking-[0.12em]", t.chip)}>{t.label}</span>
           {author.relation === "me" ? visibilityLabel[post.audience] : `@${author.handle}`}
         </p>
       </div>
@@ -162,12 +163,12 @@ export function FeedPost({ post, author, data, following }: { post: SocialPost; 
     return (
       <article className="overflow-hidden rounded-[26px] bg-card shadow-[var(--shadow-card)]">
         <div className="p-4 pb-3">{head}</div>
-        <Link href={`/stores/?id=${r.id}`} className="relative mx-3 flex items-center gap-4 overflow-hidden rounded-[20px] bg-wallet-soft p-4">
-          <span aria-hidden className="absolute -right-6 -top-6 size-24 rounded-full bg-[#28794E]/15" />
+        <Link href={`/stores/?id=${r.id}`} className="relative mx-3 flex items-center gap-4 overflow-hidden rounded-[20px] border border-line bg-[#FAF8F4] p-4">
+          <BagsSketch className="absolute -right-3 bottom-0 h-20 opacity-90" />
           <RetailerMark retailer={r} className="size-14 rounded-2xl text-[17px]" />
           <span className="relative min-w-0">
             <span className="font-display block text-[24px] leading-none">{r.name}</span>
-            <span className="mt-1 block text-[14px] text-[#28794E]">View store, returns and reviews →</span>
+            <span className="mt-1 block text-[14px] text-muted underline decoration-[#C23A2B] underline-offset-4">Store, returns and reviews</span>
           </span>
         </Link>
         <div className="px-4 pb-2 pt-3">
@@ -184,7 +185,7 @@ export function FeedPost({ post, author, data, following }: { post: SocialPost; 
     return (
       <article className="rounded-[26px] bg-card p-4 shadow-[var(--shadow-card)]">
         {head}
-        <blockquote className="mt-3 border-l-4 border-returns pl-3">
+        <blockquote className="mt-3 border-l-2 border-[#C23A2B] pl-3">
           <p className="font-display text-[20px] leading-[1.15]">“{post.caption}”</p>
         </blockquote>
         <div className="mt-2 text-[14px]">

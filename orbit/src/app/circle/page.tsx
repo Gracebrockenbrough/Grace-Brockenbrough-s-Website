@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Bookmark, ChevronRight, Lock, Plus, Search, UserPlus } from "lucide-react";
 import { Shell } from "@/components/layout/shell";
+import { TabBanner } from "@/components/layout/tab-banner";
 import { CollectionTile, FeedPost, StoreTile, visibilityLabel } from "@/components/orbit/circle";
 import { Button, ButtonLink, IconButton } from "@/components/ui/button";
 import { FilterChips } from "@/components/ui/chips";
@@ -252,26 +253,23 @@ export default function CirclePage() {
   const [invite, setInvite] = useState(false);
   if (!o) return <Shell loading />;
   return (
-    <div className="wash-circle min-h-dvh">
+    <div className="min-h-dvh">
       <Shell>
-        <header className="flex items-end justify-between gap-3 pb-4 pt-7">
-          <div>
-            <h1 className="font-display text-[44px] leading-[0.92]">
-              Your
-              <br />
-              Circle
-            </h1>
-            <p className="mt-2 text-[16px] text-muted">Good finds from people you trust.</p>
-          </div>
-          <div className="flex gap-1">
-            <IconButton label="Add friends" onClick={() => setInvite(true)} className="bg-white/70">
+        <TabBanner
+          tab="circle"
+          title="Good finds are better together"
+          subtitle="Discover stores, share favorites, get inspired."
+          right={
+            <IconButton label="Add friends" onClick={() => setInvite(true)} className="-mr-2">
               <UserPlus aria-hidden className="size-5" />
             </IconButton>
-            <ButtonLink href="/circle/new/" size="sm" icon={<Plus aria-hidden className="size-4" />} className="bg-circle hover:bg-[#8a4d10]">
-              Post
-            </ButtonLink>
-          </div>
-        </header>
+          }
+        />
+        <div className="mb-4 mt-3 flex justify-end">
+          <ButtonLink href="/circle/new/" size="sm" icon={<Plus aria-hidden className="size-4" />} className="bg-circle hover:bg-[#8a4d10]">
+            New Post
+          </ButtonLink>
+        </div>
         <Segments
           label="Circle sections"
           value={section}

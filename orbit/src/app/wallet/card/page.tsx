@@ -2,8 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { ChevronRight, Eye, EyeOff, LockKeyhole, WalletCards } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, WalletCards } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { BalanceStatus, balanceStatusText } from "@/components/orbit/balance";
 import { CopyRow } from "@/components/orbit/copy";

@@ -1,11 +1,11 @@
 @import "tailwindcss";
 @import "@fontsource-variable/dm-sans";
-@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource-variable/fraunces";
 
 @theme {
   --font-sans: "DM Sans Variable", "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   /* Expressive moments only: greetings, page titles, brand, Circle. Never for money or deadlines. */
-  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces Variable", "Fraunces", ui-serif, Georgia, serif;
 
   /* Base. Class names are kept from the first design so every screen updates at once. */
   --color-ivory: #fbf9f6; /* global background */
@@ -73,20 +73,20 @@
   }
 }
 
-/* Bricolage Grotesque, slightly condensed and tight: confident, a little fashion-editorial. */
+/* Fraunces, bold and tight at large optical sizes: editorial, like a fashion masthead. */
 @utility font-display {
   font-family: var(--font-display);
-  font-weight: 740;
-  font-stretch: 90%;
-  letter-spacing: -0.03em;
+  font-weight: 640;
+  font-variation-settings: "SOFT" 30, "WONK" 0;
+  letter-spacing: -0.02em;
 }
 
 /* Section washes: soft corner light for the expressive tabs. Content sits on solid cards. */
 @utility wash-circle {
-  background: radial-gradient(120% 60% at 100% 0%, #ffe7c5 0%, rgb(255 231 197 / 0) 60%), radial-gradient(80% 40% at 0% 8%, #fce3dc 0%, rgb(252 227 220 / 0) 70%);
+  background: radial-gradient(120% 50% at 100% 0%, rgb(255 231 197 / 0.55) 0%, rgb(255 231 197 / 0) 60%);
 }
 @utility wash-you {
-  background: radial-gradient(120% 55% at 100% 0%, #ece1fa 0%, rgb(236 225 250 / 0) 62%), radial-gradient(70% 35% at 0% 6%, #ffe7c5 0%, rgb(255 231 197 / 0) 70%);
+  background: radial-gradient(120% 50% at 100% 0%, rgb(236 225 250 / 0.6) 0%, rgb(236 225 250 / 0) 60%);
 }
 
 @utility tabular {
@@ -111,7 +111,7 @@
 }
 @keyframes tote-pop {
   0% { transform: scale(0.6); opacity: 0; }
-  60% { transform: scale(1.08); opacity: 1; }
+  60% { transform: scale(1.02); opacity: 1; }
   100% { transform: scale(1); }
 }
 @keyframes tote-draw {
@@ -141,7 +141,7 @@
   animation: orbit-fade 200ms ease-out both;
 }
 @utility animate-pop {
-  animation: tote-pop 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  animation: tote-pop 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 @utility animate-draw {
   stroke-dasharray: 24;

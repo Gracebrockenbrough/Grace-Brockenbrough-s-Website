@@ -158,8 +158,12 @@ export function NextUpCard({ p, data, today }: { p: Priority; data: OrbitData; t
   const urgent = p.daysLeft != null && p.daysLeft <= 3;
   return (
     <article className="relative overflow-hidden rounded-[28px] bg-navy p-5 text-white shadow-[var(--shadow-lift)]">
-      <span aria-hidden className={cn("absolute -right-8 -top-10 size-36 rounded-full", urgent ? "bg-returns" : "bg-[#3d3660]")} />
-      <span aria-hidden className="absolute -bottom-8 right-16 size-20 rotate-[18deg] rounded-[22px] bg-circle-soft/90" />
+      <svg aria-hidden viewBox="0 0 100 100" className="absolute -right-6 top-2 h-[120%] w-auto opacity-25" fill="none" stroke="#fff" strokeLinecap="round">
+        <path d="M30 100V46a22 22 0 0 1 44 0v54" strokeWidth={0.8} />
+        <path d="M31 100V46.6a21 21 0 0 1 42 0V100" strokeWidth={0.4} />
+        <path d="M52 58h12l-1 16H53z" strokeWidth={0.7} className={urgent ? "fill-[#C23A2B]" : ""} />
+        <path d="M55 58v-2a3 3 0 0 1 6 0v2" strokeWidth={0.6} />
+      </svg>
       <div className="relative">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[13px] font-semibold">
           Next up · {when}

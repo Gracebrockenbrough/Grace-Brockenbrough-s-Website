@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { ChevronRight, Eye, Unplug, UsersRound, WalletCards, X } from "lucide-react";
-import { Shell, TopBar } from "@/components/layout/shell";
+import { Shell } from "@/components/layout/shell";
+import { TabBanner } from "@/components/layout/tab-banner";
 import { AskBar } from "@/components/orbit/ask-bar";
 import { PriorityRow } from "@/components/orbit/priority-row";
+import { BagsSketch } from "@/components/orbit/art";
 import { AgendaRow, NextUpCard, WeekStrip } from "@/components/orbit/timeline";
 import { ButtonLink, TextLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,7 +22,7 @@ import { actions, useOrbit } from "@/lib/store/store";
 
 function greeting(name: string) {
   const h = new Date().getHours();
-  return `${h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening"}, ${name}.`;
+  return `${h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"}, ${name}`;
 }
 
 /**
@@ -51,20 +53,22 @@ export default function TodayPage() {
 
   return (
     <Shell>
-      <TopBar date={new Date(`${today}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })} />
-      <div className="pb-4 pt-1">
-        <h1 className="font-display text-[40px] leading-[0.98]">{greeting(profile.firstName)}</h1>
-        <p className="mt-2 text-[16px] text-muted">
-          {summary ?? (
+      <TabBanner
+        tab="today"
+        title={greeting(profile.firstName)}
+        subtitle={
+          summary ?? (
             <>
               <span className="font-semibold text-navy">
                 {plural(plan.now.length, "thing")} {plan.now.length === 1 ? "needs" : "need"} you this week.
               </span>{" "}
               {plan.watching.length ? `Tote is watching ${plan.watching.length} more.` : ""}
             </>
-          )}
-        </p>
-      </div>
+          )
+        }
+        right={<span className="text-[13px] font-medium text-muted">{new Date(`${today}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}</span>}
+      />
+      <div className="h-4" />
 
       <AskBar />
 
@@ -171,15 +175,15 @@ export default function TodayPage() {
 
           {/* 5. Circle stays below anything urgent, and can be hidden. */}
           {(data.prefs.circlePreview ?? true) && (
-            <section aria-label="From your Circle" className="relative mt-6 overflow-hidden rounded-[22px] bg-circle-soft px-4 py-4">
-              <span aria-hidden className="absolute -right-6 -top-8 size-24 rounded-full bg-[#f5be73]/60" />
+            <section aria-label="From your Circle" className="relative mt-6 overflow-hidden rounded-[22px] border border-line bg-[#FAF8F4] px-4 py-4">
+              <BagsSketch className="pointer-events-none absolute -right-2 bottom-0 h-16 opacity-80" />
               <div className="relative flex items-center gap-3">
                 <UsersRound aria-hidden className="size-5 shrink-0 text-circle" />
-                <Link href="/circle/" className="min-w-0 flex-1">
+                <Link href="/circle/" className="min-w-0 flex-1 pr-20">
                   <span className="block text-[15px] font-semibold">New in Circle: hauls, stores and lists</span>
                   <span className="block text-[14px] text-muted">See what returns are like before you buy</span>
                 </Link>
-                <button type="button" aria-label="Hide Circle on Today" onClick={() => actions.setPrefs({ circlePreview: false })} className="-mr-2 inline-flex size-11 items-center justify-center rounded-full text-muted hover:bg-white/60">
+                <button type="button" aria-label="Hide Circle on Today" onClick={() => actions.setPrefs({ circlePreview: false })} className="relative -mr-2 inline-flex size-11 items-center justify-center rounded-full bg-white/80 text-muted hover:bg-white">
                   <X aria-hidden className="size-4" />
                 </button>
               </div>

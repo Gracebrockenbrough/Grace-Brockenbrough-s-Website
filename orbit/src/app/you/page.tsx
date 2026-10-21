@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChartNoAxesColumn, ChevronRight, Eye, EyeOff, Inbox, Lock, MessageSquareQuote, Settings, ShieldCheck } from "lucide-react";
 import { Shell } from "@/components/layout/shell";
-import { Collage, type Palette } from "@/components/orbit/art";
+import { type Palette } from "@/components/orbit/art";
+import { TabBanner } from "@/components/layout/tab-banner";
 import { CollectionTile, visibilityLabel } from "@/components/orbit/circle";
 import { RetailerMark } from "@/components/orbit/retail";
 import { Button, IconLink } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import { Field, Input, Textarea } from "@/components/ui/form";
 import { Sheet } from "@/components/ui/sheet";
 import { plural } from "@/lib/domain/format";
 import type { Visibility } from "@/lib/domain/types";
-import { itemKind, type ItemKind } from "@/lib/intelligence/buckets";
 import { connectionProblems, retailerOf } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
@@ -64,12 +64,21 @@ export default function YouPage() {
   const myPosts = (data.posts ?? []).filter((p) => p.authorId === "me" && shown(p.audience)).length;
   const conns = data.connections.filter((c) => c.status !== "disconnected");
   const problems = connectionProblems(data);
-  const styleKinds: ItemKind[] = [...new Set([...cols.flatMap((c) => c.items.map((i) => (i.kind ?? "other") as ItemKind)), ...data.orders.flatMap((x) => (asFriend ? [] : x.items.map((i) => itemKind(i))))])].filter((k) => k !== "other").slice(0, 3);
 
   return (
-    <div className="wash-you min-h-dvh">
+    <div className="min-h-dvh">
       <Shell>
-        <header className="flex items-center justify-between pt-5">
+        <TabBanner
+          tab="you"
+          title="Your style, your space"
+          subtitle="Saved items, favorite stores, and a little more you."
+          right={
+            <IconLink href="/settings/" label="Settings" className="-mr-2">
+              <Settings aria-hidden className="size-5" />
+            </IconLink>
+          }
+        />
+        <div className="mt-4 flex items-center justify-between">
           <button
             type="button"
             aria-pressed={asFriend}
@@ -79,16 +88,12 @@ export default function YouPage() {
             {asFriend ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
             {asFriend ? "Back to my view" : "View as a friend"}
           </button>
-          <IconLink href="/settings/" label="Settings" className="-mr-2 bg-white/70">
-            <Settings aria-hidden className="size-5" />
-          </IconLink>
-        </header>
+        </div>
 
         {/* Style banner + identity */}
         <section className="mt-4">
-          <Collage seed={`profile-${pub.displayName}`} kinds={styleKinds.length ? styleKinds : ["dresses", "bags"]} palette={palette} className="h-36 rounded-[28px]" scale={0.42} label="Profile banner" />
-          <div className="-mt-10 flex items-end gap-3 px-3">
-            <span className="font-display relative z-10 flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-ivory bg-you-soft text-[34px] text-you">{pub.displayName[0]}</span>
+          <div className="flex items-end gap-3">
+            <span className="font-display flex size-16 shrink-0 items-center justify-center rounded-full bg-you-soft text-[28px] text-you ring-1 ring-you/30">{pub.displayName[0]}</span>
             {!asFriend && (
               <Button
                 variant="secondary"
@@ -103,12 +108,12 @@ export default function YouPage() {
               </Button>
             )}
           </div>
-          <h1 className="font-display mt-2 text-[38px] leading-none">{pub.displayName}</h1>
+          <p className="font-display mt-2 text-[30px] leading-none">{pub.displayName}</p>
           {pub.bio && <p className="mt-1.5 text-[16px]">{pub.bio}</p>}
           {(pub.styleTags ?? []).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {pub.styleTags!.map((t) => (
-                <span key={t} className="rounded-full bg-you px-3 py-1 text-[13px] font-semibold text-white">
+                <span key={t} className="rounded-full border border-navy/25 px-3 py-1 text-[13px] font-semibold">
                   {t}
                 </span>
               ))}

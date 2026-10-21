@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Gift, Plus, WalletCards } from "lucide-react";
-import { PageHeader, Shell } from "@/components/layout/shell";
+import { Shell } from "@/components/layout/shell";
+import { TabBanner } from "@/components/layout/tab-banner";
 import { WalletCardFace } from "@/components/orbit/wallet-card";
 import { ButtonLink, IconLink } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
@@ -24,16 +25,19 @@ export default function WalletPage() {
   const { data, today, preview } = o;
 
   const header = (
-    <PageHeader
-      accent="wallet"
-      title="Your Wallet"
-      subtitle="Gift cards and store credit, ready when you shop."
-      action={
-        <IconLink href="/wallet/add/" label="Add a gift card or credit">
-          <Plus aria-hidden className="size-[22px]" />
-        </IconLink>
-      }
-    />
+    <>
+      <TabBanner
+        tab="wallet"
+        title="Your credit, simplified"
+        subtitle="Gift cards and store credit in one place."
+        right={
+          <IconLink href="/wallet/add/" label="Add a gift card or credit" className="-mr-2">
+            <Plus aria-hidden className="size-[22px]" />
+          </IconLink>
+        }
+      />
+      <div className="h-4" />
+    </>
   );
 
   if (preview.outage === "wallet")

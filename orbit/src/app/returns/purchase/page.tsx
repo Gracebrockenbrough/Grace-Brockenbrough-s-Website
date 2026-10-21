@@ -8,7 +8,6 @@ import { BackBar, Shell } from "@/components/layout/shell";
 import { ProductThumb } from "@/components/orbit/retail";
 import { Button, ButtonLink, ExternalButton, TextLink } from "@/components/ui/button";
 import { Card, Row, Rows } from "@/components/ui/card";
-import { cn } from "@/components/ui/cn";
 import { Disclosure } from "@/components/ui/disclosure";
 import { Field, Input } from "@/components/ui/form";
 import { RefundAsker } from "@/components/orbit/refund-asker";

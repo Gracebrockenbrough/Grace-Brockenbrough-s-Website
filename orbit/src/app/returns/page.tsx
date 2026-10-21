@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { CalendarDays, PackageOpen, Plus, Search, SlidersHorizontal } from "lucide-react";
-import { PageHeader, Shell } from "@/components/layout/shell";
+import { Shell } from "@/components/layout/shell";
+import { TabBanner } from "@/components/layout/tab-banner";
 import { OrderList, OrderRow } from "@/components/orbit/order-row";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
@@ -41,11 +42,11 @@ export default function ReturnsPage() {
   if (!o) return <Shell loading />;
 
   const header = (
-    <PageHeader
-      accent="returns"
-      title="Returns"
-      subtitle="Send back, track, and get your money."
-      action={
+    <TabBanner
+      tab="returns"
+      title="Make returns easy"
+      subtitle="Send it back, track it, and watch for refunds."
+      right={
         <>
           <IconLink href="/calendar/" label="Calendar of dates">
             <CalendarDays aria-hidden className="size-[22px]" />
@@ -57,11 +58,14 @@ export default function ReturnsPage() {
       }
     />
   );
+  const spacer = <div className="h-4" />;
 
   if (o.preview.outage === "returns")
     return (
       <Shell>
         {header}
+        {spacer}
+      {spacer}
         <ErrorState title="We couldn't load your returns" onRetry={() => actions.setPreview({ outage: "none" })}>
           Your wallet and saved labels are unaffected.
         </ErrorState>
@@ -73,6 +77,8 @@ export default function ReturnsPage() {
     return (
       <Shell>
         {header}
+        {spacer}
+      {spacer}
         <EmptyState icon={<PackageOpen aria-hidden />} title="No purchases yet" action={<ButtonLink href="/add/">Add a Purchase</ButtonLink>}>
           Forward an order email, upload a receipt, or add one yourself.
         </EmptyState>
@@ -97,6 +103,7 @@ export default function ReturnsPage() {
   return (
     <Shell>
       {header}
+      {spacer}
 
       <div className="relative">
         <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
