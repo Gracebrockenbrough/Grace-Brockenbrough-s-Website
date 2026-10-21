@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowLeft, UserRound } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { IconButton, IconLink } from "../ui/button";
+import { IconButton } from "../ui/button";
+import { Toaster } from "../ui/toast";
 import { cn } from "../ui/cn";
 import { PageSkeleton } from "../ui/states";
 import { BottomNav } from "./bottom-nav";
@@ -12,36 +13,38 @@ import Link from "next/link";
 
 /**
  * Page frame: a centered, phone-width column on every screen size.
- * `nav` shows the three-tab bar; focused flows (return assistant, gifting) hide it.
+ * `nav` shows the five-tab bar; focused flows (return assistant, gifting) hide it.
  */
 export function Shell({ children, nav = true, loading = false, className }: { children?: ReactNode; nav?: boolean; loading?: boolean; className?: string }) {
   return (
     <>
-      <main className={cn("mx-auto min-h-dvh w-full max-w-[560px] px-5", nav ? "pb-32" : "pb-10", className)}>{loading ? <PageSkeleton /> : children}</main>
+      <main className={cn("animate-fade mx-auto min-h-dvh w-full max-w-[560px] px-5", nav ? "pb-32" : "pb-10", className)}>{loading ? <PageSkeleton /> : children}</main>
       {nav && <BottomNav />}
+      <Toaster />
     </>
   );
 }
 
-/** Today's header: wordmark left, profile right. */
-export function TopBar() {
+/** Today's header: wordmark left, a small date right. */
+export function TopBar({ date }: { date?: string }) {
   return (
     <header className="flex h-16 items-center justify-between">
       <Link href="/" aria-label="Tote home" className="-ml-1 rounded-lg px-1">
         <OrbitWordmark />
       </Link>
-      <IconLink href="/settings/" label="Profile and settings" className="-mr-2 border border-line bg-card">
-        <UserRound aria-hidden className="size-5" />
-      </IconLink>
+      {date && <p className="text-[14px] font-medium text-muted">{date}</p>}
     </header>
   );
 }
 
-export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
+/** Top-level page title. `accent` tints a small bar in the section's identity color. */
+export function PageHeader({ title, subtitle, action, accent }: { title: string; subtitle?: string; action?: ReactNode; accent?: "returns" | "wallet" | "circle" | "you" }) {
+  const bar = { returns: "bg-returns", wallet: "bg-wallet", circle: "bg-circle", you: "bg-you" };
   return (
     <header className="pb-5 pt-6">
+      {accent && <span aria-hidden className={cn("mb-3 block h-1 w-8 rounded-full", bar[accent])} />}
       <div className="flex items-start justify-between gap-3">
-        <h1 className="text-[32px] font-semibold leading-[1.1] tracking-[-0.025em]">{title}</h1>
+        <h1 className="font-display text-[34px] leading-[1.05]">{title}</h1>
         {action && <div className="-mr-2 -mt-1 flex items-center">{action}</div>}
       </div>
       {subtitle && <p className="mt-1.5 text-[17px] text-muted">{subtitle}</p>}

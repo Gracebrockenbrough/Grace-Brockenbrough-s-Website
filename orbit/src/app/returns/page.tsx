@@ -37,6 +37,7 @@ export default function ReturnsPage() {
 
   const header = (
     <PageHeader
+      accent="returns"
       title="Returns"
       subtitle="What you can send back, what's on its way, and refunds to confirm."
       action={

@@ -8,8 +8,10 @@ import { formatDate } from "@/lib/domain/dates";
 import { money } from "@/lib/domain/format";
 import type { DateOnly, Refund, Retailer, ReturnRequest } from "@/lib/domain/types";
 import { askerPrompt, refundAskerStatus } from "@/lib/intelligence/refunds";
-import { actions } from "@/lib/store/store";
+import { actions, getState } from "@/lib/store/store";
+import { recoveredThisYear } from "@/lib/store/selectors";
 import { cn } from "../ui/cn";
+import { toast } from "@/components/ui/toast";
 
 /**
  * Refund Asker. Tote can't see a bank account, so after the store issues a card refund it
@@ -100,6 +102,8 @@ export function RefundAsker({ refund, request, retailer, orderNumber, today, com
             onClick={() => {
               if (sheet === "resolve") actions.resolveRefund(refund.id, "Arrived late", Number(amount));
               else actions.markRefundArrived(refund.id, Number(amount));
+              const total = recoveredThisYear(getState().data, today);
+              toast(`${money(Number(amount))} is back`, `Refund confirmed. ${money(total)} recovered so far this year.`);
               setSheet(null);
             }}
           >

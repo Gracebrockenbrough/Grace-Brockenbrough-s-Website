@@ -20,6 +20,7 @@ import { trackingUrl } from "@/lib/domain/carriers";
 import { money } from "@/lib/domain/format";
 import { orderDeadlines, orderView, policyForOrder, refundOutlook, retailerOf, returnStatusText } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
+import { toast } from "@/components/ui/toast";
 
 /**
  * Return Kit: everything needed to finish a return, on one screen.
@@ -205,6 +206,7 @@ function LabelView() {
           <Button
             onClick={() => {
               actions.markShipped(request.id);
+              toast("Dropped off", `We'll watch for ${retailer.name} to receive it and refund you.`);
               setConfirmDrop(false);
               if (refund) router.push(`/returns/refund/?id=${refund.id}`);
             }}

@@ -413,4 +413,24 @@ export interface NotificationPrefs {
   deliveries?: boolean;
   /** Days before a deadline to remind. */
   leadDays: 3 | 5 | 7;
+  /** Show the small Circle note on Today (below anything urgent). */
+  circlePreview?: boolean;
+}
+
+// ─── You and Circle ──────────────────────────────────────────────────────
+
+/** Who can see something the customer chose to share. Private unless they change it. */
+export type Visibility = "private" | "friends" | "public";
+
+/** A store the customer saved. Saving never reveals anything they bought there. */
+export interface FavoriteStore {
+  retailerId: string;
+  visibility: Visibility;
+  addedAt: Timestamp;
+}
+
+/** What friends could see. Never includes purchases, returns, refunds, balances or email. */
+export interface PublicProfile {
+  displayName: string;
+  bio: string | null;
 }

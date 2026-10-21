@@ -21,6 +21,7 @@ import { returnFacts } from "@/lib/intelligence/returns";
 import { adapterFor, prepareDetails, type SubmissionResult } from "@/lib/services/returnSubmission";
 import { orderView, returnStatusText, type OrderView } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
+import { toast } from "@/components/ui/toast";
 
 const STEPS = ["Choose items", "Return details", "Review & approve", "Next steps"];
 const REASONS = ["Too small", "Too large", "Not as pictured", "Changed my mind", "Arrived damaged", "Wrong item sent", "Other"];
@@ -313,7 +314,10 @@ function NextSteps({ view, request, result, email }: { view: OrderView; request:
 
       <Button
         variant="secondary"
-        onClick={() => actions.reportSubmitted(request.id)}
+        onClick={() => {
+          actions.reportSubmitted(request.id);
+          toast("Return started", `Now we wait for ${retailer.name}'s confirmation email.`);
+        }}
       >
         I&apos;ve Submitted It on {retailer.name}
       </Button>

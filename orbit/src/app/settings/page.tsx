@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Ban, Bookmark, ChartNoAxesColumn, ChevronRight, ClockArrowUp, FileUp, Gauge, Mail, Plus, ShieldCheck } from "lucide-react";
+import { Ban, ChevronRight, ClockArrowUp, FileUp, Gauge, Mail, Plus, ShieldCheck } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { CopyRow } from "@/components/orbit/copy";
 import { Button } from "@/components/ui/button";
@@ -44,11 +44,10 @@ export default function SettingsPage() {
   const active = data.connections.filter((c) => c.status !== "disconnected");
   const off = data.connections.filter((c) => c.status === "disconnected");
   const review = data.jobs.filter((j) => j.status === "needs_review").length;
-  const saved = data.wishlist.filter((w) => w.status === "active").length;
 
   return (
     <Shell nav={false}>
-      <BackBar fallback="/" title="Profile" />
+      <BackBar fallback="/you/" title="Settings" />
 
       <Card className="mt-2 flex items-center gap-4 p-4">
         <span className="flex size-12 items-center justify-center rounded-full bg-navy text-[18px] font-semibold text-white">{profile.firstName[0]}</span>
@@ -59,10 +58,6 @@ export default function SettingsPage() {
         <Tag>Demo account</Tag>
       </Card>
 
-      <Card className="mt-6 divide-y divide-line overflow-hidden">
-        <MenuRow href="/insights/" icon={<ChartNoAxesColumn aria-hidden />} title="Shopping Insights" body="Private spending awareness: months, stores, refunds" />
-        <MenuRow href="/saved/" icon={<Bookmark aria-hidden />} title="Saved for Later" body={saved ? `${plural(saved, "item")} you saved` : "Products and ideas you want to remember"} />
-      </Card>
 
       {/* Connected accounts */}
       <section id="email" className="mt-8 scroll-mt-16">
@@ -107,6 +102,7 @@ export default function SettingsPage() {
           <Toggle label="Returns that need you" description="Labels to drop off, steps to finish" checked={prefs.returnActions} onChange={(v) => actions.setPrefs({ returnActions: v })} />
           <Toggle label="Refunds that need checking" checked={prefs.refunds} onChange={(v) => actions.setPrefs({ refunds: v })} />
           <Toggle label="Credit expiring" checked={prefs.creditExpiry} onChange={(v) => actions.setPrefs({ creditExpiry: v })} />
+          <Toggle label="Circle on Today" description="A small note below your to-dos. Never above them" checked={prefs.circlePreview ?? true} onChange={(v) => actions.setPrefs({ circlePreview: v })} />
           <Toggle label="Packages arriving" checked={prefs.deliveries ?? true} onChange={(v) => actions.setPrefs({ deliveries: v })} />
           <div className="py-3">
             <p className="mb-2 font-medium">Remind me before a deadline</p>
@@ -159,7 +155,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Privacy */}
-      <section className="mt-8">
+      <section id="privacy" className="mt-8 scroll-mt-16">
         <SectionTitle>Privacy & data</SectionTitle>
         <Card className="p-4">
           <ul className="space-y-2.5 text-[15px]">
@@ -168,6 +164,7 @@ export default function SettingsPage() {
               "Tote never connects to your bank. You confirm refunds yourself.",
               "Gift card codes are hidden until you reveal them.",
               "Your email is never used for advertising, and your shopping history is never sold.",
+              "Nothing you buy or return is ever posted to Circle. You choose what friends see.",
               "Most emails are read by simple rules, with no AI at all.",
             ].map((t) => (
               <li key={t} className="flex gap-2.5">

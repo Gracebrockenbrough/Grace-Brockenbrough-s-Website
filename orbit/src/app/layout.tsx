@@ -4,7 +4,7 @@ import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = {
   title: BRAND.name,
-  description: `${BRAND.tagline} Sales you care about, purchases, returns, refunds, gift cards and spending awareness.`,
+  description: `${BRAND.tagline} ${BRAND.supporting}`,
   applicationName: BRAND.name,
 };
 
@@ -12,7 +12,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#F8F7F4",
+  themeColor: "#FBF9F6",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

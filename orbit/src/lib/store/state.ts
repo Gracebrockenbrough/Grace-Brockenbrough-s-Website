@@ -1,5 +1,7 @@
 import type {
   ConnectedAccount,
+  FavoriteStore,
+  PublicProfile,
   DateOnly,
   Evidence,
   GiftTransfer,
@@ -32,6 +34,10 @@ export interface OrbitData {
   /** Every AI model call and its cost. */
   aiUsage: AiUsageEntry[];
   prefs: NotificationPrefs;
+  /** Stores the customer saved, each with its own visibility. */
+  favoriteStores?: FavoriteStore[];
+  /** The optional public side of the profile. */
+  publicProfile?: PublicProfile;
   /** Priority keys the user dismissed. Prevents identical repeat reminders. */
   dismissed: string[];
   /** Optional monthly spending goals per bucket. Off unless the customer turns them on. */

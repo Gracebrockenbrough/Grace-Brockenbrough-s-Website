@@ -25,8 +25,9 @@ export default function WalletPage() {
 
   const header = (
     <PageHeader
+      accent="wallet"
       title="Your Wallet"
-      subtitle="All your shopping credits, together."
+      subtitle="Gift cards and store credit, ready when you shop."
       action={
         <IconLink href="/wallet/add/" label="Add a gift card or credit">
           <Plus aria-hidden className="size-[22px]" />

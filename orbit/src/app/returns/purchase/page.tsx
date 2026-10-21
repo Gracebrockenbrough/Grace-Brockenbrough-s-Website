@@ -24,6 +24,7 @@ import type { DateOnly, Evidence, FieldSource, ReturnPolicy } from "@/lib/domain
 import { STAGES, orderDeadlines, orderView, purchaseSource, refundOutlook, stageIndex, type MoneyKind } from "@/lib/store/selectors";
 import { capabilitiesOf } from "@/lib/retailers/capabilities";
 import { actions, useOrbit } from "@/lib/store/store";
+import { toast } from "@/components/ui/toast";
 
 const evidenceLabel: Record<Evidence["kind"], string> = {
   order_confirmation: "Order confirmation",
@@ -323,7 +324,10 @@ function PurchaseDetail() {
             </ButtonLink>
           )}
           {openItems.length > 0 && (
-            <Button variant="ghost" size="md" className="w-full" onClick={() => actions.keepItems(order.id, openItems.map((i) => i.item.id))}>
+            <Button variant="ghost" size="md" className="w-full" onClick={() => {
+                actions.keepItems(order.id, openItems.map((i) => i.item.id));
+                toast(openItems.length > 1 ? "Keeping them" : "Keeping it", "Return reminders are off. You can undo this anytime.");
+              }}>
               I&apos;m Keeping {openItems.length > 1 ? "These" : "It"}
             </Button>
           )}

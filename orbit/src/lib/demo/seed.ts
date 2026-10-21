@@ -507,6 +507,11 @@ export function buildDemoData(today: DateOnly): OrbitData {
     connections,
     jobs: [],
     aiUsage: [],
+    favoriteStores: [
+      { retailerId: "reformation", visibility: "friends", addedAt: ts(-20) },
+      { retailerId: "madewell", visibility: "private", addedAt: ts(-9) },
+    ],
+    publicProfile: { displayName: DEMO_PROFILE.firstName, bio: null },
     prefs,
     dismissed: [],
   };

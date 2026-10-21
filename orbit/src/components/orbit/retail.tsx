@@ -6,12 +6,12 @@ import { ItemArt, KIND_COLOR } from "./item-art";
 
 /** Card-face and accent colors per tone. Muted, in-palette; never a retailer's own branding. */
 export const tones: Record<CardTone, { face: string; ink: string; soft: string; softInk: string }> = {
-  navy: { face: "bg-[#19243B]", ink: "text-white", soft: "bg-[#E6E8EE]", softInk: "text-[#19243B]" },
-  sage: { face: "bg-[#4E6A57]", ink: "text-white", soft: "bg-[#DDE8DC]", softInk: "text-[#35553C]" },
-  terracotta: { face: "bg-[#B65D4F]", ink: "text-white", soft: "bg-[#F5E7E3]", softInk: "text-[#8E4135]" },
-  sand: { face: "bg-[#E5DAC4]", ink: "text-[#19243B]", soft: "bg-[#F3ECDF]", softInk: "text-[#6B5532]" },
-  slate: { face: "bg-[#59627A]", ink: "text-white", soft: "bg-[#E9EBEF]", softInk: "text-[#3F4759]" },
-  ink: { face: "bg-[#1E1E22]", ink: "text-white", soft: "bg-[#ECECEC]", softInk: "text-[#1E1E22]" },
+  navy: { face: "bg-[#26233D]", ink: "text-white", soft: "bg-[#E8E7EF]", softInk: "text-[#26233D]" },
+  sage: { face: "bg-[#41766F]", ink: "text-white", soft: "bg-[#E9F2F0]", softInk: "text-[#2F5A54]" },
+  terracotta: { face: "bg-[#AD503E]", ink: "text-white", soft: "bg-[#FBE9E4]", softInk: "text-[#8C3D2F]" },
+  sand: { face: "bg-[#EEDFC6]", ink: "text-[#26233D]", soft: "bg-[#FFF0DD]", softInk: "text-[#7E5020]" },
+  slate: { face: "bg-[#6E5A96]", ink: "text-white", soft: "bg-[#F1EAFB]", softInk: "text-[#5A4382]" },
+  ink: { face: "bg-[#1F1E2A]", ink: "text-white", soft: "bg-[#ECEBEF]", softInk: "text-[#1F1E2A]" },
 };
 
 export function RetailerMark({ retailer, className }: { retailer: Retailer; className?: string }) {

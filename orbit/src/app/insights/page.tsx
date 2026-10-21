@@ -67,7 +67,7 @@ export default function InsightsPage() {
 
   return (
     <Shell nav={false}>
-      <BackBar fallback="/settings/" title="Shopping Insights" />
+      <BackBar fallback="/you/" title="Shopping Insights" />
       <p className="pb-4 pt-1 text-[16px] text-muted">Private awareness, not a budget. Only purchases Tote knows about count.</p>
 
       <div role="radiogroup" aria-label="Time period" className="mt-4 inline-flex rounded-full bg-ivory-deep p-1">

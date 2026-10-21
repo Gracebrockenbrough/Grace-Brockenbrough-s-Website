@@ -27,8 +27,8 @@ const js = await build({
   logLevel: "error",
 });
 
-// Inter comes from Google Fonts here instead of the bundled package.
-const source = (await readFile(path.join(root, "src/app/globals.css"), "utf8")).replace('@import "@fontsource-variable/inter";', "");
+// Fonts come from Google Fonts here instead of the bundled packages.
+const source = (await readFile(path.join(root, "src/app/globals.css"), "utf8")).replace(/@import "@fontsource-variable\/[a-z-]+";\n/g, "");
 const css = await postcss([tailwind({ base: root, optimize: true })]).process(source, { from: path.join(root, "src/app/globals.css") });
 
 const script = js.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
@@ -36,7 +36,7 @@ const html = `<title>Tote</title>
 <meta name="description" content="Tote: returns, refunds and gift cards in one place. Interactive prototype with fictional demo data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..700,0..100,0..1&display=swap">
 <style>${css.css}
 html, body { background: #F8F7F4; color: #19243B; }
 </style>

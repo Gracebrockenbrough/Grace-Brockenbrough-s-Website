@@ -252,7 +252,7 @@ export default function SavedPage() {
 
   return (
     <Shell>
-      <BackBar fallback="/settings/" title="Saved for Later" />
+      <BackBar fallback="/you/" title="Saved for Later" />
       <p className="pb-1 pt-1 text-[16px] text-muted">Products and ideas you want to remember. Only you can see them.</p>
 
       <div className="mt-4 grid grid-cols-4 gap-2" role="group" aria-label="Save something for later">

@@ -27,12 +27,13 @@ export function Notice({ tone = "info", title, children, action, className }: { 
 }
 
 /** Small pill used for a status the user must not misread (Estimated, Unverified, Demo). */
-export function Tag({ children, tone = "neutral", className }: { children: ReactNode; tone?: "neutral" | "urgent" | "success" | "warning"; className?: string }) {
+export function Tag({ children, tone = "neutral", className }: { children: ReactNode; tone?: "neutral" | "urgent" | "success" | "warning" | "progress"; className?: string }) {
   const map = {
     neutral: "bg-ivory-deep text-muted",
     urgent: "bg-terracotta-soft text-terracotta",
     success: "bg-sage text-sage-ink",
     warning: "bg-sand text-sand-ink",
+    progress: "bg-progress-soft text-progress",
   };
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[13px] font-semibold", map[tone], className)}>{children}</span>;
 }

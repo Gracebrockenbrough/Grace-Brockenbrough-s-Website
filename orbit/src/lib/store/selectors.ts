@@ -338,3 +338,17 @@ export function orderDeadlines(v: OrderView, today: DateOnly): ReturnDeadlines {
   const start: Deadline = item?.deadline ?? v.deadline ?? { kind: "unknown", reason: "We don't have enough to work out a deadline.", missing: "policy" };
   return returnDeadlines(start, r, v.policy, today);
 }
+
+/**
+ * Money actually back with the customer this year: card refunds they confirmed arrived,
+ * plus store credit the store issued. Expected or merely "issued" card refunds don't count.
+ */
+export function recoveredThisYear(d: OrbitData, today: DateOnly): number {
+  const year = today.slice(0, 4);
+  const cents = d.refunds.reduce((s, f) => {
+    if (!f.confirmed) return s;
+    const at = f.destination === "store_credit" ? f.confirmed.at : f.arrivedAt ?? (f.confirmed.by === "customer" ? f.confirmed.at : null);
+    return at && at.startsWith(year) ? s + Math.round(f.confirmed.amount * 100) : s;
+  }, 0);
+  return cents / 100;
+}

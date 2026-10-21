@@ -20,6 +20,7 @@ import { daysBetween, formatDate } from "@/lib/domain/dates";
 import { creditTypeLabel, money } from "@/lib/domain/format";
 import { retailerOf } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
+import { toast } from "@/components/ui/toast";
 
 const REVEAL_SECONDS = 30;
 
@@ -223,6 +224,7 @@ function CardDetail() {
             disabled={newBalance === "" || Number.isNaN(Number(newBalance))}
             onClick={() => {
               actions.updateBalance(item.id, Number(newBalance));
+              toast("Balance updated", "Marked as reported by you, with today's date.");
               setBalanceSheet(false);
             }}
           >

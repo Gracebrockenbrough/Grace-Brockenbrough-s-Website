@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, CircleCheck, Unplug, WalletCards } from "lucide-react";
+import { ChevronRight, Unplug, UsersRound, WalletCards, X } from "lucide-react";
+import { DoneCheck } from "@/components/ui/done-check";
 import { Shell, TopBar } from "@/components/layout/shell";
 import { AskBar } from "@/components/orbit/ask-bar";
 import { PriorityRow } from "@/components/orbit/priority-row";
@@ -43,11 +44,11 @@ export default function TodayPage() {
 
   return (
     <Shell>
-      <TopBar />
+      <TopBar date={new Date(`${today}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })} />
       <div className="pb-4 pt-2">
-        <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.025em]">{greeting(profile.firstName)}</h1>
+        <h1 className="font-display text-[34px] leading-[1.08]">{greeting(profile.firstName)}</h1>
         <p className="mt-1 text-[17px] text-muted">
-          {isEmpty ? "Let's bring your purchases into Tote." : needs.length ? `${plural(needs.length, "thing")} ${needs.length === 1 ? "needs" : "need"} you.` : "You're all caught up."}
+          {isEmpty ? "Let's bring your purchases into Tote." : needs.length ? `${plural(needs.length, "thing")} ${needs.length === 1 ? "needs" : "need"} you.` : "Everything's in order."}
         </p>
       </div>
 
@@ -86,7 +87,7 @@ export default function TodayPage() {
           <section aria-labelledby="attention" className="mt-6">
             <div className="mb-2.5 flex items-baseline justify-between">
               <h2 id="attention" className="text-[17px] font-semibold">
-                Needs you
+                Needs attention
               </h2>
               {todos.length > top.length && <TextLink href="/attention/">See all {todos.length}</TextLink>}
             </div>
@@ -97,11 +98,12 @@ export default function TodayPage() {
                 ))}
               </div>
             ) : (
-              <Card className="flex items-center gap-3 p-4">
-                <span className="flex size-11 items-center justify-center rounded-full bg-sage text-sage-ink">
-                  <CircleCheck aria-hidden className="size-5" />
+              <Card className="flex items-center gap-4 p-5">
+                <DoneCheck className="size-12" />
+                <span>
+                  <span className="font-display block text-[22px] leading-tight">All taken care of.</span>
+                  <span className="block text-[15px] text-muted">No deadlines, labels or refunds need you right now.</span>
                 </span>
-                <p className="text-[15px] text-muted">No deadlines, labels or refunds need you right now.</p>
               </Card>
             )}
           </section>
@@ -110,14 +112,14 @@ export default function TodayPage() {
           {(potential.count > 0 || pendingRefunds.length > 0) && (
             <div className="mt-4 grid grid-cols-2 gap-2.5">
               {potential.count > 0 && (
-                <Link href="/attention/" className="rounded-[20px] bg-ivory-deep px-4 py-3 hover:bg-[#ebe8e1]">
+                <Link href="/attention/" className="rounded-[20px] bg-ivory-deep px-4 py-3 hover:bg-[#ebe7e0]">
                   <span className="block text-[13px] font-semibold text-muted">Could come back</span>
                   <span className="tabular block text-[22px] font-semibold tracking-[-0.02em]">{money(potential.amount)}</span>
                   <span className="block text-[13px] text-muted">{plural(potential.count, "return")} due in 2 weeks</span>
                 </Link>
               )}
               {pendingRefunds.length > 0 && (
-                <Link href="/returns/" onClick={() => presetSession("purchases-filter", "refunds")} className="rounded-[20px] bg-ivory-deep px-4 py-3 hover:bg-[#ebe8e1]">
+                <Link href="/returns/" onClick={() => presetSession("purchases-filter", "refunds")} className="rounded-[20px] bg-ivory-deep px-4 py-3 hover:bg-[#ebe7e0]">
                   <span className="block text-[13px] font-semibold text-muted">Refunds on the way</span>
                   <span className="tabular block text-[22px] font-semibold tracking-[-0.02em]">{money(refundAmount)}</span>
                   <span className="block text-[13px] text-muted">{plural(pendingRefunds.length, "refund")}, not confirmed yet</span>
@@ -126,15 +128,32 @@ export default function TodayPage() {
             </div>
           )}
 
-          <div className="mt-8">
+          <section aria-labelledby="upcoming" className="mt-8">
+            <h2 id="upcoming" className="sr-only">
+              Upcoming
+            </h2>
             <WeekCalendar events={calendarEvents(data, today)} today={today} data={data} />
-          </div>
+          </section>
+
+          {/* Circle stays below anything urgent, and can be hidden. */}
+          {(data.prefs.circlePreview ?? true) && (
+            <section aria-label="From your Circle" className="mt-8 flex items-center gap-3 rounded-[20px] bg-circle-soft px-4 py-3.5">
+              <UsersRound aria-hidden className="size-5 shrink-0 text-circle" />
+              <Link href="/circle/" className="min-w-0 flex-1">
+                <span className="block text-[15px] font-semibold">See what returns are like before you buy</span>
+                <span className="block text-[14px] text-muted">Store policies and friends&apos; favorite shops, in Circle</span>
+              </Link>
+              <button type="button" aria-label="Hide Circle on Today" onClick={() => actions.setPrefs({ circlePreview: false })} className="-mr-2 inline-flex size-11 items-center justify-center rounded-full text-muted hover:bg-white/60">
+                <X aria-hidden className="size-4" />
+              </button>
+            </section>
+          )}
         </>
       )}
 
       {data.wallet.length > 0 && preview.outage !== "wallet" && (
         <Link href="/wallet/" className="mt-8 flex min-h-16 items-center gap-3 border-t border-line pt-4 text-left">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-ivory-deep">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-wallet-soft text-wallet">
             <WalletCards aria-hidden className="size-5" />
           </span>
           <span className="min-w-0 flex-1">

@@ -44,7 +44,7 @@ function Claim() {
 
       <section className="animate-in pt-6 text-center">
         <p className="text-[16px] text-muted">{gift.senderName} sent you a gift</p>
-        <div className={cn("relative mx-auto mt-5 aspect-[1.586] w-full max-w-[360px] overflow-hidden rounded-[22px] p-5 text-left shadow-[var(--shadow-lift)]", t.face, t.ink)}>
+        <div className={cn("animate-reveal relative mx-auto mt-5 aspect-[1.586] w-full max-w-[360px] overflow-hidden rounded-[22px] p-5 text-left shadow-[var(--shadow-lift)]", t.face, t.ink)}>
           <div className="flex h-full flex-col justify-between">
             <p className="text-[20px] font-semibold">{retailer.name}</p>
             <div>

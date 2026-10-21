@@ -10,6 +10,8 @@ import type {
   WishItem,
   ConnectedAccount,
   ConnectionStatus,
+  FavoriteStore,
+  PublicProfile,
   ConnectorId,
   ImportSettings,
   DateOnly,
@@ -643,6 +645,26 @@ export const actions = {
       .map((m) => actions.importMessage({ ...m, channel: "sample_inbox", connectionId: id }));
     setData((d) => ({ ...d, connections: d.connections.map((c) => (c.id === id ? { ...c, status: "connected", lastError: null, lastSyncedAt: now() } : c)) }));
     return results;
+  },
+
+  // ── You and Circle ───────────────────────────────────────────────────
+  /** Saves or unsaves a store. New favorites are private until the customer shares them. */
+  toggleFavoriteStore(retailerId: string): boolean {
+    let saved = false;
+    setData((d) => {
+      const list = d.favoriteStores ?? [];
+      saved = !list.some((f) => f.retailerId === retailerId);
+      return { ...d, favoriteStores: saved ? [{ retailerId, visibility: "private", addedAt: now() }, ...list] : list.filter((f) => f.retailerId !== retailerId) };
+    });
+    return saved;
+  },
+
+  setFavoriteVisibility(retailerId: string, visibility: FavoriteStore["visibility"]) {
+    setData((d) => ({ ...d, favoriteStores: (d.favoriteStores ?? []).map((f) => (f.retailerId === retailerId ? { ...f, visibility } : f)) }));
+  },
+
+  setPublicProfile(patch: Partial<PublicProfile>) {
+    setData((d) => ({ ...d, publicProfile: { displayName: DEMO_PROFILE.firstName, bio: null, ...d.publicProfile, ...patch } }));
   },
 
   // ── Saved for Later ─────────────────────────────────────────────────────────
