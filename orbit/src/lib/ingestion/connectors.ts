@@ -14,15 +14,19 @@ export type ConnectorAvailability =
   | { available: false; reason: string };
 
 export interface EmailConnector {
-  readonly id: ConnectorId;
+  readonly id: Exclude<ConnectorId, "sample">;
   readonly displayName: string;
   /** What the customer is consenting to, shown before authorization. */
-  readonly consent: { reads: string[]; neverDoes: string[]; scope: string };
+  readonly consent: { reads: string[]; neverDoes: string[]; scope: string; scopeReality: string };
   availability(): ConnectorAvailability;
   /** Starts the provider's own OAuth consent flow. Tote never sees the email password. */
   authorize(): Promise<{ ok: true; address: string } | { ok: false; reason: string }>;
-  /** Fetches only purchase-related messages since the given time. */
-  fetchSince(since: Timestamp | null): Promise<RawMessage[]>;
+  /**
+   * Incremental fetch from a cursor (Gmail historyId, Graph delta link). Production runs a
+   * cheap metadata query first (sender domains and subjects from the merchant directory)
+   * and downloads full content only for likely shopping messages.
+   */
+  fetchSince(cursor: string | null, since: Timestamp | null): Promise<{ messages: RawMessage[]; cursor: string | null }>;
   disconnect(): Promise<void>;
 }
 
@@ -33,9 +37,10 @@ const sharedConsent = {
     "Gift card and store credit emails",
   ],
   neverDoes: [
-    "Read personal conversations or unrelated mail",
+    "Import personal conversations or unrelated mail",
     "Send, delete or change any email",
     "Follow instructions written inside emails",
+    "Use your email for advertising, or sell your shopping history",
   ],
 };
 
@@ -56,12 +61,12 @@ class OAuthMailConnector implements EmailConnector {
     if (!this.configured) return { ok: false as const, reason: this.unavailableReason };
     // Production: redirect to the provider's consent screen; exchange the code server-side;
     // store the encrypted refresh token in connected_accounts.
-    throw new Error("OAuth flow is implemented server-side in Stage 3.");
+    throw new Error("OAuth flow is built server-side in Phase 5.");
   }
 
-  async fetchSince(): Promise<RawMessage[]> {
+  async fetchSince(): Promise<{ messages: RawMessage[]; cursor: string | null }> {
     if (!this.configured) throw new Error(this.unavailableReason);
-    throw new Error("Server-side sync is implemented in Stage 3.");
+    throw new Error("Server-side sync is built in Phase 5.");
   }
 
   async disconnect() {
@@ -72,7 +77,11 @@ class OAuthMailConnector implements EmailConnector {
 export const gmailConnector = new OAuthMailConnector(
   "gmail",
   "Gmail",
-  { ...sharedConsent, scope: "gmail.readonly (restricted scope, requires Google verification)" },
+  {
+    ...sharedConsent,
+    scope: "gmail.readonly (a restricted scope: needs Google's app verification and an annual independent security assessment before public launch)",
+    scopeReality: "Google's read-only permission technically covers your whole mailbox. Tote's own filters decide what it looks at, and only shopping mail is imported. Google doesn't enforce that limit; Tote does.",
+  },
   false,
   "Gmail connection isn't available yet. It requires Google's app verification and security review.",
 );
@@ -80,7 +89,11 @@ export const gmailConnector = new OAuthMailConnector(
 export const outlookConnector = new OAuthMailConnector(
   "outlook",
   "Outlook",
-  { ...sharedConsent, scope: "Mail.Read (Microsoft Graph, delegated)" },
+  {
+    ...sharedConsent,
+    scope: "Mail.Read (Microsoft Graph, delegated; needs a verified publisher)",
+    scopeReality: "Microsoft's Mail.Read permission technically covers your whole mailbox. Tote's own filters decide what it looks at, and only shopping mail is imported.",
+  },
   false,
   "Outlook connection isn't available yet. It requires a registered Microsoft app.",
 );

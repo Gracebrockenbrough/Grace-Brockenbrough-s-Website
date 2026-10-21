@@ -9,7 +9,23 @@
  */
 import type { ReturnPolicy, Retailer } from "../domain/types";
 
+type PolicyInput = Omit<ReturnPolicy, "version" | "effectiveFrom" | "labelWithinDays" | "shipWithinDays" | "inStore"> & Partial<ReturnPolicy>;
+
 export const SEED_RETAILERS: Retailer[] = [
+  {
+    // Amazon is supported through emails, shared receipts and manual entry, with handoff
+    // to Amazon's own Your Orders page for returns. Tote has no Amazon API access.
+    id: "amazon",
+    name: "Amazon",
+    websiteUrl: "https://www.amazon.com",
+    returnsUrl: "https://www.amazon.com/gp/css/order-history",
+    supportUrl: "https://www.amazon.com/gp/help/customer/display.html",
+    balanceCheckUrl: "https://www.amazon.com/gc/balance",
+    returnCapability: "guided",
+    giftPartner: false,
+    tone: "ink",
+    category: "general",
+  },
   {
     id: "reformation",
     name: "Reformation",
@@ -110,7 +126,34 @@ export const SEED_RETAILERS: Retailer[] = [
 
 /** Builds sample policies; `checked` is the policy's last-checked date. */
 export function seedPolicies(checked: (daysAgo: number) => string): ReturnPolicy[] {
-  return [
+  const v = (p: PolicyInput): ReturnPolicy => ({
+    version: 1,
+    effectiveFrom: null,
+    labelWithinDays: null,
+    shipWithinDays: null,
+    inStore: { accepted: p.dropOff.includes("store") ? true : null, windowDays: null, note: null },
+    ...p,
+  });
+  const list: PolicyInput[] = [
+    {
+      retailerId: "amazon",
+      // Amazon asks you to ship within a set time after starting the return.
+      shipWithinDays: 30,
+      inStore: { accepted: true, windowDays: null, note: "Some items can be dropped off without a box at participating stores." },
+      windowDays: 30,
+      windowStartsAt: "delivery",
+      refundMethods: ["original_payment", "store_credit"],
+      refundTimelineDays: 7,
+      fees: { mail: null, inStore: 0, waivedForStoreCredit: null },
+      exceptions: [{ kind: "other", description: "Many items are sold by third-party sellers with their own return terms." }],
+      initiation: "online_portal",
+      shipping: { boxRequired: null, printingRequired: null, qrCodeAvailable: true },
+      dropOff: ["ups", "store"],
+      approvalRequired: null,
+      sourceUrl: "https://www.amazon.com/gp/help/customer/display.html",
+      lastCheckedAt: checked(10),
+      verification: "sample",
+    },
     {
       retailerId: "reformation",
       windowDays: 30,
@@ -145,6 +188,7 @@ export function seedPolicies(checked: (daysAgo: number) => string): ReturnPolicy
     },
     {
       retailerId: "sephora",
+      inStore: { accepted: true, windowDays: 30, note: "In-store returns need the receipt or the card used to pay." },
       windowDays: 30,
       windowStartsAt: "purchase",
       refundMethods: ["original_payment", "store_credit"],
@@ -163,6 +207,7 @@ export function seedPolicies(checked: (daysAgo: number) => string): ReturnPolicy
     },
     {
       retailerId: "madewell",
+      shipWithinDays: 14,
       windowDays: 30,
       windowStartsAt: "delivery",
       refundMethods: ["original_payment", "store_credit"],
@@ -227,6 +272,9 @@ export function seedPolicies(checked: (daysAgo: number) => string): ReturnPolicy
     },
     {
       retailerId: "jcrew",
+      approvalRequired: true,
+      labelWithinDays: 7,
+      shipWithinDays: 14,
       windowDays: 30,
       windowStartsAt: "delivery",
       refundMethods: ["original_payment", "store_credit"],
@@ -236,10 +284,29 @@ export function seedPolicies(checked: (daysAgo: number) => string): ReturnPolicy
       initiation: "online_portal",
       shipping: { boxRequired: true, printingRequired: null, qrCodeAvailable: null },
       dropOff: ["ups", "store"],
-      approvalRequired: false,
       sourceUrl: "https://www.jcrew.com",
       lastCheckedAt: checked(30),
       verification: "sample",
     },
+    {
+      // A newer version: orders placed before it keep the version-1 terms above.
+      retailerId: "aritzia",
+      version: 2,
+      effectiveFrom: checked(3),
+      windowDays: 30,
+      windowStartsAt: "delivery",
+      refundMethods: ["original_payment", "store_credit"],
+      refundTimelineDays: 14,
+      fees: { mail: 9.95, inStore: 0, waivedForStoreCredit: true },
+      exceptions: [{ kind: "final_sale", description: "Items marked final sale can't be returned." }],
+      initiation: "online_portal",
+      shipping: { boxRequired: true, printingRequired: false, qrCodeAvailable: true },
+      dropOff: ["ups", "store"],
+      approvalRequired: false,
+      sourceUrl: "https://www.aritzia.com",
+      lastCheckedAt: checked(3),
+      verification: "sample",
+    },
   ];
+  return list.map(v);
 }

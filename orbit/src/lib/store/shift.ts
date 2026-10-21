@@ -31,10 +31,10 @@ export function shiftSeedDates(data: OrbitData, days: number): OrbitData {
     returns: pick(data.returns),
     refunds: pick(data.refunds),
     wallet: pick(data.wallet),
-    promotions: pick(data.promotions),
     wishlist: pick(data.wishlist),
     evidence: pick(data.evidence),
     connections: shiftDeep(data.connections, days),
+    jobs: data.jobs,
     dismissed: shiftDeep(data.dismissed, days),
   };
 }

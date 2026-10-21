@@ -37,7 +37,7 @@ describe("return stages", () => {
   });
 
   it("potential return value covers decisions and drop-offs in the next two weeks", () => {
-    expect(potentialReturnValue(buildPriorities(data, TODAY))).toEqual({ amount: 318, count: 2 });
+    expect(potentialReturnValue(buildPriorities(data, TODAY))).toEqual({ amount: 397.99, count: 3 }); // Reformation, Madewell, Amazon
   });
 });
 
@@ -45,7 +45,7 @@ describe("calendar", () => {
   const events = calendarEvents(data, TODAY);
   it("separates decision, drop-off and refund dates, each linked to its record", () => {
     expect(eventsOn(events, "2026-10-23")).toEqual([expect.objectContaining({ kind: "decide_by", certainty: "confirmed", href: "/returns/purchase/?id=d-o-ref" })]);
-    expect(eventsOn(events, "2026-10-25")).toEqual([expect.objectContaining({ kind: "drop_off_by", href: "/returns/label/?id=d-r-mad" })]);
+    expect(eventsOn(events, "2026-10-25")).toEqual([expect.objectContaining({ kind: "drop_off_by", href: "/returns/kit/?id=d-r-mad" })]);
     expect(eventsOn(events, "2026-10-16")).toContainEqual(expect.objectContaining({ kind: "refund_expected", label: "Refund needs checking", certainty: "estimated" }));
   });
   it("marks estimated deadlines as estimated", () => {
@@ -84,7 +84,7 @@ describe("Ask Tote, broader questions", () => {
   });
   it("finds a label", () => {
     const r = ask("Find the label for my jeans", data, TODAY).results[0];
-    expect(r.actions[0]).toEqual({ label: "Show QR Code", href: "/returns/label/?id=d-r-mad" });
+    expect(r.actions[0]).toEqual({ label: "Show QR Code", href: "/returns/kit/?id=d-r-mad" });
   });
   it("answers spending questions from recorded orders", () => {
     const r = ask("How much did I spend on clothing this year?", data, TODAY).results[0];

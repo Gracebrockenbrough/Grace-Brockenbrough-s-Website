@@ -79,7 +79,8 @@ function detectRetailer(msg: RawMessage, retailers: Retailer[]): Extraction["ret
   const display = msg.from?.match(/^\s*"?([^"<@]+?)"?\s*</)?.[1];
   const domain = from.match(/@([a-z0-9-]+)\./)?.[1];
   const name = display ?? (domain ? domain[0].toUpperCase() + domain.slice(1) : null);
-  return name ? det({ id: null, name }, msg.from, "low") : null;
+  // A sender display name ("Hollis & Pine <orders@…>") is decent evidence; a bare domain is weak.
+  return name ? det({ id: null, name }, msg.from, display ? "medium" : "low") : null;
 }
 
 const SKIP_LINE = /\b(sub-?total|total|tax|shipping|delivery fee|discount|promo|savings|refund|balance|paid|payment|card ending)\b/i;
@@ -126,7 +127,7 @@ export function parseMessage(msg: RawMessage, retailers: Retailer[]): Extraction
   const received = toDateOnly(new Date(msg.receivedAt));
 
   const orderNo = text.match(/order\s*(?:number|no\.?|#|id)?\s*[:#]?\s*#?\s*([A-Z]{0,4}-?\d[A-Z0-9-]{4,})/i);
-  const totalM = text.match(/(?:order\s+)?total\s*[:\-]?\s*\$\s?(\d{1,6}(?:,\d{3})*(?:\.\d{2})?)/i);
+  const totalM = text.match(/(?<!sub-?\s?)\btotal\s*[:\-]?\s*\$\s?(\d{1,6}(?:,\d{3})*(?:\.\d{2})?)/i);
   const refundM = text.match(/refund of\s*\$\s?(\d{1,6}(?:,\d{3})*(?:\.\d{2})?)/i);
   const trackM = text.match(/tracking\s*(?:number|no\.?|#)?\s*[:#]?\s*([A-Z0-9]{10,34})/i);
   const deadlineM = text.match(new RegExp(`return(?:s)?(?:\\s+accepted)?\\s+(?:by|until|before|through)\\s+${DATE_PATTERN}`, "i"));

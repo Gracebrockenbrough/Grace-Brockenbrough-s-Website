@@ -9,11 +9,13 @@
  */
 import { daysBetween, formatDate } from "../domain/dates";
 import { countWord, orderTotal } from "../domain/format";
+import { sumMoney } from "../domain/money";
 import type { DateOnly, NotificationPrefs } from "../domain/types";
 import type { OrbitData } from "../store/state";
-import type { Indicator } from "../store/selectors";
+import { policyForOrder, type Indicator } from "../store/selectors";
 import { buildBuckets } from "./buckets";
 import { insights, rangeFor } from "./insights";
+import { refundAskerStatus } from "./refunds";
 import { assessItem, type ItemAssessment } from "./returns";
 
 export type PriorityKind =
@@ -25,10 +27,8 @@ export type PriorityKind =
   | "missing_info"
   | "delivery_soon"
   | "refund_arrival"
-  | "wishlist_sale"
-  | "credit_sale"
-  | "goal_over"
-  | "favorites_sales";
+  | "refund_missing"
+  | "goal_over";
 
 export type Bucket = "overdue" | "soon" | "week" | "updates" | "later" | "missing";
 
@@ -63,21 +63,19 @@ export const kindMeta: Record<PriorityKind, { indicator: Indicator; label: strin
   credit_expiring: { indicator: "credit", label: "Credit expiring", due: "Use by" },
   missing_info: { indicator: "unknown", label: "Deadline unknown", due: "" },
   delivery_soon: { indicator: "arriving", label: "Arriving soon", due: "Expected" },
-  refund_arrival: { indicator: "refund", label: "Refund issued", due: "Issued" },
-  wishlist_sale: { indicator: "wish", label: "Wishlist on sale", due: "Ends" },
-  credit_sale: { indicator: "sale", label: "Use your credit", due: "Sale ends" },
+  refund_arrival: { indicator: "refund", label: "Did your refund arrive?", due: "Issued" },
+  refund_missing: { indicator: "refund_check", label: "Refund reported missing", due: "Reported" },
   goal_over: { indicator: "goal", label: "Spending goal", due: "" },
-  favorites_sales: { indicator: "sale", label: "Favorite brands", due: "" },
 };
 
-/** Opportunities and check-ins: shown as updates, never ranked above money you could lose. */
-const UPDATE_KINDS: PriorityKind[] = ["delivery_soon", "refund_arrival", "wishlist_sale", "credit_sale", "goal_over", "favorites_sales"];
+/** Check-ins: shown as updates, never ranked above money you could lose. */
+const UPDATE_KINDS: PriorityKind[] = ["delivery_soon", "refund_arrival", "goal_over"];
 
 export const bucketMeta: Record<Bucket, { title: string; hint: string }> = {
   overdue: { title: "Overdue", hint: "Past the date. Act now." },
   soon: { title: "Next 3 days", hint: "Money you could lose soon." },
   week: { title: "This week", hint: "" },
-  updates: { title: "Updates", hint: "Sales and check-ins worth knowing about." },
+  updates: { title: "Updates", hint: "Check-ins worth knowing about." },
   later: { title: "Later deadlines", hint: "" },
   missing: { title: "Deadline unknown", hint: "We need a detail before we can set a date." },
 };
@@ -99,7 +97,7 @@ export function bucketFor(daysLeft: number | null): Bucket {
 export function orderAssessments(data: OrbitData, orderId: string, today: DateOnly): ItemAssessment[] {
   const order = data.orders.find((o) => o.id === orderId);
   if (!order) return [];
-  const policy = data.policies.find((p) => p.retailerId === order.retailerId) ?? null;
+  const policy = policyForOrder(data, order);
   return order.items.map((i) => assessItem(order, i, policy, data.returns, today));
 }
 
@@ -168,7 +166,7 @@ export function buildPriorities(data: OrbitData, today: DateOnly, prefs: Notific
           dueDate: r.shipBy,
           amount,
           estimated: false,
-          action: { label: r.artifacts.some((x) => x.kind === "qr_code") ? "Show QR Code" : "View Label", href: `/returns/label/?id=${r.id}` },
+          action: { label: r.artifacts.some((x) => x.kind === "qr_code") ? "Show QR Code" : "View Label", href: `/returns/kit/?id=${r.id}` },
           detailHref: `/returns/purchase/?id=${order.id}`,
         });
       } else if (r.status === "prepared") {
@@ -257,80 +255,44 @@ export function buildPriorities(data: OrbitData, today: DateOnly, prefs: Notific
     }
   }
 
-  // Refunds the store issued that the customer hasn't confirmed arriving.
+  // Refund Asker: refunds the store issued that the customer hasn't confirmed arriving.
+  // Snoozed questions stay quiet until their reminder date, so nothing repeats.
   if (prefs.refunds) {
     for (const f of data.refunds) {
-      if (!f.confirmed || f.confirmed.by !== "retailer_email" || f.destination === "store_credit" || f.arrivedAt) continue;
-      const ago = daysBetween(f.confirmed.at, today);
-      if (ago < 2) continue; // give the bank a couple of days first
+      const r = data.returns.find((x) => x.id === f.returnId) ?? null;
+      const status = refundAskerStatus(f, r, today);
       const o = data.orders.find((x) => x.id === f.orderId);
-      out.push({
-        key: `arrival:${f.id}`,
-        kind: "refund_arrival",
-        retailerId: o?.retailerId ?? "",
-        title: o?.items[0] ? `${o.items[0].name}${o.items.length > 1 ? ` + ${o.items.length - 1} more` : ""}` : "Refund",
-        status: `Issued ${ago === 1 ? "yesterday" : `${ago} days ago`}. Have you received it?`,
-        dueDate: null,
-        amount: f.confirmed.amount,
-        estimated: false,
-        action: { label: "Confirm Refund", href: `/returns/refund/?id=${f.id}` },
-        detailHref: `/returns/refund/?id=${f.id}`,
-      });
+      const retailerId = o?.retailerId ?? "";
+      const title = o?.items[0] ? `${o.items[0].name}${o.items.length > 1 ? ` + ${o.items.length - 1} more` : ""}` : "Refund";
+      if (status === "needs_check" && f.confirmed) {
+        const ago = daysBetween(f.confirmed.at, today);
+        out.push({
+          key: `arrival:${f.id}:${f.asker?.askedCount ?? 0}`,
+          kind: "refund_arrival",
+          retailerId,
+          title,
+          status: `Issued ${ago === 1 ? "yesterday" : `${ago} days ago`}. Have you checked it arrived?`,
+          dueDate: null,
+          amount: f.confirmed.amount,
+          estimated: false,
+          action: { label: "Check Refund", href: `/returns/refund/?id=${f.id}` },
+          detailHref: `/returns/refund/?id=${f.id}`,
+        });
+      } else if (status === "reported_missing") {
+        out.push({
+          key: `missing-refund:${f.id}`,
+          kind: "refund_missing",
+          retailerId,
+          title,
+          status: "You said it hasn't arrived. Contact the store with your order number",
+          dueDate: f.asker?.reportedMissingAt ?? today,
+          amount: f.confirmed?.amount ?? f.expected?.amount ?? null,
+          estimated: false,
+          action: { label: "Follow Up", href: `/returns/refund/?id=${f.id}` },
+          detailHref: `/returns/refund/?id=${f.id}`,
+        });
+      }
     }
-  }
-
-  if (prefs.deals ?? true) {
-    const live = data.promotions.filter((p) => p.startsAt <= today && (p.endsAt == null || p.endsAt >= today) && !data.shopping.hiddenPromotionIds.includes(p.id) && !data.shopping.hiddenRetailerIds.includes(p.retailerId));
-    // Wishlist items on sale.
-    for (const w of data.wishlist) {
-      if (w.status !== "active" || (w.until && w.until < today)) continue;
-      const sale = live.find((p) => (!w.retailerId || w.retailerId === p.retailerId) && p.tags.some((t) => w.tags.includes(t)));
-      if (!sale) continue;
-      out.push({
-        key: `wish:${w.id}:${sale.id}`,
-        kind: "wishlist_sale",
-        retailerId: sale.retailerId,
-        title: w.text,
-        status: `${sale.discountPct ? `${sale.discountPct}% off` : "On sale"} now`,
-        dueDate: sale.endsAt,
-        amount: null,
-        estimated: false,
-        action: { label: "See Sale", href: `/promo/?id=${sale.id}` },
-        detailHref: `/promo/?id=${sale.id}`,
-      });
-    }
-    // Credit at a store that's having a sale.
-    for (const p of live) {
-      const credit = data.wallet.filter((w) => w.retailerId === p.retailerId && (w.balance ?? 0) > 0 && !(w.expiration.kind === "date" && w.expiration.date < today)).reduce((s, w) => s + (w.balance ?? 0), 0);
-      if (!credit || p.sponsored) continue;
-      out.push({
-        key: `creditsale:${p.id}`,
-        kind: "credit_sale",
-        retailerId: p.retailerId,
-        title: p.title,
-        status: `You already have $${credit} to spend here`,
-        dueDate: p.endsAt,
-        amount: credit,
-        estimated: false,
-        action: { label: "See Sale", href: `/promo/?id=${p.id}` },
-        detailHref: `/promo/?id=${p.id}`,
-      });
-    }
-    // Several favorite brands on sale.
-    const favs = new Set(live.filter((p) => data.shopping.favoriteRetailerIds.includes(p.retailerId)).map((p) => p.retailerId));
-    if (favs.size >= 3)
-      out.push({
-        key: `favs:${today.slice(0, 7)}:${favs.size}`,
-        kind: "favorites_sales",
-        retailerId: "",
-        title: `${countWord(favs.size)} of your favorite brands have sales`,
-        status: "See them together in Discover",
-        dueDate: null,
-        amount: null,
-        estimated: false,
-        action: { label: "See Their Sales", href: "/sales/?filter=favorites" },
-        detailHref: "/sales/?filter=favorites",
-      });
   }
 
   // Optional spending goals the customer set themselves.
@@ -383,7 +345,7 @@ export function potentialReturnValue(list: Priority[], days = 14): { amount: num
 
 /** Total money across to-dos. */
 export function amountAtStake(list: Priority[]): number {
-  return Math.round(list.reduce((s, p) => s + (p.amount ?? 0), 0) * 100) / 100;
+  return sumMoney(list.map((p) => p.amount));
 }
 
 /** "3 days", "Today", "4 days late", "Deadline unknown". Past refund dates read "4 days ago". */
@@ -392,7 +354,7 @@ export function dueText(p: { daysLeft: number | null; kind?: string }): string {
   if (n == null) return "Deadline unknown";
   if (n < 0) {
     const d = n === -1 ? "1 day" : `${-n} days`;
-    return p.kind === "refund_check" ? `${d} ago` : `${d} late`;
+    return p.kind === "refund_check" || p.kind === "refund_missing" ? `${d} ago` : `${d} late`;
   }
   if (n === 0) return "Today";
   if (n === 1) return "Tomorrow";

@@ -7,11 +7,11 @@
 import { useSyncExternalStore } from "react";
 import { daysBetween, toDateOnly } from "../domain/dates";
 import type {
-  Promotion,
-  ShoppingPrefs,
   WishItem,
+  ConnectedAccount,
   ConnectionStatus,
   ConnectorId,
+  ImportSettings,
   DateOnly,
   DropOffKind,
   GiftTransfer,
@@ -23,19 +23,22 @@ import type {
   ReturnStatus,
   WalletItem,
 } from "../domain/types";
-import { DEMO_PROFILE, buildDemoData } from "../demo/seed";
+import { DEMO_PROFILE, PERSONAL, SCHOOL, buildDemoData } from "../demo/seed";
 import { buildBusyMonth } from "../demo/busy";
 import type { ItemKind } from "../intelligence/buckets";
-import { blankOrder, customRetailer, evidenceFromMessage, findDuplicate, isDuplicateMessage, mergeExtraction } from "../ingestion/dedupe";
+import { blankOrder, conflicts, customRetailer, evidenceFromMessage, findDuplicate, mergeExtraction } from "../ingestion/dedupe";
+import { gmailConnector, outlookConnector } from "../ingestion/connectors";
+import { processMessage } from "../ingestion/pipeline";
 import { money, orderTotal } from "../domain/format";
 import { returnFacts } from "../intelligence/returns";
-import { parseMessage } from "../ingestion/parse";
+import { remindOnFor } from "../intelligence/refunds";
 import { sampleMessages } from "../ingestion/samples";
-import type { Extraction, RawMessage } from "../ingestion/types";
+import type { Extraction, MessageCategory, ProcessingJob, RawMessage } from "../ingestion/types";
+import { policyForOrder } from "./selectors";
 import { shiftSeedDates } from "./shift";
 import { EMPTY_PREVIEW, emptied, type OrbitData, type PersistedState, type PreviewFlags } from "./state";
 
-const KEY = "orbit:v3";
+const KEY = "tote:v4";
 const listeners = new Set<() => void>();
 let state: PersistedState | null = null;
 
@@ -44,7 +47,7 @@ const now = () => new Date().toISOString();
 export const today = (): DateOnly => toDateOnly(new Date());
 
 function fresh(): PersistedState {
-  return { version: 3, anchor: today(), data: buildDemoData(today()), preview: EMPTY_PREVIEW };
+  return { version: 4, anchor: today(), data: buildDemoData(today()), preview: EMPTY_PREVIEW };
 }
 
 function load(): PersistedState {
@@ -52,7 +55,7 @@ function load(): PersistedState {
     const raw = window.localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as PersistedState;
-      if (parsed.version === 3) {
+      if (parsed.version === 4) {
         const shift = daysBetween(parsed.anchor, today());
         return { ...parsed, anchor: today(), data: shiftSeedDates(parsed.data, shift), preview: parsed.preview ?? EMPTY_PREVIEW };
       }
@@ -121,7 +124,7 @@ function patchReturn(id: string, status: ReturnStatus | null, note: string, patc
  * Return Workflow + Refund Service: retailer emails are the evidence that moves a
  * return forward. Only retailer messages can mark a return confirmed or a refund received.
  */
-function linkReturnEvidence(d: OrbitData, orderId: string, x: Extraction, evidenceId: string): OrbitData {
+function linkReturnEvidence(d: OrbitData, orderId: string, x: Extraction, evidenceId: string, category: MessageCategory | null = null): OrbitData {
   const at = now();
   if (x.kind === "return_confirmation" || x.kind === "return_label") {
     return {
@@ -139,7 +142,8 @@ function linkReturnEvidence(d: OrbitData, orderId: string, x: Extraction, eviden
       }),
     };
   }
-  if (x.kind === "refund_confirmation" && x.refundAmount) {
+  // Only an issued refund counts. "We'll process your refund" is not a refund.
+  if (x.kind === "refund_confirmation" && x.refundAmount && category !== "refund_initiated") {
     const refund = d.refunds.find((f) => f.orderId === orderId && !f.confirmed);
     if (!refund) return d;
     const amount = x.refundAmount.value;
@@ -159,9 +163,11 @@ function linkReturnEvidence(d: OrbitData, orderId: string, x: Extraction, eviden
 }
 
 export interface ImportResult {
-  status: "added" | "merged" | "duplicate_message" | "unrecognized";
+  status: "added" | "merged" | "duplicate_message" | "unrecognized" | "skipped" | "needs_review";
   orderId: string | null;
   extraction: Extraction | null;
+  /** The audit entry for this message. */
+  job: ProcessingJob | null;
 }
 
 export const actions = {
@@ -207,7 +213,7 @@ export const actions = {
       const order = r && d.orders.find((o) => o.id === r.orderId);
       if (!r || !order || d.refunds.some((f) => f.returnId === returnId)) return d;
       const retailer = d.retailers.find((x) => x.id === order.retailerId);
-      const policy = d.policies.find((p) => p.retailerId === order.retailerId) ?? null;
+      const policy = policyForOrder(d, order);
       const fee = returnFacts(policy, { dropOff: r.dropOff, refund: r.refundPreference }).fee;
       const total = orderTotal(order, r.itemIds);
       const refund: Refund = {
@@ -281,13 +287,63 @@ export const actions = {
     });
   },
 
+  /**
+   * Refund Asker answers. "Not yet" and "Remind me later" snooze the question (no repeat
+   * reminders in between); "missing" flags it so Tote helps follow up with the store.
+   */
+  answerRefund(refundId: string, answer: "not_yet" | "later" | "missing") {
+    const t = today();
+    setData((d) => ({
+      ...d,
+      refunds: d.refunds.map((f) => {
+        if (f.id !== refundId) return f;
+        const prev = f.asker ?? { answer: null, remindOn: null, askedCount: 0, reportedMissingAt: null, resolvedAt: null, resolution: null };
+        const label = answer === "missing" ? "You reported the refund missing" : answer === "not_yet" ? "Not arrived yet (you checked)" : "You'll check later";
+        return {
+          ...f,
+          asker: { ...prev, answer, askedCount: prev.askedCount + 1, remindOn: answer === "missing" ? null : remindOnFor(answer, t), reportedMissingAt: answer === "missing" ? t : prev.reportedMissingAt },
+          milestones: [...f.milestones, { at: now(), label, evidenceId: null }],
+        };
+      }),
+    }));
+  },
+
+  /** A missing refund was sorted out (it arrived late, or the store fixed it). */
+  resolveRefund(refundId: string, resolution: string, amount: number | null = null) {
+    const t = today();
+    setData((d) => ({
+      ...d,
+      refunds: d.refunds.map((f) =>
+        f.id === refundId
+          ? {
+              ...f,
+              arrivedAt: amount != null ? t : f.arrivedAt,
+              confirmed: f.confirmed ?? (amount != null ? { amount, at: t, by: "customer", evidenceId: null } : null),
+              asker: { ...(f.asker ?? { answer: null, remindOn: null, askedCount: 0, reportedMissingAt: null }), answer: f.asker?.answer ?? null, resolvedAt: t, resolution },
+              milestones: [...f.milestones, { at: now(), label: `Resolved: ${resolution}`, evidenceId: null }],
+            }
+          : f,
+      ),
+    }));
+  },
+
   // ── Orders & ingestion ───────────────────────────────────────────────
+  /**
+   * Runs one message through the ingestion pipeline and saves the result. Safe to call
+   * repeatedly: the same message or content is recorded once and never reprocessed.
+   */
   importMessage(msg: RawMessage): ImportResult {
     const d = get().data;
-    if (isDuplicateMessage(d.evidence, msg)) return { status: "duplicate_message", orderId: null, extraction: null };
+    const conn = msg.connectionId ? d.connections.find((c) => c.id === msg.connectionId) : undefined;
+    const decision = processMessage(msg, { retailers: d.retailers, jobs: d.jobs, aiUsage: d.aiUsage, settings: conn?.importSettings, now: now() });
+    const job: ProcessingJob = { ...decision.job, id: uid("job"), orderId: null };
+    const x = decision.extraction;
 
-    const x = parseMessage(msg, d.retailers);
-    if (x.kind === "unknown" && !x.orderNumber && x.items.length === 0) return { status: "unrecognized", orderId: null, extraction: x };
+    if (!decision.save || !x) {
+      setData((s) => ({ ...s, jobs: [job, ...s.jobs].slice(0, 500) }));
+      const status = job.status === "duplicate" ? "duplicate_message" : job.status === "needs_review" ? "needs_review" : job.status.startsWith("skipped") ? (job.status === "skipped_irrelevant" ? "unrecognized" : "skipped") : "unrecognized";
+      return { status, orderId: null, extraction: x, job };
+    }
 
     let retailers = d.retailers;
     let retailerId = x.retailer?.value.id ?? null;
@@ -302,25 +358,53 @@ export const actions = {
     }
 
     const evidence = evidenceFromMessage(msg, x);
-    const dup = findDuplicate(d.orders, retailerId, x.orderNumber?.value ?? null);
-    const base = dup ?? blankOrder(uid("o"), retailerId, now());
+    const dup = findDuplicate(d.orders, retailerId, x.orderNumber?.value ?? null, x.tracking?.value.number ?? null);
+    // Conflicting high-confidence facts are never silently overwritten: ask the customer.
+    const clash = dup ? conflicts(dup, x) : [];
+    const base = dup ?? { ...blankOrder(uid("o"), retailerId, now()), sourceConnectionId: msg.connectionId ?? null, channel: msg.inStore ? ("in_store" as const) : ("online" as const) };
     const merged = mergeExtraction(base, x, evidence.id, () => uid("i"));
+    const done: ProcessingJob = clash.length
+      ? { ...job, status: "needs_review", tier: 3, orderId: merged.id, reason: `This email disagrees with the order on the ${clash.join(" and ")}. We kept the original.` }
+      : { ...job, status: dup ? "merged" : "saved", orderId: merged.id };
+    const saved = clash.length ? { ...dup!, evidenceIds: Array.from(new Set([...dup!.evidenceIds, evidence.id])) } : merged;
 
-    setData((s) => linkReturnEvidence(
-      {
-        ...s,
-        retailers,
-        evidence: [...s.evidence, evidence],
-        orders: dup ? s.orders.map((o) => (o.id === dup.id ? merged : o)) : [merged, ...s.orders],
-      },
-      merged.id,
-      x,
-      evidence.id,
-    ));
-    return { status: dup ? "merged" : "added", orderId: merged.id, extraction: x };
+    setData((s) =>
+      linkReturnEvidence(
+        {
+          ...s,
+          retailers,
+          evidence: [...s.evidence, evidence],
+          orders: dup ? s.orders.map((o) => (o.id === dup.id ? saved : o)) : [saved, ...s.orders],
+          jobs: [done, ...s.jobs].slice(0, 500),
+        },
+        saved.id,
+        x,
+        evidence.id,
+        decision.category,
+      ),
+    );
+    return { status: clash.length ? "needs_review" : dup ? "merged" : "added", orderId: saved.id, extraction: x, job: done };
   },
 
-  addManualOrder(input: { retailerName: string; orderNumber: string | null; purchasedAt: DateOnly | null; deliveredAt: DateOnly | null; itemName: string; price: number | null }): string {
+  /** The customer resolved a review item: saved it as a purchase, or dismissed it. */
+  resolveReview(jobId: string, resolution: "corrected" | "dismissed", orderId: string | null = null) {
+    setData((d) => ({
+      ...d,
+      jobs: d.jobs.map((j) => (j.id === jobId ? { ...j, status: resolution === "dismissed" ? "skipped_irrelevant" : "saved", reason: resolution === "dismissed" ? "Dismissed by you" : "Corrected by you", orderId: orderId ?? j.orderId } : j)),
+    }));
+  },
+
+  addManualOrder(input: {
+    retailerName: string;
+    orderNumber: string | null;
+    purchasedAt: DateOnly | null;
+    deliveredAt: DateOnly | null;
+    itemName: string;
+    price: number | null;
+    inStore?: boolean;
+    /** A receipt photo or PDF kept with the purchase. Not read automatically yet. */
+    attachment?: { name: string; type: string; dataUrl: string } | null;
+  }): string {
     const retailerId = actions.ensureRetailer(input.retailerName);
     const evId = uid("ev");
     const src = { evidenceId: evId, confidence: "high" as const, method: "user" as const };
@@ -333,11 +417,20 @@ export const actions = {
       items: [{ id: uid("i"), name: input.itemName, variant: null, quantity: 1, unitPrice: input.price, category: "other", finalSale: null }],
       evidenceIds: [evId],
       fieldSources: { orderNumber: src, purchasedAt: src, deliveredAt: src, items: src },
+      channel: input.inStore ? "in_store" : "online",
+      // In-store purchases are "delivered" the day they're bought.
+      ...(input.inStore && !input.deliveredAt && input.purchasedAt ? { deliveredAt: input.purchasedAt, shipmentStatus: "delivered" as const } : {}),
     };
+    const file = input.attachment ?? null;
     setData((s) => ({
       ...s,
       orders: [order, ...s.orders],
-      evidence: [...s.evidence, { id: evId, kind: "manual_entry", channel: "manual", title: "Added by you", from: null, receivedAt: now(), excerpt: null }],
+      evidence: [
+        ...s.evidence,
+        file
+          ? { id: evId, kind: "receipt_upload", channel: file.type === "application/pdf" ? "pdf_upload" : "screenshot", title: file.name, from: null, receivedAt: now(), excerpt: "Details entered by you", attachment: file, verification: "verified" }
+          : { id: evId, kind: "manual_entry", channel: "manual", title: "Added by you", from: null, receivedAt: now(), excerpt: null },
+      ],
     }));
     return order.id;
   },
@@ -455,7 +548,7 @@ export const actions = {
   },
 
   // ── Connections, notifications, data ─────────────────────────────────
-  setConnection(id: ConnectorId, status: ConnectionStatus, lastError: string | null = null) {
+  setConnection(id: string, status: ConnectionStatus, lastError: string | null = null) {
     setData((d) => ({
       ...d,
       connections: d.connections.map((c) => (c.id === id ? { ...c, status, lastError, lastSyncedAt: status === "connected" && !c.lastSyncedAt ? now() : c.lastSyncedAt } : c)),
@@ -463,29 +556,96 @@ export const actions = {
   },
 
   /**
-   * Syncs the clearly labeled sample inbox. It goes through the same states a real
-   * mailbox would (syncing, failed, connected), but only ever reads fictional emails.
+   * Adds another inbox to the same Tote profile. Real providers go through their own
+   * OAuth consent; Tote never asks for an email password. Gmail and Outlook aren't
+   * available yet, so only clearly labeled sample inboxes can be added in the prototype.
    */
-  async syncSampleInbox(): Promise<ImportResult[] | null> {
-    actions.setConnection("sample_inbox", "syncing");
+  async addConnection(input: { provider: ConnectorId; label: string; address: string }): Promise<{ ok: true; id: string } | { ok: false; reason: string }> {
+    if (input.provider !== "sample") {
+      const c = input.provider === "gmail" ? gmailConnector : outlookConnector;
+      const a = c.availability();
+      if (!a.available) return { ok: false, reason: a.reason };
+      const res = await c.authorize();
+      if (!res.ok) return res;
+    }
+    const id = uid("conn");
+    const conn: ConnectedAccount = {
+      id,
+      provider: input.provider,
+      label: input.label.trim() || "Email",
+      address: input.address.trim() || null,
+      status: "connecting",
+      lastSyncedAt: null,
+      lastError: null,
+      importSettings: { orders: true, shipping: true, returnsAndRefunds: true, giftCards: true, since: null },
+      connectedAt: now(),
+      demo: input.provider === "sample",
+    };
+    setData((d) => ({ ...d, connections: [...d.connections, conn] }));
+    await new Promise((r) => setTimeout(r, 500));
+    actions.setConnection(id, "connected");
+    return { ok: true, id };
+  },
+
+  renameConnection(id: string, label: string) {
+    setData((d) => ({ ...d, connections: d.connections.map((c) => (c.id === id ? { ...c, label: label.trim() || c.label } : c)) }));
+  },
+
+  setImportSettings(id: string, patch: Partial<ImportSettings>) {
+    setData((d) => ({ ...d, connections: d.connections.map((c) => (c.id === id ? { ...c, importSettings: { ...c.importSettings, ...patch } } : c)) }));
+  },
+
+  /**
+   * Disconnects an inbox (production: revokes the token with the provider). Purchases
+   * already imported stay unless the customer also asks to delete them.
+   */
+  disconnectConnection(id: string, deleteImported = false) {
+    setData((d) => {
+      const connections = d.connections.map((c) => (c.id === id ? { ...c, status: "disconnected" as const, lastError: null } : c));
+      if (!deleteImported) return { ...d, connections };
+      const orderIds = new Set(d.orders.filter((o) => o.sourceConnectionId === id).map((o) => o.id));
+      return {
+        ...d,
+        connections: connections.filter((c) => c.id !== id),
+        orders: d.orders.filter((o) => !orderIds.has(o.id)),
+        returns: d.returns.filter((r) => !orderIds.has(r.orderId)),
+        refunds: d.refunds.filter((f) => !orderIds.has(f.orderId)),
+        evidence: d.evidence.filter((e) => e.connectionId !== id),
+        jobs: d.jobs.filter((j) => j.connectionId !== id),
+      };
+    });
+  },
+
+  async reconnect(id: string) {
+    actions.setConnection(id, "connecting");
+    await new Promise((r) => setTimeout(r, 600));
+    actions.setConnection(id, "connected");
+  },
+
+  /**
+   * Syncs one sample inbox. It goes through the same states a real mailbox would
+   * (syncing, failed, connected), but only ever reads fictional emails. Each message
+   * runs through the full pipeline, so re-syncing never duplicates anything.
+   */
+  async syncConnection(id: string): Promise<ImportResult[] | null> {
+    const conn = get().data.connections.find((c) => c.id === id);
+    if (!conn || conn.status === "disconnected" || conn.status === "reauth_required") return null;
+    actions.setConnection(id, "syncing");
     await new Promise((r) => setTimeout(r, 900));
     if (get().preview.failNextSync) {
       set((s) => ({ ...s, preview: { ...s.preview, failNextSync: false } }));
-      actions.setConnection("sample_inbox", "sync_failed", "The mail server didn't respond. Nothing was changed.");
+      actions.setConnection(id, "sync_failed", "The mail server didn't respond. Nothing was changed.");
       return null;
     }
-    const results = sampleMessages(today()).map((m) => actions.importMessage({ ...m, channel: "sample_inbox" }));
-    setData((d) => ({ ...d, connections: d.connections.map((c) => (c.id === "sample_inbox" ? { ...c, status: "connected", lastError: null, lastSyncedAt: now() } : c)) }));
+    const inbox = id === PERSONAL ? "personal" : id === SCHOOL ? "school" : null;
+    const results = sampleMessages(today())
+      .filter((m) => m.inbox === inbox)
+      .map((m) => actions.importMessage({ ...m, channel: "sample_inbox", connectionId: id }));
+    setData((d) => ({ ...d, connections: d.connections.map((c) => (c.id === id ? { ...c, status: "connected", lastError: null, lastSyncedAt: now() } : c)) }));
     return results;
   },
 
-  async connectSampleInbox() {
-    actions.setConnection("sample_inbox", "connecting");
-    await new Promise((r) => setTimeout(r, 700));
-    actions.setConnection("sample_inbox", "connected");
-  },
-
-  // ── Wishlist ─────────────────────────────────────────────────────────
+  // ── Saved for Later ─────────────────────────────────────────────────────────
   addWish(input: Omit<WishItem, "id" | "addedAt" | "status">): string {
     const id = uid("wl");
     setData((d) => ({ ...d, wishlist: [{ ...input, id, status: "active", addedAt: now() }, ...d.wishlist] }));
@@ -500,86 +660,19 @@ export const actions = {
     setData((d) => ({ ...d, wishlist: d.wishlist.filter((w) => w.id !== id) }));
   },
 
-  // ── Discover ─────────────────────────────────────────────────────────
-  setShopping(patch: Partial<ShoppingPrefs>) {
-    setData((d) => ({ ...d, shopping: { ...d.shopping, ...patch } }));
-  },
-
-  toggleFavorite(retailerId: string) {
-    setData((d) => {
-      const fav = d.shopping.favoriteRetailerIds.includes(retailerId);
-      return {
-        ...d,
-        shopping: {
-          ...d.shopping,
-          favoriteRetailerIds: fav ? d.shopping.favoriteRetailerIds.filter((x) => x !== retailerId) : [...d.shopping.favoriteRetailerIds, retailerId],
-          hiddenRetailerIds: d.shopping.hiddenRetailerIds.filter((x) => x !== retailerId),
-        },
-      };
-    });
-  },
-
-  toggleHiddenRetailer(retailerId: string) {
-    setData((d) => {
-      const hidden = d.shopping.hiddenRetailerIds.includes(retailerId);
-      return {
-        ...d,
-        shopping: {
-          ...d.shopping,
-          hiddenRetailerIds: hidden ? d.shopping.hiddenRetailerIds.filter((x) => x !== retailerId) : [...d.shopping.hiddenRetailerIds, retailerId],
-          favoriteRetailerIds: d.shopping.favoriteRetailerIds.filter((x) => x !== retailerId),
-        },
-      };
-    });
-  },
-
-  hidePromotion(id: string) {
-    setData((d) => ({ ...d, shopping: { ...d.shopping, hiddenPromotionIds: [...d.shopping.hiddenPromotionIds, id] } }));
-  },
-
-  /** Community verification of a code. One vote per code per person in production. */
-  voteCode(id: string, worked: boolean) {
-    setData((d) => ({
-      ...d,
-      promotions: d.promotions.map((p) => (p.id === id ? { ...p, votes: { worked: p.votes.worked + (worked ? 1 : 0), failed: p.votes.failed + (worked ? 0 : 1) } } : p)),
-      shopping: { ...d.shopping, points: d.shopping.points + 5 },
-    }));
-  },
-
-  submitCode(input: { retailerName: string; code: string; title: string; discountPct: number | null; endsAt: DateOnly | null }): string {
-    const retailerId = actions.ensureRetailer(input.retailerName);
-    const r = get().data.retailers.find((x) => x.id === retailerId);
-    const id = uid("p");
-    const promo: Promotion = {
-      id,
-      retailerId,
-      title: input.title.trim() || `Code for ${r?.name ?? "this store"}`,
-      detail: "Shared by you. Not verified yet.",
-      discountPct: input.discountPct,
-      code: input.code.trim().toUpperCase(),
-      source: "community",
-      sponsored: false,
-      votes: { worked: 0, failed: 0 },
-      tags: [],
-      categories: [],
-      startsAt: today(),
-      endsAt: input.endsAt,
-      url: r?.websiteUrl ?? "",
-      affiliate: false,
-      addedByUser: true,
-    };
-    setData((d) => ({ ...d, promotions: [promo, ...d.promotions], shopping: { ...d.shopping, points: d.shopping.points + 10 } }));
-    return id;
-  },
-
   // ── Receipts, labels, return tracking ────────────────────────────────
   attachReceipt(orderId: string, file: { name: string; type: string; dataUrl: string }) {
     const evId = uid("ev");
     setData((d) => ({
       ...d,
-      evidence: [...d.evidence, { id: evId, kind: "receipt_upload", channel: "screenshot", title: file.name, from: null, receivedAt: now(), excerpt: null, attachment: file }],
+      evidence: [...d.evidence, { id: evId, kind: "receipt_upload", channel: file.type === "application/pdf" ? "pdf_upload" : "screenshot", title: file.name, from: null, receivedAt: now(), excerpt: null, attachment: file, verification: null }],
       orders: d.orders.map((o) => (o.id === orderId ? { ...o, evidenceIds: [...o.evidenceIds, evId] } : o)),
     }));
+  },
+
+  /** The customer checked details read from a receipt against the receipt itself. */
+  markEvidenceVerified(evidenceId: string) {
+    setData((d) => ({ ...d, evidence: d.evidence.map((e) => (e.id === evidenceId ? { ...e, verification: "verified" } : e)) }));
   },
 
   /** Saves a label the customer has (from the store's site or email). */
@@ -659,7 +752,7 @@ export const actions = {
 
   /** Deletes all imported purchases, returns, refunds and credits. */
   deleteAllData() {
-    setData((d) => ({ ...emptied(d), connections: d.connections.map((c) => (c.id === "sample_inbox" ? { ...c, status: "disconnected" } : c)) }));
+    setData((d) => ({ ...emptied(d), connections: d.connections.map((c) => ({ ...c, status: "disconnected" })) }));
   },
 };
 

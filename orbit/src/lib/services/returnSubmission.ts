@@ -18,7 +18,7 @@ export interface PreparedReturnDetails {
 
 export type SubmissionResult =
   | { submitted: true; retailerConfirmationId: string }
-  | { submitted: false; reason: "customer_completes_on_retailer_site"; message: string };
+  | { submitted: false; reason: "customer_completes_on_retailer_site" | "integration_unavailable" | "approval_missing"; message: string };
 
 export interface ReturnSubmissionAdapter {
   readonly capability: ReturnCapability;
@@ -38,9 +38,41 @@ export const guidedAdapter: ReturnSubmissionAdapter = {
   },
 };
 
-export function adapterFor(_capability: ReturnCapability): ReturnSubmissionAdapter {
-  return guidedAdapter;
+/**
+ * Level 2: prepares the request inside an authorized customer workflow (for example a
+ * retailer's customer-account API) and hands the protected steps to the customer.
+ * Not connected to any retailer yet, so it reports that honestly.
+ */
+export const assistedAdapter: ReturnSubmissionAdapter = {
+  capability: "assisted",
+  async submit(_r, _d, approvedAt) {
+    if (!approvedAt) return { submitted: false, reason: "approval_missing", message: "You need to approve this return first." };
+    return { submitted: false, reason: "integration_unavailable", message: "Assisted returns aren't available for this store yet." };
+  },
+};
+
+/**
+ * Level 3: submits through an approved retailer API after explicit approval. Requires a
+ * partnership agreement and credentials held server-side. None exist yet.
+ */
+export const integratedAdapter: ReturnSubmissionAdapter = {
+  capability: "integrated",
+  async submit(_r, _d, approvedAt) {
+    if (!approvedAt) return { submitted: false, reason: "approval_missing", message: "You need to approve this return first." };
+    return { submitted: false, reason: "integration_unavailable", message: "This store isn't connected to Tote, so the return wasn't submitted." };
+  },
+};
+
+export function adapterFor(capability: ReturnCapability): ReturnSubmissionAdapter {
+  return capability === "integrated" ? integratedAdapter : capability === "assisted" ? assistedAdapter : guidedAdapter;
 }
+
+/**
+ * Placeholder for an officially authorized Amazon returns integration, should one ever be
+ * offered. Until then Amazon returns are guided: Tote links to Your Orders and never
+ * automates amazon.com.
+ */
+export const amazonReturnsAdapter: ReturnSubmissionAdapter = { ...integratedAdapter };
 
 export function prepareDetails(order: Order, request: Pick<ReturnRequest, "itemIds" | "reason" | "refundPreference" | "dropOff">, email: string): PreparedReturnDetails {
   return {

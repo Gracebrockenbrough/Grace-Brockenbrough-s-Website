@@ -2,38 +2,26 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, ClipboardList, FileUp, Forward, Mail, PencilLine } from "lucide-react";
+import { ChevronRight, ClipboardList, FileUp, Forward, Mail, MessageSquareText, PencilLine } from "lucide-react";
 import Link from "next/link";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { CopyRow } from "@/components/orbit/copy";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, Row, Rows } from "@/components/ui/card";
-import { Field, Input, Textarea } from "@/components/ui/form";
+import { CheckRow, Field, Input, Textarea } from "@/components/ui/form";
 import { Notice, Tag } from "@/components/ui/notice";
 import { formatDate } from "@/lib/domain/dates";
 import { money } from "@/lib/domain/format";
 import type { Confidence } from "@/lib/domain/types";
 import { FORWARDING_ADDRESS_DEMO } from "@/lib/ingestion/connectors";
-import { parseMessage } from "@/lib/ingestion/parse";
+import { categoryLabel, processMessage } from "@/lib/ingestion/pipeline";
+import { receiptToMessage, sharedKind } from "@/lib/ingestion/receipts";
+import { downscaleImage, readSmallFile } from "@/lib/hooks/downscale";
 import { sampleMessages } from "@/lib/ingestion/samples";
 import type { Extracted, Extraction, RawMessage } from "@/lib/ingestion/types";
 import { actions, useOrbit, type ImportResult } from "@/lib/store/store";
 
-type Mode = "paste" | "upload" | "manual" | "forward";
-
-const kindLabel: Record<Extraction["kind"], string> = {
-  order_confirmation: "Order confirmation",
-  shipping_notice: "Shipping notice",
-  delivery_update: "Delivery update",
-  return_confirmation: "Return confirmation",
-  return_label: "Return label",
-  refund_confirmation: "Refund confirmation",
-  gift_card_email: "Gift card email",
-  receipt_upload: "Receipt",
-  manual_entry: "Manual entry",
-  retailer_integration: "Retailer update",
-  unknown: "Unrecognized email",
-};
+type Mode = "paste" | "text" | "upload" | "manual" | "forward";
 
 function hashId(text: string) {
   let h = 0;
@@ -59,9 +47,10 @@ function Value<T>({ x, render }: { x: Extracted<T> | null; render?: (v: T) => st
 function Chooser() {
   const options = [
     { mode: "forward", icon: Forward, title: "Forward an email", body: "Send confirmations to your Tote address" },
-    { mode: "paste", icon: Mail, title: "Paste an email", body: "Copy the text of an order or return email" },
-    { mode: "upload", icon: FileUp, title: "Upload a receipt", body: "An email file, PDF or screenshot" },
-    { mode: "manual", icon: PencilLine, title: "Enter it yourself", body: "Just the basics: store, item, date" },
+    { mode: "paste", icon: Mail, title: "Paste an email", body: "An order, shipping, return or refund email" },
+    { mode: "text", icon: MessageSquareText, title: "Paste a receipt or text message", body: "From a store, a text message, or a PDF" },
+    { mode: "upload", icon: FileUp, title: "Upload a photo, screenshot or PDF", body: "Keep the receipt with the purchase" },
+    { mode: "manual", icon: PencilLine, title: "Enter it yourself", body: "Online or in-store. Just the basics" },
   ] as const;
   return (
     <>
@@ -82,23 +71,31 @@ function Chooser() {
         ))}
       </Card>
       <p className="mt-5 text-center text-[14px] text-muted">
-        Connecting Gmail or Outlook is coming. <Link href="/settings/#email" className="font-semibold text-navy underline-offset-4 hover:underline">Learn more</Link>
+        Tote can&apos;t read your text messages on its own. Share the ones you want to keep. <Link href="/settings/#email" className="font-semibold text-navy underline-offset-4 hover:underline">Connected accounts</Link>
       </p>
     </>
   );
 }
 
-function PasteFlow({ initialText }: { initialText?: string }) {
+function PasteFlow({ initialText, shared = false }: { initialText?: string; shared?: boolean }) {
   const o = useOrbit()!;
   const samples = sampleMessages(o.today);
   const [text, setText] = useState(initialText ?? "");
   const [msg, setMsg] = useState<RawMessage | null>(null);
   const [x, setX] = useState<Extraction | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [inStore, setInStore] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [category, setCategory] = useState<string | null>(null);
+  const [skip, setSkip] = useState<string | null>(null);
 
+  // Preview only: runs the same pipeline the save will, without recording anything.
   const read = (m: RawMessage) => {
+    const d = processMessage(m, { retailers: o.data.retailers, jobs: [], aiUsage: [], now: new Date().toISOString() });
     setMsg(m);
-    setX(parseMessage(m, o.data.retailers));
+    setX(d.extraction);
+    setCategory(categoryLabel[d.category]);
+    setSkip(d.extraction ? null : d.job.reason);
     setResult(null);
   };
 
@@ -106,16 +103,20 @@ function PasteFlow({ initialText }: { initialText?: string }) {
     const copy = {
       added: { title: "Purchase added", body: "We'll keep an eye on the return window." },
       merged: { title: "Matched to an existing order", body: "We added the new details to the order you already had. No duplicate was created." },
-      duplicate_message: { title: "Already imported", body: "This email is already in Tote, so nothing changed." },
-      unrecognized: { title: "We couldn't read this email", body: "It doesn't look like an order, shipping, return or refund email. You can enter the details yourself." },
+      duplicate_message: { title: "Already imported", body: "This is already in Tote, so nothing changed." },
+      unrecognized: { title: "We couldn't read this", body: "It doesn't look like an order, shipping, return or refund message. You can enter the details yourself." },
+      skipped: { title: "Not imported", body: result.job?.reason ?? "This message isn't something Tote imports." },
+      needs_review: { title: "Saved for a quick check", body: result.job?.reason ?? "Some details need you before we can save this." },
     }[result.status];
     return (
       <section className="animate-in space-y-5 pt-2">
-        <Notice tone={result.status === "unrecognized" ? "warning" : "success"} title={copy.title}>
+        <Notice tone={result.status === "added" || result.status === "merged" ? "success" : "warning"} title={copy.title}>
           {copy.body}
         </Notice>
         {result.orderId ? (
           <ButtonLink href={`/returns/purchase/?id=${result.orderId}`}>View Purchase</ButtonLink>
+        ) : result.status === "needs_review" ? (
+          <ButtonLink href="/settings/history/">Review It</ButtonLink>
         ) : (
           <ButtonLink href="/add/?mode=manual">Enter Manually</ButtonLink>
         )}
@@ -126,12 +127,26 @@ function PasteFlow({ initialText }: { initialText?: string }) {
     );
   }
 
+  if (msg && !x) {
+    return (
+      <section className="animate-in space-y-5 pt-2">
+        <Notice tone="warning" title="This doesn't look like a purchase">
+          {skip ?? "We couldn't find order, shipping, return or refund details."} Nothing was saved.
+        </Notice>
+        <ButtonLink href="/add/?mode=manual">Enter Manually</ButtonLink>
+        <Button variant="ghost" size="md" className="w-full" onClick={() => setMsg(null)}>
+          Edit Text
+        </Button>
+      </section>
+    );
+  }
+
   if (x && msg) {
     const total = x.items.reduce((s, i) => s + (i.value.unitPrice ?? 0) * i.value.quantity, 0);
     return (
       <section className="animate-in space-y-5 pt-2">
         <div>
-          <Tag>{kindLabel[x.kind]}</Tag>
+          <Tag>{category}</Tag>
           <h1 className="mt-3 text-[26px] font-semibold tracking-[-0.02em]">Does this look right?</h1>
           <p className="mt-1 text-[16px] text-muted">Here&apos;s what we found. Anything marked “Check this” was read with less certainty.</p>
         </div>
@@ -167,7 +182,25 @@ function PasteFlow({ initialText }: { initialText?: string }) {
             You can add {x.missing.length === 1 ? "it" : "them"} later on the purchase page. We won&apos;t guess.
           </Notice>
         )}
-        <Button onClick={() => setResult(actions.importMessage(msg))}>Save to Tote</Button>
+        {shared && (
+          <Card className="divide-y divide-line px-4">
+            <CheckRow checked={inStore} onChange={setInStore}>
+              Bought in a store
+            </CheckRow>
+            <CheckRow checked={checked} onChange={setChecked}>
+              I checked these details against the receipt
+            </CheckRow>
+          </Card>
+        )}
+        <Button
+          onClick={() => {
+            const r = actions.importMessage({ ...msg, inStore });
+            if (shared && checked && r.status !== "duplicate_message") actions.markEvidenceVerified(`ev-${msg.id}`);
+            setResult(r);
+          }}
+        >
+          Save to Tote
+        </Button>
         <Button variant="ghost" size="md" className="w-full" onClick={() => setX(null)}>
           Edit Text
         </Button>
@@ -178,13 +211,20 @@ function PasteFlow({ initialText }: { initialText?: string }) {
   return (
     <section className="animate-in space-y-5 pt-2">
       <div>
-        <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Paste an email</h1>
-        <p className="mt-1 text-[16px] text-muted">Order confirmations, shipping updates, return labels and refund emails all work.</p>
+        <h1 className="text-[26px] font-semibold tracking-[-0.02em]">{shared ? "Paste a receipt or text" : "Paste an email"}</h1>
+        <p className="mt-1 text-[16px] text-muted">
+          {shared ? "A store receipt, a text message from a store, or text copied from a PDF." : "Order confirmations, shipping updates, return labels and refund emails all work."}
+        </p>
       </div>
-      <Field label="Email text" htmlFor="email" hint="Treated as data only. Instructions inside an email are never followed.">
-        <Textarea id="email" value={text} onChange={(e) => setText(e.target.value)} placeholder={"From: orders@store.com\nSubject: Thanks for your order\n\nOrder #12345 …"} />
+      <Field label={shared ? "Receipt or message text" : "Email text"} htmlFor="email" hint="Treated as data only. Instructions inside it are never followed.">
+        <Textarea
+          id="email"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={shared ? "SEPHORA\n10/18/2026\nHYDRATING SERUM   72.00\nTAX   6.39\nTOTAL   78.39" : "From: orders@store.com\nSubject: Thanks for your order\n\nOrder #12345 …"}
+        />
       </Field>
-      <div>
+      {!shared && <div>
         <p className="mb-2 text-[14px] font-semibold text-muted">Or try a sample email</p>
         <div className="space-y-2">
           {samples.map((s) => (
@@ -197,32 +237,40 @@ function PasteFlow({ initialText }: { initialText?: string }) {
             </button>
           ))}
         </div>
-      </div>
+      </div>}
       <Button
         disabled={text.trim().length < 20}
         onClick={() => {
+          if (shared) {
+            read(receiptToMessage(text, { id: hashId(text), inStore, retailers: o.data.retailers, receivedAt: new Date().toISOString() }));
+            return;
+          }
           const from = text.match(/^from:\s*(.+)$/im)?.[1] ?? null;
           const subject = text.match(/^subject:\s*(.+)$/im)?.[1] ?? null;
           read({ id: hashId(text), channel: "email_upload", from, subject, receivedAt: new Date().toISOString(), body: text });
         }}
       >
-        Read Email
+        {shared ? (text.trim() && sharedKind(text) === "sms" ? "Read Message" : "Read Receipt") : "Read Email"}
       </Button>
     </section>
   );
 }
 
+type Attachment = { name: string; type: string; dataUrl: string };
+
 function UploadFlow() {
   const [fileText, setFileText] = useState<string | null>(null);
-  const [imageName, setImageName] = useState<string | null>(null);
+  const [file, setFile] = useState<Attachment | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   if (fileText != null) return <PasteFlow initialText={fileText} />;
+  if (file) return <ManualFlow attachment={file} />;
 
   return (
     <section className="animate-in space-y-5 pt-2">
       <div>
         <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Upload a receipt</h1>
-        <p className="mt-1 text-[16px] text-muted">Email files (.eml, .txt) are read right away.</p>
+        <p className="mt-1 text-[16px] text-muted">Email files are read right away. Photos, screenshots and PDFs are kept with the purchase while you add the basics.</p>
       </div>
       <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-line bg-card px-6 text-center hover:border-navy/30">
         <FileUp aria-hidden className="size-7 text-muted" />
@@ -230,41 +278,63 @@ function UploadFlow() {
         <span className="text-[14px] text-muted">.eml, .txt, .pdf, .png or .jpg</span>
         <input
           type="file"
-          accept=".eml,.txt,.pdf,image/*,message/rfc822,text/plain"
+          accept=".eml,.txt,.pdf,image/*,message/rfc822,text/plain,application/pdf"
           className="sr-only"
           onChange={async (e) => {
             const f = e.target.files?.[0];
             if (!f) return;
-            if (/\.(eml|txt)$/i.test(f.name) || f.type.startsWith("text/") || f.type === "message/rfc822") setFileText(await f.text());
-            else setImageName(f.name);
+            setError(null);
+            if (/\.(eml|txt)$/i.test(f.name) || f.type.startsWith("text/") || f.type === "message/rfc822") return setFileText(await f.text());
+            try {
+              const dataUrl = f.type.startsWith("image/") ? await downscaleImage(f, 1200) : await readSmallFile(f);
+              setFile({ name: f.name, type: f.type.startsWith("image/") ? "image/jpeg" : f.type, dataUrl });
+            } catch {
+              setError("That file is too large to keep in this preview (900 KB max for PDFs).");
+            }
           }}
         />
       </label>
-      {imageName && (
-        <Notice
-          tone="warning"
-          title="We can't read screenshots or PDFs yet"
-          action={<ButtonLink href="/add/?mode=manual" size="md" className="w-full">Enter Details Manually</ButtonLink>}
-        >
-          Reading “{imageName}” needs text recognition, which isn&apos;t available in this preview. The file wasn&apos;t uploaded anywhere.
-        </Notice>
-      )}
+      {error && <Notice tone="warning">{error}</Notice>}
+      <Notice tone="info" title="Reading images and PDFs comes next">
+        Text recognition isn&apos;t switched on yet, so we won&apos;t pretend to read the file. If you can copy the text out of a PDF, <Link href="/add/?mode=text" className="font-semibold underline-offset-4 hover:underline">paste it instead</Link> and Tote reads it.
+      </Notice>
     </section>
   );
 }
 
-function ManualFlow() {
+function ManualFlow({ attachment = null }: { attachment?: Attachment | null }) {
   const o = useOrbit()!;
   const router = useRouter();
   const [f, setF] = useState({ retailer: "", item: "", price: "", orderNumber: "", purchased: "", delivered: "" });
+  const [inStore, setInStore] = useState(false);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
   const valid = f.retailer.trim() && f.item.trim();
   return (
     <section className="animate-in space-y-5 pt-2">
       <div>
-        <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Enter a purchase</h1>
+        <h1 className="text-[26px] font-semibold tracking-[-0.02em]">{attachment ? "Add the basics" : "Enter a purchase"}</h1>
         <p className="mt-1 text-[16px] text-muted">Only the store and item are required. Leave anything you don&apos;t know blank.</p>
       </div>
+      {attachment && (
+        <Card className="flex items-center gap-3 p-3">
+          {attachment.type.startsWith("image/") ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={attachment.dataUrl} alt="Your receipt" className="size-16 rounded-xl object-cover" />
+          ) : (
+            <span className="flex size-16 items-center justify-center rounded-xl bg-ivory-deep text-[13px] font-semibold">PDF</span>
+          )}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-semibold">{attachment.name}</span>
+            <span className="block text-[14px] text-muted">Kept with this purchase. Only you can see it.</span>
+          </span>
+        </Card>
+      )}
+      <Card className="px-4">
+        <CheckRow checked={inStore} onChange={setInStore}>
+          Bought in a store
+        </CheckRow>
+      </Card>
+      {inStore && <p className="-mt-2 px-1 text-[14px] text-muted">In-store returns can follow different rules from online orders. We&apos;ll show them separately.</p>}
       <Field label="Store" htmlFor="m-r">
         <Input id="m-r" list="retailers" value={f.retailer} onChange={set("retailer")} autoComplete="off" />
         <datalist id="retailers">
@@ -280,17 +350,19 @@ function ManualFlow() {
         <Field label="Price" htmlFor="m-p">
           <Input id="m-p" inputMode="decimal" placeholder="$" value={f.price} onChange={(e) => setF({ ...f, price: e.target.value.replace(/[^0-9.]/g, "") })} />
         </Field>
-        <Field label="Order number" htmlFor="m-o">
+        <Field label={inStore ? "Receipt number" : "Order number"} htmlFor="m-o">
           <Input id="m-o" value={f.orderNumber} onChange={set("orderNumber")} autoComplete="off" />
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Ordered" htmlFor="m-d1">
+        <Field label={inStore ? "Bought" : "Ordered"} htmlFor="m-d1">
           <Input id="m-d1" type="date" max={o.today} value={f.purchased} onChange={set("purchased")} />
         </Field>
-        <Field label="Delivered" htmlFor="m-d2">
-          <Input id="m-d2" type="date" max={o.today} value={f.delivered} onChange={set("delivered")} />
-        </Field>
+        {!inStore && (
+          <Field label="Delivered" htmlFor="m-d2">
+            <Input id="m-d2" type="date" max={o.today} value={f.delivered} onChange={set("delivered")} />
+          </Field>
+        )}
       </div>
       <Button
         disabled={!valid}
@@ -301,7 +373,9 @@ function ManualFlow() {
             price: f.price ? Number(f.price) : null,
             orderNumber: f.orderNumber.trim() || null,
             purchasedAt: f.purchased || null,
-            deliveredAt: f.delivered || null,
+            deliveredAt: inStore ? null : f.delivered || null,
+            inStore,
+            attachment,
           });
           router.replace(`/returns/purchase/?id=${id}`);
         }}
@@ -337,7 +411,7 @@ function AddPage() {
   return (
     <Shell nav={false}>
       <BackBar fallback={mode ? "/add/" : "/returns/"} title={mode ? "Add a purchase" : undefined} />
-      {mode === "paste" ? <PasteFlow /> : mode === "upload" ? <UploadFlow /> : mode === "manual" ? <ManualFlow /> : mode === "forward" ? <ForwardInfo /> : <Chooser />}
+      {mode === "paste" ? <PasteFlow /> : mode === "text" ? <PasteFlow shared /> : mode === "upload" ? <UploadFlow /> : mode === "manual" ? <ManualFlow /> : mode === "forward" ? <ForwardInfo /> : <Chooser />}
     </Shell>
   );
 }

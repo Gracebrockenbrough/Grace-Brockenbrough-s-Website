@@ -10,7 +10,6 @@ import type {
   Evidence,
   NotificationPrefs,
   Order,
-  Promotion,
   Refund,
   ReturnRequest,
   WalletItem,
@@ -20,28 +19,9 @@ import { SEED_RETAILERS, seedPolicies } from "./retailers";
 
 export const DEMO_PROFILE = { firstName: "Alex", email: "alex@tote.example" };
 
-/** Fictional promotions, as if found in promotional emails. Codes are invented. */
-function buildPromotions(d: (n: number) => DateOnly): Promotion[] {
-  const p = (x: Omit<Promotion, "votes" | "affiliate" | "addedByUser" | "sponsored" | "detail" | "code"> & Partial<Promotion>): Promotion => ({
-    votes: { worked: 0, failed: 0 },
-    affiliate: false,
-    addedByUser: false,
-    sponsored: false,
-    detail: null,
-    code: null,
-    ...x,
-  });
-  return [
-    p({ id: "d-p-mad", retailerId: "madewell", title: "25% off boots and shoes", detail: "Includes new-season Chelsea boots.", discountPct: 25, code: "STEPINDEMO", votes: { worked: 41, failed: 3 }, source: "email", tags: ["boot", "boots", "chelsea", "shoes"], categories: ["shoes"], startsAt: d(-1), endsAt: d(3), url: "https://www.madewell.com" }),
-    p({ id: "d-p-ref", retailerId: "reformation", title: "20% off dresses", detail: "Online and in stores.", discountPct: 20, source: "email", tags: ["dress", "dresses"], categories: ["clothing"], startsAt: d(-2), endsAt: d(5), url: "https://www.thereformation.com" }),
-    p({ id: "d-p-eve", retailerId: "everlane", title: "30% off sneakers", detail: "Court and running styles.", discountPct: 30, source: "email", tags: ["sneaker", "sneakers", "shoes"], categories: ["shoes"], startsAt: d(-1), endsAt: d(4), url: "https://www.everlane.com" }),
-    p({ id: "d-p-ari", retailerId: "aritzia", title: "Extra 15% off sale styles", discountPct: 15, code: "EXTRADEMO15", votes: { worked: 12, failed: 5 }, source: "community", tags: ["sweater", "pants"], categories: ["clothing"], startsAt: d(-3), endsAt: d(6), url: "https://www.aritzia.com" }),
-    p({ id: "d-p-sep", retailerId: "sephora", title: "Beauty event: up to 20% off", detail: "Discount depends on your rewards tier.", discountPct: 20, source: "email", tags: ["beauty", "makeup", "skincare"], categories: ["beauty"], startsAt: d(-1), endsAt: d(9), url: "https://www.sephora.com" }),
-    p({ id: "d-p-zara", retailerId: "zara", title: "Mid-season sale, up to 40% off", discountPct: 40, source: "email", tags: ["dress", "jacket", "blazer"], categories: ["clothing", "shoes"], startsAt: d(-4), endsAt: d(7), url: "https://www.zara.com" }),
-    p({ id: "d-p-jc", retailerId: "jcrew", title: "40% off sweaters", discountPct: 40, source: "email", tags: ["sweater", "sweaters", "cashmere"], categories: ["clothing"], startsAt: d(-1), endsAt: d(2), url: "https://www.jcrew.com" }),
-    p({ id: "d-p-cos", retailerId: "cos", title: "15% off your next order", detail: "New-season outerwear.", discountPct: 15, source: "partner", sponsored: true, affiliate: true, tags: ["coat", "jacket"], categories: ["clothing"], startsAt: d(-1), endsAt: d(10), url: "https://www.cos.com" }),
-  ];
-}
+/** Demo connection ids. Sample inboxes only ever contain fictional mail. */
+export const PERSONAL = "d-conn-personal";
+export const SCHOOL = "d-conn-school";
 
 export function buildDemoData(today: DateOnly): OrbitData {
   const d = (offset: number) => addDays(today, offset);
@@ -71,6 +51,8 @@ export function buildDemoData(today: DateOnly): OrbitData {
     ev("d-ev-cos-1", "refund_confirmation", "Your refund has been issued", "service@cos.example", -3, "A refund of $89.00 has been issued to your original payment method."),
     ev("d-ev-zara-1", "return_confirmation", "Return processed: store credit issued", "noreply@zara.example", -20, "A store credit of $100.00 has been added to your account."),
     ev("d-ev-jc-1", "shipping_notice", "Your J.Crew order shipped", "orders@jcrew.example", -1, "Order JC-3390112 is on the way."),
+    ev("d-ev-amz-1", "order_confirmation", "Your Amazon.com order of Wireless Noise-Cancelling Headphones", "auto-confirm@amazon.example", -24, "Order #112-4839201-5550127 · Wireless Noise-Cancelling Headphones · $79.99"),
+    ev("d-ev-amz-2", "delivery_update", "Delivered: Your Amazon package", "shipment-tracking@amazon.example", -21, "Your package was delivered. It was handed directly to a resident."),
     ev("d-ev-w-ref", "gift_card_email", "Maya sent you a Reformation gift card", "gifts@reformation.example", -40, "Happy birthday! Enjoy something new."),
     ev("d-ev-w-sep", "gift_card_email", "Your Sephora eGift Card", "beauty@sephora.example", -48, "Gift card balance: $75.00"),
     ev("d-ev-w-ari", "gift_card_email", "A little something from Aritzia", "hello@aritzia.example", -5, "$25 promotional credit. Expires " + d(9) + ". Minimum purchase $100."),
@@ -213,6 +195,24 @@ export function buildDemoData(today: DateOnly): OrbitData {
       evidenceIds: ["d-ev-zara-1"],
       fieldSources: {},
       createdAt: ts(-45),
+    },
+    {
+      ...base,
+      id: "d-o-amz",
+      retailerId: "amazon",
+      orderNumber: "112-4839201-5550127",
+      purchasedAt: d(-24),
+      shippedAt: d(-23),
+      deliveredAt: d(-21),
+      expectedDeliveryAt: null,
+      shipmentStatus: "delivered",
+      items: [{ id: "d-i-amz-1", name: "Wireless Noise-Cancelling Headphones", variant: "Black", quantity: 1, unitPrice: 79.99, category: "other", finalSale: false }],
+      tracking: { carrier: "Amazon Logistics", number: "TBA301948572000" },
+      charges: { subtotal: 79.99, shipping: 0, tax: 7.1, discount: null, total: 87.09 },
+      statedReturnDeadline: null,
+      evidenceIds: ["d-ev-amz-1", "d-ev-amz-2"],
+      fieldSources: { orderNumber: fs("d-ev-amz-1"), purchasedAt: fs("d-ev-amz-1"), deliveredAt: fs("d-ev-amz-2"), items: fs("d-ev-amz-1") },
+      createdAt: ts(-24),
     },
   ];
 
@@ -418,11 +418,22 @@ export function buildDemoData(today: DateOnly): OrbitData {
     },
   ];
 
+  const allMail = { orders: true, shipping: true, returnsAndRefunds: true, giftCards: true, since: null };
   const connections: ConnectedAccount[] = [
-    { id: "sample_inbox", status: "connected", address: DEMO_PROFILE.email, lastSyncedAt: ts(0, "07:12:00") },
-    { id: "gmail", status: "unavailable", address: null, lastSyncedAt: null },
-    { id: "outlook", status: "unavailable", address: null, lastSyncedAt: null },
+    { id: PERSONAL, provider: "sample", label: "Personal email", address: DEMO_PROFILE.email, status: "connected", lastSyncedAt: ts(0, "07:12:00"), importSettings: allMail, connectedAt: ts(-60), demo: true },
+    { id: SCHOOL, provider: "sample", label: "School email", address: "alex.k@school.example", status: "connected", lastSyncedAt: ts(-1, "18:40:00"), importSettings: { ...allMail, giftCards: false }, connectedAt: ts(-30), demo: true },
   ];
+
+  // Which inbox each purchase was found in ("Purchased using: School email").
+  const SCHOOL_ORDERS = new Set(["d-o-ari", "d-o-jc", "d-o-amz"]);
+  for (const o of orders) {
+    o.sourceConnectionId = SCHOOL_ORDERS.has(o.id) ? SCHOOL : PERSONAL;
+    o.channel = "online";
+  }
+  for (const e of evidence) {
+    const order = orders.find((o) => o.evidenceIds.includes(e.id));
+    e.connectionId = order?.sourceConnectionId ?? PERSONAL;
+  }
 
   const prefs: NotificationPrefs = {
     returnDeadlines: true,
@@ -431,7 +442,6 @@ export function buildDemoData(today: DateOnly): OrbitData {
     creditExpiry: true,
     weeklySummary: true,
     deliveries: true,
-    deals: true,
     leadDays: 5,
   };
 
@@ -443,7 +453,6 @@ export function buildDemoData(today: DateOnly): OrbitData {
     refunds,
     wallet,
     gifts: [],
-    promotions: buildPromotions(d),
     wishlist: [
       {
         id: "d-wl-1",
@@ -494,18 +503,10 @@ export function buildDemoData(today: DateOnly): OrbitData {
         addedAt: ts(-2),
       },
     ],
-    shopping: {
-      onboarded: false,
-      favoriteRetailerIds: ["reformation", "madewell", "aritzia", "sephora"],
-      hiddenRetailerIds: [],
-      categories: ["clothing", "shoes", "beauty"],
-      minDiscount: 0,
-      showSponsored: true,
-      hiddenPromotionIds: [],
-      points: 0,
-    },
     evidence,
     connections,
+    jobs: [],
+    aiUsage: [],
     prefs,
     dismissed: [],
   };

@@ -7,14 +7,13 @@ import type {
   Order,
   Refund,
   Retailer,
-  Promotion,
   ReturnPolicy,
-  ShoppingPrefs,
   WishItem,
   ReturnRequest,
   WalletItem,
 } from "../domain/types";
 import type { ItemKind } from "../intelligence/buckets";
+import type { AiUsageEntry, ProcessingJob } from "../ingestion/types";
 
 /** Everything Tote knows for one user. Mirrors the relational schema in supabase/migrations. */
 export interface OrbitData {
@@ -25,11 +24,13 @@ export interface OrbitData {
   refunds: Refund[];
   wallet: WalletItem[];
   gifts: GiftTransfer[];
-  promotions: Promotion[];
   wishlist: WishItem[];
-  shopping: ShoppingPrefs;
   evidence: Evidence[];
   connections: ConnectedAccount[];
+  /** Ingestion audit trail: one entry per processed message. No email bodies. */
+  jobs: ProcessingJob[];
+  /** Every AI model call and its cost. */
+  aiUsage: AiUsageEntry[];
   prefs: NotificationPrefs;
   /** Priority keys the user dismissed. Prevents identical repeat reminders. */
   dismissed: string[];
@@ -46,7 +47,7 @@ export interface PreviewFlags {
 }
 
 export interface PersistedState {
-  version: 3;
+  version: 4;
   /** Date the seeded demo data was last aligned to. */
   anchor: DateOnly;
   data: OrbitData;
@@ -57,5 +58,5 @@ export const EMPTY_PREVIEW: PreviewFlags = { emptyAccount: false, outage: "none"
 
 /** A copy of `data` with no purchases or credits, for previewing first-run states. */
 export function emptied(data: OrbitData): OrbitData {
-  return { ...data, orders: [], returns: [], refunds: [], wallet: [], gifts: [], wishlist: [], evidence: [], dismissed: [] };
+  return { ...data, orders: [], returns: [], refunds: [], wallet: [], gifts: [], wishlist: [], evidence: [], dismissed: [], jobs: [], aiUsage: [] };
 }

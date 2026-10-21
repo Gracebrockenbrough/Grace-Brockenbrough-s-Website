@@ -68,7 +68,7 @@ export function calendarEvents(d: OrbitData, today: DateOnly): CalendarEvent[] {
           out.push({ id: `startby:${r.id}`, date: dl.date, kind: "start_by", retailerId: order.retailerId, title, label: "Start return by", amount: value, certainty: dl.kind === "confirmed" ? "confirmed" : "estimated", deadline: true, indicator: "initiate", href });
       }
       if (r.status === "label_ready" && r.shipBy)
-        out.push({ id: `drop:${r.id}`, date: r.shipBy, kind: "drop_off_by", retailerId: order.retailerId, title, label: "Drop-off deadline", amount: value, certainty: "confirmed", deadline: true, indicator: "drop_off", href: `/returns/label/?id=${r.id}` });
+        out.push({ id: `drop:${r.id}`, date: r.shipBy, kind: "drop_off_by", retailerId: order.retailerId, title, label: "Drop-off deadline", amount: value, certainty: "confirmed", deadline: true, indicator: "drop_off", href: `/returns/kit/?id=${r.id}` });
     }
   }
 

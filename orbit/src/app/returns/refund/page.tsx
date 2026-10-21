@@ -7,12 +7,14 @@ import { BackBar, Shell } from "@/components/layout/shell";
 import { Button, ButtonLink, ExternalButton } from "@/components/ui/button";
 import { Card, Row, Rows } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
-import { CheckRow, Field, Input } from "@/components/ui/form";
+import { Field, Input } from "@/components/ui/form";
+import { RefundAsker } from "@/components/orbit/refund-asker";
 import { Notice, Tag } from "@/components/ui/notice";
 import { Sheet } from "@/components/ui/sheet";
 import { EmptyState } from "@/components/ui/states";
 import { daysBetween, formatDate } from "@/lib/domain/dates";
 import { money } from "@/lib/domain/format";
+import { askerLabel, refundAskerStatus } from "@/lib/intelligence/refunds";
 import { retailerOf, returnStatusText } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
@@ -48,6 +50,7 @@ function RefundView() {
   const received = request && (request.status === "received" || request.status === "completed");
   const credit = refund.destination === "store_credit";
   const dest = refund.destinationLabel ?? "your original payment method";
+  const askStatus = refundAskerStatus(refund, request ?? null, today);
 
   const steps = [
     ...refund.milestones.filter((m) => !/arrived/i.test(m.label)).map((m) => ({ label: m.label, sub: formatDate(m.at.slice(0, 10), today) + (m.evidenceId ? " · from the store's email" : ""), done: true })),
@@ -65,7 +68,13 @@ function RefundView() {
       <BackBar fallback={`/returns/purchase/?id=${order.id}`} title={`${retailer.name} ${credit ? "credit" : "refund"}`} />
 
       <div className="pb-5 pt-3">
-        {arrived ? (
+        {askStatus === "resolved" ? (
+          <Tag tone="success">
+            <CircleCheck aria-hidden className="size-3.5" /> Resolved{refund.asker?.resolution ? ` · ${refund.asker.resolution}` : ""}
+          </Tag>
+        ) : askStatus === "reported_missing" ? (
+          <Tag tone="urgent">Reported missing</Tag>
+        ) : arrived ? (
           <Tag tone="success">
             <CircleCheck aria-hidden className="size-3.5" /> Arrived
           </Tag>
@@ -125,6 +134,7 @@ function RefundView() {
           <Row label="Issued">{issued ? `${money(issued.amount)} · ${issued.by === "retailer_email" ? "store email" : "you confirmed"}` : "Not yet"}</Row>
           <Row label="Refund to">{refund.destinationLabel ?? "Unknown"}</Row>
           {request && <Row label="Return status">{returnStatusText(request)}</Row>}
+          <Row label="Refund status">{askerLabel[askStatus]}</Row>
         </Rows>
       </Card>
 
@@ -137,14 +147,7 @@ function RefundView() {
             </ButtonLink>
           )}
           {!credit && issued ? (
-            <div className="rounded-[18px] border border-line bg-card px-4">
-              <CheckRow checked={false} onChange={() => actions.markRefundArrived(refund.id, issued.amount)}>
-                <span className="block font-semibold">I&apos;ve received this refund</span>
-                <span className="block text-[14px] text-muted">
-                  Check {dest} for {money(issued.amount)}. It stays pending until you tick this.
-                </span>
-              </CheckRow>
-            </div>
+            <RefundAsker refund={refund} request={request ?? null} retailer={retailer} orderNumber={order.orderNumber} today={today} />
           ) : !credit ? (
             <Button
               variant="ghost"

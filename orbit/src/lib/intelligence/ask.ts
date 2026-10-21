@@ -113,7 +113,7 @@ function itemAnswer(v: OrderView, itemId: string, today: DateOnly, intent: AskIn
     actions.push({ label: "Start Return", href: `/returns/start/?order=${v.order.id}&item=${itemId}` });
   } else if (r?.status === "label_ready") {
     answer = r.shipBy ? `Your return label is ready. Drop it off by ${formatDate(r.shipBy, today)}.` : "Your return label is ready to drop off.";
-    actions.push({ label: r.artifacts.some((x) => x.kind === "qr_code") ? "Show QR Code" : "View Label", href: `/returns/label/?id=${r.id}` });
+    actions.push({ label: r.artifacts.some((x) => x.kind === "qr_code") ? "Show QR Code" : "View Label", href: `/returns/kit/?id=${r.id}` });
   } else if (r && v.refund && (r.status === "received" || r.status === "shipped")) {
     const late = v.refund.expected?.by ? daysBetween(v.refund.expected.by, today) : 0;
     answer =

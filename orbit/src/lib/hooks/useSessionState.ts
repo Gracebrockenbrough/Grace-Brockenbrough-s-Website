@@ -21,3 +21,12 @@ export function useSessionState<T>(key: string, initial: T): [T, (v: T) => void]
   }, [key, value]);
   return [value, setValue];
 }
+
+/** Sets a session value before navigating, e.g. to open Returns on its Refunds filter. */
+export function presetSession<T>(key: string, value: T) {
+  try {
+    window.sessionStorage.setItem(`orbit:ui:${key}`, JSON.stringify(value));
+  } catch {
+    // Ignore: the destination opens on its default.
+  }
+}

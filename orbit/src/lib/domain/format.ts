@@ -45,6 +45,14 @@ export const capabilityLabel: Record<ReturnCapability, { name: string; summary: 
     name: "Guided",
     summary: "Tote prepares your details and links you to the store. You finish on their site.",
   },
+  assisted: {
+    name: "Assisted",
+    summary: "Tote prepares the request in the store's own process. You confirm and finish any protected steps.",
+  },
+  integrated: {
+    name: "Integrated",
+    summary: "Tote submits the return through the store's approved system, only after you approve it.",
+  },
 };
 
 export function plural(n: number, one: string, many = `${one}s`): string {

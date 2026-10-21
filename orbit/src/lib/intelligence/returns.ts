@@ -48,6 +48,8 @@ export function isActiveReturn(r: ReturnRequest): boolean {
 export const POLICY_STALE_DAYS = 120;
 
 function windowStartDate(order: Order, policy: ReturnPolicy): { date: DateOnly | null; label: string } {
+  // In-store purchases start counting on the day of purchase.
+  if (order.channel === "in_store") return { date: order.purchasedAt, label: "purchase" };
   switch (policy.windowStartsAt) {
     case "delivery":
       return { date: order.deliveredAt, label: "delivery" };
@@ -60,9 +62,11 @@ function windowStartDate(order: Order, policy: ReturnPolicy): { date: DateOnly |
   }
 }
 
-function windowDaysFor(item: OrderItem, policy: ReturnPolicy): number | null {
+function windowDaysFor(item: OrderItem, policy: ReturnPolicy, inStore = false): number | null {
   const shorter = policy.exceptions.find((e) => e.kind === "shorter_window" && e.category === item.category && e.windowDays);
-  return shorter?.windowDays ?? policy.windowDays;
+  if (shorter?.windowDays) return shorter.windowDays;
+  if (inStore) return policy.inStore?.windowDays ?? policy.windowDays;
+  return policy.windowDays;
 }
 
 export function assessDeadline(order: Order, item: OrderItem, policy: ReturnPolicy | null, today: DateOnly): Deadline {
@@ -73,8 +77,10 @@ export function assessDeadline(order: Order, item: OrderItem, policy: ReturnPoli
   }
   if (!policy) return { kind: "unknown", reason: "We don't have this retailer's return policy yet.", missing: "policy" };
 
-  const days = windowDaysFor(item, policy);
-  if (days == null || policy.windowStartsAt === "unknown") {
+  const inStore = order.channel === "in_store";
+  if (inStore && policy.inStore?.accepted === false) return { kind: "unknown", reason: "This store doesn't list in-store returns.", missing: "window" };
+  const days = windowDaysFor(item, policy, inStore);
+  if (days == null || (policy.windowStartsAt === "unknown" && !inStore)) {
     return { kind: "unknown", reason: "The retailer's return window isn't clear.", missing: "window" };
   }
 
@@ -96,7 +102,7 @@ export function assessDeadline(order: Order, item: OrderItem, policy: ReturnPoli
     kind: "estimated",
     date,
     daysLeft: daysBetween(today, date),
-    basis: `${days} days from ${start.label}, per the policy last checked ${policy.lastCheckedAt}`,
+    basis: `${days} days from ${start.label}${inStore ? " (in-store rules)" : ""}, per the policy last checked ${policy.lastCheckedAt}`,
     staleAfter: daysBetween(staleAfter, today) > 0 ? staleAfter : null,
   };
 }
@@ -208,4 +214,68 @@ export function returnFacts(policy: ReturnPolicy | null, choice: { dropOff: Drop
 export function expectedRefundBy(receivedAt: DateOnly | null, policy: ReturnPolicy | null): DateOnly | null {
   if (!receivedAt || !policy?.refundTimelineDays) return null;
   return addDays(receivedAt, policy.refundTimelineDays);
+}
+
+// ─── The three return dates ─────────────────────────────────────────────
+
+/** One step's deadline. "done" once the step is behind the customer. */
+export type StepDeadline =
+  | { kind: "confirmed"; date: DateOnly; daysLeft: number; basis: string }
+  | { kind: "estimated"; date: DateOnly; daysLeft: number; basis: string }
+  | { kind: "done"; basis: string }
+  | { kind: "none"; basis: string }
+  | { kind: "pending"; basis: string };
+
+export interface ReturnDeadlines {
+  /** 1. Start the return (the return window). */
+  start: StepDeadline;
+  /** 2. Get approval or create the label. */
+  label: StepDeadline;
+  /** 3. Ship or drop off. */
+  ship: StepDeadline;
+}
+
+const dated = (kind: "confirmed" | "estimated", date: DateOnly, today: DateOnly, basis: string): StepDeadline => ({ kind, date, daysLeft: daysBetween(today, date), basis });
+
+const SUBMITTED: ReturnStatus[] = ["reported_submitted", "approval_pending", "label_ready", "shipped", "received", "completed"];
+const LABELED: ReturnStatus[] = ["label_ready", "shipped", "received", "completed"];
+const SHIPPED: ReturnStatus[] = ["shipped", "received", "completed"];
+
+/**
+ * Keeps the three dates apart instead of collapsing them into one "due date". Each comes
+ * from the retailer when they stated it (confirmed), from the policy (estimated), or is
+ * honestly marked as not applying or not known.
+ */
+export function returnDeadlines(start: Deadline, request: ReturnRequest | null, policy: ReturnPolicy | null, today: DateOnly): ReturnDeadlines {
+  const status = request?.status ?? null;
+
+  const startStep: StepDeadline =
+    status && SUBMITTED.includes(status)
+      ? { kind: "done", basis: "You started the return." }
+      : start.kind === "confirmed"
+        ? dated("confirmed", start.date, today, "Stated by the retailer")
+        : start.kind === "estimated"
+          ? dated("estimated", start.date, today, start.basis)
+          : start.kind === "not_started"
+            ? { kind: "pending", basis: start.reason }
+            : { kind: "none", basis: start.reason };
+
+  let label: StepDeadline;
+  if (status && LABELED.includes(status)) label = { kind: "done", basis: "Label or QR code issued." };
+  else if (policy?.labelWithinDays == null) label = { kind: "none", basis: policy?.approvalRequired ? "Approval needed; the retailer doesn't state a time limit." : "No separate deadline. The label comes when you start the return." };
+  else if (request?.submission.at && status && SUBMITTED.includes(status)) {
+    label = dated("estimated", addDays(request.submission.at.slice(0, 10), policy.labelWithinDays), today, `${policy.labelWithinDays} days after you started, per the policy`);
+  } else label = { kind: "pending", basis: `Within ${policy.labelWithinDays} days of starting the return.` };
+
+  let ship: StepDeadline;
+  if (status && SHIPPED.includes(status)) ship = { kind: "done", basis: "Dropped off." };
+  else if (request?.shipBy) ship = dated("confirmed", request.shipBy, today, "Stated by the retailer");
+  else if (policy?.shipWithinDays != null) {
+    const labeledAt = request?.history.find((h) => h.status === "label_ready")?.at ?? (status && SUBMITTED.includes(status) ? request?.submission.at : null);
+    ship = labeledAt
+      ? dated("estimated", addDays(labeledAt.slice(0, 10), policy.shipWithinDays), today, `${policy.shipWithinDays} days after the return started, per the policy`)
+      : { kind: "pending", basis: `Within ${policy.shipWithinDays} days of starting the return.` };
+  } else ship = { kind: "none", basis: "No separate ship-by date known." };
+
+  return { start: startStep, label, ship };
 }

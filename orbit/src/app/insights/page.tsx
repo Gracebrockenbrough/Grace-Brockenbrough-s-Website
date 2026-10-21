@@ -1,7 +1,7 @@
 "use client";
 
 import { ChartNoAxesColumn } from "lucide-react";
-import { PageHeader, Shell } from "@/components/layout/shell";
+import { BackBar, Shell } from "@/components/layout/shell";
 import { SpendBuckets } from "@/components/orbit/spend-buckets";
 import { Card, Row, Rows } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
@@ -51,7 +51,7 @@ export default function InsightsPage() {
   const o = useOrbit();
   const [kind, setKind] = useSessionState<RangeKind>("insights-range", "year");
   const [custom, setCustom] = useSessionState<InsightRange | null>("insights-custom", null);
-  if (!o) return <Shell loading />;
+  if (!o) return <Shell loading nav={false} />;
   const { today, data } = o;
 
   const range = kind === "custom" ? custom ?? rangeFor("year", today) : rangeFor(kind, today);
@@ -66,8 +66,9 @@ export default function InsightsPage() {
     .slice(0, 4);
 
   return (
-    <Shell>
-      <PageHeader title="Insights" subtitle="Awareness, not restriction. Only purchases Tote knows about count." />
+    <Shell nav={false}>
+      <BackBar fallback="/settings/" title="Shopping Insights" />
+      <p className="pb-4 pt-1 text-[16px] text-muted">Private awareness, not a budget. Only purchases Tote knows about count.</p>
 
       <div role="radiogroup" aria-label="Time period" className="mt-4 inline-flex rounded-full bg-ivory-deep p-1">
         {(["month", "quarter", "year", "custom"] as RangeKind[]).map((k) => (

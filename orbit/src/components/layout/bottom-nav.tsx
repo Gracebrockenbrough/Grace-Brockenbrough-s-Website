@@ -2,21 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChartNoAxesColumn, Compass, ShoppingBag, WalletCards } from "lucide-react";
+import { Sun, Undo2, WalletCards } from "lucide-react";
 import { cn } from "../ui/cn";
 
 const tabs = [
-  { href: "/", label: "Discover", icon: Compass, match: (p: string) => p === "/" || ["/sales", "/wishlist", "/promo", "/ask", "/attention", "/preferences"].some((x) => p.startsWith(x)) },
-  { href: "/returns/", label: "Purchases", icon: ShoppingBag, match: (p: string) => p.startsWith("/returns") || p.startsWith("/add") || p.startsWith("/calendar") },
+  { href: "/", label: "Today", icon: Sun, match: (p: string) => p === "/" || ["/ask", "/attention", "/calendar"].some((x) => p.startsWith(x)) },
+  { href: "/returns/", label: "Returns", icon: Undo2, match: (p: string) => p.startsWith("/returns") || p.startsWith("/add") },
   { href: "/wallet/", label: "Wallet", icon: WalletCards, match: (p: string) => p.startsWith("/wallet") || p.startsWith("/gift") },
-  { href: "/insights/", label: "Insights", icon: ChartNoAxesColumn, match: (p: string) => p.startsWith("/insights") },
 ];
 
 export function BottomNav() {
   const path = usePathname() ?? "/";
   return (
     <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 border-t border-line/80 bg-ivory/85 pb-safe backdrop-blur-xl">
-      <ul className="mx-auto grid h-[64px] max-w-[560px] grid-cols-4">
+      <ul className="mx-auto grid h-[64px] max-w-[560px] grid-cols-3">
         {tabs.map(({ href, label, icon: Icon, match }) => {
           const active = match(path);
           return (

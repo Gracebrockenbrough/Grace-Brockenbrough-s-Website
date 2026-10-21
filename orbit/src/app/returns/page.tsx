@@ -8,6 +8,7 @@ import { FilterChips } from "@/components/ui/chips";
 import { Input, Select } from "@/components/ui/form";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { money } from "@/lib/domain/format";
+import { sumMoney } from "@/lib/domain/money";
 import type { ItemCategory } from "@/lib/domain/types";
 import { useSessionState } from "@/lib/hooks/useSessionState";
 import { bucketFor, bucketMeta, type Bucket } from "@/lib/intelligence/priorities";
@@ -17,7 +18,7 @@ import { actions, useOrbit } from "@/lib/store/store";
 
 type Filter = "all" | PurchaseFilter;
 const BUCKETS: Bucket[] = ["overdue", "soon", "week", "later", "missing"];
-const sum = (list: OrderView[]) => list.reduce((s, v) => s + (v.amount ?? 0), 0);
+const sum = (list: OrderView[]) => sumMoney(list.map((v) => v.amount));
 
 const hints: Record<Filter, string> = {
   all: "Everything you've bought, newest first.",
@@ -26,9 +27,9 @@ const hints: Record<Filter, string> = {
   refunds: "Returns on their way back, and refunds to confirm.",
 };
 
-export default function PurchasesPage() {
+export default function ReturnsPage() {
   const o = useOrbit();
-  const [filter, setFilter] = useSessionState<Filter>("purchases-filter", "all");
+  const [filter, setFilter] = useSessionState<Filter>("purchases-filter", "returns");
   const [q, setQ] = useSessionState("purchases-q", "");
   const [store, setStore] = useSessionState("purchases-store", "");
   const [cat, setCat] = useSessionState<"" | ItemCategory>("purchases-cat", "");
@@ -36,8 +37,8 @@ export default function PurchasesPage() {
 
   const header = (
     <PageHeader
-      title="Purchases"
-      subtitle="Every order, from delivery to return to refund."
+      title="Returns"
+      subtitle="What you can send back, what's on its way, and refunds to confirm."
       action={
         <>
           <IconLink href="/calendar/" label="Calendar of dates">
@@ -55,7 +56,7 @@ export default function PurchasesPage() {
     return (
       <Shell>
         {header}
-        <ErrorState title="We couldn't load your purchases" onRetry={() => actions.setPreview({ outage: "none" })}>
+        <ErrorState title="We couldn't load your returns" onRetry={() => actions.setPreview({ outage: "none" })}>
           Your wallet and saved labels are unaffected.
         </ErrorState>
       </Shell>
@@ -94,7 +95,7 @@ export default function PurchasesPage() {
       <div className="relative">
         <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
         <label htmlFor="p-search" className="sr-only">
-          Search purchases
+          Search returns and purchases
         </label>
         <Input id="p-search" type="search" className="pl-11" placeholder="Store, item or order number" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
@@ -105,10 +106,10 @@ export default function PurchasesPage() {
           value={filter}
           onChange={setFilter}
           options={[
-            { value: "all", label: "All", count: narrowed.length },
-            { value: "deliveries", label: "Deliveries", count: count("deliveries") },
-            { value: "returns", label: "Returns", count: count("returns") },
+            { value: "returns", label: "To return", count: count("returns") },
             { value: "refunds", label: "Refunds", count: count("refunds") },
+            { value: "deliveries", label: "Arriving", count: count("deliveries") },
+            { value: "all", label: "All purchases", count: narrowed.length },
           ]}
         />
       </div>

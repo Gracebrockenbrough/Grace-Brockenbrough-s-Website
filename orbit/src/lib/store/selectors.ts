@@ -6,7 +6,7 @@
 import { daysBetween, formatDate } from "../domain/dates";
 import { money } from "../domain/format";
 import type { DateOnly, Order, Refund, RefundMethod, Retailer, ReturnPolicy, ReturnRequest, WalletItem } from "../domain/types";
-import { assessItem, isActiveReturn, orderStage, returnFacts, soonestDeadline, type Deadline, type ItemAssessment, type OrderStage } from "../intelligence/returns";
+import { assessItem, isActiveReturn, orderStage, returnDeadlines, returnFacts, soonestDeadline, type Deadline, type ItemAssessment, type OrderStage, type ReturnDeadlines } from "../intelligence/returns";
 import { needsVerification } from "../services/balances";
 import type { OrbitData } from "./state";
 
@@ -24,7 +24,17 @@ export const retailerOf = (d: OrbitData, id: string): Retailer =>
     category: "general",
   };
 
-export const policyOf = (d: OrbitData, retailerId: string): ReturnPolicy | null => d.policies.find((p) => p.retailerId === retailerId) ?? null;
+/**
+ * The policy version that applies. With a purchase date, that's the newest version already
+ * in effect on that day (an order keeps the rules it was bought under); without one, the latest.
+ */
+export function policyOf(d: OrbitData, retailerId: string, at: DateOnly | null = null): ReturnPolicy | null {
+  const versions = d.policies.filter((p) => p.retailerId === retailerId).sort((a, b) => b.version - a.version);
+  if (!at) return versions[0] ?? null;
+  return versions.find((p) => p.effectiveFrom == null || p.effectiveFrom <= at) ?? versions[versions.length - 1] ?? null;
+}
+
+export const policyForOrder = (d: OrbitData, order: Order) => policyOf(d, order.retailerId, order.purchasedAt);
 
 export const orderHref = (orderId: string) => `/returns/purchase/?id=${orderId}`;
 
@@ -151,7 +161,7 @@ function stageFor(v: Omit<OrderView, "current">, today: DateOnly): Stage {
       case "label_ready": {
         const qr = r.artifacts.some((a) => a.kind === "qr_code");
         const store = r.dropOff === "store";
-        return { key: "drop_off", label: "Ready to drop off", group: "action", indicator: "drop_off", dueDate: r.shipBy, daysLeft: left(r.shipBy), dueLabel: by("Drop off by", r.shipBy), estimated: false, why: qr ? "Your QR code is ready. Take the package to a drop-off point." : store ? `Bring the item to a ${retailer.name} store.` : "Your label is ready. Drop the package off.", action: { label: store && !qr ? "Get Directions" : qr ? "Show QR Code" : "View Label", href: `/returns/label/?id=${r.id}` } };
+        return { key: "drop_off", label: "Ready to drop off", group: "action", indicator: "drop_off", dueDate: r.shipBy, daysLeft: left(r.shipBy), dueLabel: by("Drop off by", r.shipBy), estimated: false, why: qr ? "Your QR code is ready. Take the package to a drop-off point." : store ? `Bring the item to a ${retailer.name} store.` : "Your label is ready. Drop the package off.", action: { label: store && !qr ? "Get Directions" : qr ? "Show QR Code" : "View Label", href: `/returns/kit/?id=${r.id}` } };
       }
       case "shipped":
         return { ...base, key: "in_transit", label: "Return in transit", group: "awaiting", indicator: "transit", why: `On its way back to ${retailer.name}.`, action: refund ? { label: "Track Refund", href: `/returns/refund/?id=${refund.id}` } : { label: "View Return", href: `/returns/start/?return=${r.id}` } };
@@ -201,7 +211,7 @@ function stageFor(v: Omit<OrderView, "current">, today: DateOnly): Stage {
 
 export function orderView(d: OrbitData, order: Order, today: DateOnly): OrderView {
   const retailer = retailerOf(d, order.retailerId);
-  const policy = policyOf(d, order.retailerId);
+  const policy = policyForOrder(d, order);
   const items = order.items.map((i) => assessItem(order, i, policy, d.returns, today));
   const stage = items.length ? orderStage(items) : "to_decide";
   const returns = d.returns.filter((r) => r.orderId === order.id && r.status !== "cancelled");
@@ -293,4 +303,38 @@ export function isExpired(w: WalletItem, today: DateOnly) {
 /** Recorded balance at a retailer, for contextual notes ("You have $150 in recorded Reformation credit"). */
 export function creditAt(d: OrbitData, retailerId: string, today: DateOnly): number {
   return d.wallet.filter((w) => w.retailerId === retailerId && !isExpired(w, today)).reduce((s, w) => s + (w.balance ?? 0), 0);
+}
+
+// ─── Sources ─────────────────────────────────────────────────────────────
+
+export const connectionOf = (d: OrbitData, id: string | null | undefined) => (id ? d.connections.find((c) => c.id === id) ?? null : null);
+
+/** Connections with a problem the customer should fix. */
+export const connectionProblems = (d: OrbitData) => d.connections.filter((c) => c.status === "sync_failed" || c.status === "reauth_required");
+
+/**
+ * Where an order came from, for "Purchased using: …". Falls back to how it was added
+ * (an upload, pasted text, manual entry) when no inbox is involved.
+ */
+export function purchaseSource(d: OrbitData, order: Order): { label: string; detail: string | null; connectionId: string | null } {
+  const c = connectionOf(d, order.sourceConnectionId);
+  if (c) return { label: c.label, detail: c.address, connectionId: c.id };
+  const first = order.evidenceIds.map((id) => d.evidence.find((e) => e.id === id)).find(Boolean);
+  const byChannel: Partial<Record<string, string>> = {
+    screenshot: "A photo or screenshot you shared",
+    pdf_upload: "A PDF you uploaded",
+    shared_text: "Text you shared",
+    email_upload: "An email you pasted",
+    forwarded: "An email you forwarded",
+    manual: "Added by you",
+  };
+  return { label: (first && byChannel[first.channel]) ?? "Added by you", detail: null, connectionId: null };
+}
+
+/** The three return dates for an order's current (or next) return. */
+export function orderDeadlines(v: OrderView, today: DateOnly): ReturnDeadlines {
+  const r = v.activeReturn ?? v.latestReturn ?? null;
+  const item = r ? v.items.find((i) => r.itemIds.includes(i.item.id)) : null;
+  const start: Deadline = item?.deadline ?? v.deadline ?? { kind: "unknown", reason: "We don't have enough to work out a deadline.", missing: "policy" };
+  return returnDeadlines(start, r, v.policy, today);
 }

@@ -39,7 +39,7 @@ function Router() {
     return (
       <Shell nav={false}>
         <BackBar fallback="/returns/" />
-        <EmptyState icon={<PackageOpen aria-hidden />} title="We couldn't find this return" action={<ButtonLink href="/returns/">Back to Purchases</ButtonLink>} />
+        <EmptyState icon={<PackageOpen aria-hidden />} title="We couldn't find this return" action={<ButtonLink href="/returns/">Back to Returns</ButtonLink>} />
       </Shell>
     );
 
@@ -369,7 +369,7 @@ function ReturnStatus({ view, request }: { view: OrderView; request: ReturnReque
             You&apos;ll get a label once it&apos;s approved. Don&apos;t send anything yet.
           </Notice>
         )}
-        {request.status === "label_ready" && <ButtonLink href={`/returns/label/?id=${request.id}`}>View QR Code</ButtonLink>}
+        {request.status === "label_ready" && <ButtonLink href={`/returns/kit/?id=${request.id}`}>View QR Code</ButtonLink>}
         {(request.status === "shipped" || request.status === "received" || request.status === "completed") && refund && (
           <ButtonLink href={`/returns/refund/?id=${refund.id}`}>Track Refund</ButtonLink>
         )}

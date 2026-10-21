@@ -95,14 +95,14 @@ describe("priorities", () => {
 
   it("surfaces proactive updates from across the app", () => {
     const kinds = buildPriorities(data, TODAY).filter((x) => x.bucket === "updates").map((x) => x.kind);
-    expect(kinds).toEqual(expect.arrayContaining(["delivery_soon", "refund_arrival", "wishlist_sale", "credit_sale", "favorites_sales"]));
-    const boots = buildPriorities(data, TODAY).find((x) => x.kind === "wishlist_sale" && x.title === "Leather Chelsea Boots");
-    expect(boots).toMatchObject({ status: "25% off now", detailHref: "/promo/?id=d-p-mad" });
+    expect(kinds).toEqual(expect.arrayContaining(["delivery_soon", "refund_arrival"]));
+    // Tote never turns sales or promotions into to-dos.
+    expect(buildPriorities(data, TODAY).some((x) => /sale|promo/.test(x.kind))).toBe(false);
   });
 
   it("carries the purchase price at stake for deadlines", () => {
     const p = buildPriorities(data, TODAY).filter((x) => x.bucket !== "updates");
-    expect(amountAtStake(p)).toBe(95 + 180 + 138 + 25 + 145 + 128 + 135);
+    expect(amountAtStake(p)).toBe(925.99); // 95 + 180 + 138 + 25 + 145 + 128 + 135 + Amazon 79.99
     expect(p.find((x) => x.kind === "return_deadline" && x.retailerId === "reformation")).toMatchObject({ amount: 180, daysLeft: 3, estimated: false });
   });
 

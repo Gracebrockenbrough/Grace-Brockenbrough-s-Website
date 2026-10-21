@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
-import { ArrowUpRight, Camera, Check, Heart, Link2, Mic, Trash, Type } from "lucide-react";
+import { ArrowUpRight, Bookmark, Camera, Check, Link2, Mic, Trash, Type } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { ItemArt, KIND_COLOR } from "@/components/orbit/item-art";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ import { money } from "@/lib/domain/format";
 import type { WishItem } from "@/lib/domain/types";
 import { downscaleImage } from "@/lib/hooks/downscale";
 import { itemKind } from "@/lib/intelligence/buckets";
-import { activeWishes, parseProductLink, parseWishText, salesForWish } from "@/lib/intelligence/discover";
+import { activeWishes, parseProductLink, parseWishText } from "@/lib/intelligence/saved";
 import { creditAt, retailerOf } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
@@ -105,7 +104,7 @@ function AddWish({ mode, onClose }: { mode: Mode; onClose: () => void }) {
       description="Exact products or broad ideas both work, like “a blue dress for a wedding under $150”."
       footer={
         <Button disabled={!valid} onClick={save}>
-          Add to Wishlist
+          Save for Later
         </Button>
       }
     >
@@ -139,7 +138,7 @@ function AddWish({ mode, onClose }: { mode: Mode; onClose: () => void }) {
                 }}
               />
             </label>
-            <p className="mt-2 text-[13px] text-muted">Matching by photo comes later. Add a few words so we can find sales for it now.</p>
+            <p className="mt-2 text-[13px] text-muted">Add a few words so you can find it again with Ask.</p>
           </div>
         )}
         <Field label={mode === "link" ? "Name (optional)" : "What are you looking for?"} htmlFor="wl-text">
@@ -191,7 +190,6 @@ function AddWish({ mode, onClose }: { mode: Mode; onClose: () => void }) {
 
 function WishCard({ w }: { w: WishItem }) {
   const o = useOrbit()!;
-  const sales = salesForWish(o.data, w, o.today);
   const kind = itemKind({ name: `${w.text} ${w.tags.join(" ")}`, category: w.tags.includes("serum") ? "beauty" : w.tags.some((t) => ["sneakers", "sneaker", "boots", "boot", "shoes", "heels"].includes(t)) ? "shoes" : "clothing" });
   const retailer = w.retailerId ? retailerOf(o.data, w.retailerId) : null;
   const credit = w.retailerId ? creditAt(o.data, w.retailerId, o.today) : 0;
@@ -218,17 +216,7 @@ function WishCard({ w }: { w: WishItem }) {
           </p>
         </div>
       </div>
-      {sales.length > 0 ? (
-        <Link href={`/promo/?id=${sales[0].id}`} className="mt-3 flex min-h-11 items-center gap-2 rounded-2xl bg-terracotta-soft px-3 py-2 text-[14px] font-semibold text-terracotta">
-          <Heart aria-hidden className="size-4 shrink-0" />
-          <span className="flex-1">
-            On sale at {retailerOf(o.data, sales[0].retailerId).name}: {sales[0].title}
-          </span>
-        </Link>
-      ) : (
-        <p className="mt-3 text-[13px] text-muted">No matching sales right now. We&apos;ll tell you when there is one.</p>
-      )}
-      {credit > 0 && <p className="mt-2 text-[13px] font-medium text-sage-ink">You have {money(credit)} in recorded {retailer?.name} credit.</p>}
+      {credit > 0 && <p className="mt-3 text-[13px] font-medium text-sage-ink">You have {money(credit)} in recorded {retailer?.name} credit.</p>}
       <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-line/70 pt-1">
         {w.url && (
           <a href={w.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-[14px] font-semibold text-navy hover:bg-ivory-deep">
@@ -247,7 +235,7 @@ function WishCard({ w }: { w: WishItem }) {
   );
 }
 
-export default function WishlistPage() {
+export default function SavedPage() {
   const o = useOrbit();
   const [mode, setMode] = useState<Mode | null>(null);
   if (!o) return <Shell loading />;
@@ -264,10 +252,10 @@ export default function WishlistPage() {
 
   return (
     <Shell>
-      <BackBar fallback="/" title="Wishlist" />
-      <p className="pb-1 pt-1 text-[16px] text-muted">Things you&apos;re keeping an eye on. We&apos;ll tell you when they go on sale.</p>
+      <BackBar fallback="/settings/" title="Saved for Later" />
+      <p className="pb-1 pt-1 text-[16px] text-muted">Products and ideas you want to remember. Only you can see them.</p>
 
-      <div className="mt-4 grid grid-cols-4 gap-2" role="group" aria-label="Add to your wishlist">
+      <div className="mt-4 grid grid-cols-4 gap-2" role="group" aria-label="Save something for later">
         {methods.map((m) => (
           <button key={m.id} type="button" onClick={() => setMode(m.id)} className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-[18px] border border-line bg-card text-[13px] font-semibold shadow-[var(--shadow-card)] hover:bg-ivory-deep">
             {m.icon}
@@ -278,8 +266,8 @@ export default function WishlistPage() {
 
       <div className="mt-5 space-y-3">
         {active.length === 0 ? (
-          <EmptyState icon={<Heart aria-hidden />} title="Your wishlist is empty">
-            Add something you&apos;re looking for. It shapes your sales feed.
+          <EmptyState icon={<Bookmark aria-hidden />} title="Nothing saved yet">
+            Save a product link, a photo or a note so you don&apos;t lose it.
           </EmptyState>
         ) : (
           active.map((w) => <WishCard key={w.id} w={w} />)
@@ -306,7 +294,7 @@ export default function WishlistPage() {
       )}
 
       <Notice tone="info" className="mt-6">
-        Your wishlist is private. It&apos;s only used to choose which sales to show you.
+        Saved items are private. Tote never uses them for advertising or shares them.
       </Notice>
 
       {mode && <AddWish mode={mode} onClose={() => setMode(null)} />}

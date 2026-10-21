@@ -2,30 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Ban, ChevronRight, FileUp, Heart, Inbox, LoaderCircle, Mail, RefreshCw, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { Ban, Bookmark, ChartNoAxesColumn, ChevronRight, ClockArrowUp, FileUp, Gauge, Mail, Plus, ShieldCheck } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { CopyRow } from "@/components/orbit/copy";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
-import { Choice, Toggle } from "@/components/ui/form";
+import { Choice, Field, Input, Toggle } from "@/components/ui/form";
+import { ConnectionRow } from "@/components/orbit/connections";
 import { Notice, Tag } from "@/components/ui/notice";
 import { Sheet } from "@/components/ui/sheet";
-import { ago } from "@/lib/domain/dates";
 import { plural } from "@/lib/domain/format";
-import type { ConnectedAccount } from "@/lib/domain/types";
 import { FORWARDING_ADDRESS_DEMO, gmailConnector, outlookConnector, type EmailConnector } from "@/lib/ingestion/connectors";
 import { weeklySummary } from "@/lib/intelligence/priorities";
+import { SCHOOL } from "@/lib/demo/seed";
 import { actions, useOrbit } from "@/lib/store/store";
-
-const statusCopy: Record<ConnectedAccount["status"], { text: string; tone: string }> = {
-  connected: { text: "Connected", tone: "text-sage-ink" },
-  connecting: { text: "Connecting…", tone: "text-muted" },
-  syncing: { text: "Syncing…", tone: "text-muted" },
-  sync_failed: { text: "Sync failed", tone: "text-terracotta" },
-  reauth_required: { text: "Reconnection required", tone: "text-terracotta" },
-  disconnected: { text: "Not connected", tone: "text-muted" },
-  unavailable: { text: "Not available yet", tone: "text-muted" },
-};
 
 function MenuRow({ href, icon, title, body }: { href: string; icon: React.ReactNode; title: string; body: string }) {
   return (
@@ -44,22 +34,17 @@ export default function SettingsPage() {
   const o = useOrbit();
   const [consent, setConsent] = useState<EmailConnector | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [syncNote, setSyncNote] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [label, setLabel] = useState("");
+  const [address, setAddress] = useState("");
   if (!o) return <Shell loading nav={false} />;
 
   const { data, today, profile, preview } = o;
-  const inbox = data.connections.find((c) => c.id === "sample_inbox")!;
   const prefs = data.prefs;
-  const busy = inbox.status === "syncing" || inbox.status === "connecting";
-
-  const sync = async () => {
-    setSyncNote(null);
-    const r = await actions.syncSampleInbox();
-    if (r) {
-      const n = r.filter((x) => x.status === "added" || x.status === "merged").length;
-      setSyncNote(n ? `Imported ${plural(n, "new email")}.` : "No new emails.");
-    }
-  };
+  const active = data.connections.filter((c) => c.status !== "disconnected");
+  const off = data.connections.filter((c) => c.status === "disconnected");
+  const review = data.jobs.filter((j) => j.status === "needs_review").length;
+  const saved = data.wishlist.filter((w) => w.status === "active").length;
 
   return (
     <Shell nav={false}>
@@ -75,82 +60,43 @@ export default function SettingsPage() {
       </Card>
 
       <Card className="mt-6 divide-y divide-line overflow-hidden">
-        <MenuRow href="/preferences/" icon={<SlidersHorizontal aria-hidden />} title="Shopping preferences" body="Favorite brands, categories and which sales you see" />
-        <MenuRow href="/wishlist/" icon={<Heart aria-hidden />} title="Wishlist" body={`${plural(data.wishlist.filter((w) => w.status === "active").length, "item")} you're keeping an eye on`} />
+        <MenuRow href="/insights/" icon={<ChartNoAxesColumn aria-hidden />} title="Shopping Insights" body="Private spending awareness: months, stores, refunds" />
+        <MenuRow href="/saved/" icon={<Bookmark aria-hidden />} title="Saved for Later" body={saved ? `${plural(saved, "item")} you saved` : "Products and ideas you want to remember"} />
       </Card>
 
-      {/* Email */}
+      {/* Connected accounts */}
       <section id="email" className="mt-8 scroll-mt-16">
-        <SectionTitle>Email connections</SectionTitle>
+        <SectionTitle action={<Button variant="ghost" size="sm" icon={<Plus aria-hidden className="size-4" />} onClick={() => setAdding(true)}>Add Email</Button>}>Connected accounts</SectionTitle>
         <Card className="divide-y divide-line">
-          <div className="p-4">
-            <div className="flex items-start gap-3">
-              <Inbox aria-hidden className="mt-0.5 size-5 text-muted" />
-              <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 font-semibold">
-                  Sample inbox <Tag>Demo</Tag>
-                </p>
-                <p className="text-[14px] text-muted">Fictional emails for this preview. Not a real mailbox.</p>
-                <p role="status" className={`mt-1 flex items-center gap-1.5 text-[14px] font-medium ${statusCopy[inbox.status].tone}`}>
-                  {busy && <LoaderCircle aria-hidden className="size-4 animate-spin" />}
-                  {statusCopy[inbox.status].text}
-                  {inbox.lastSyncedAt && inbox.status !== "disconnected" && <span className="font-normal text-muted">· last successful sync {ago(inbox.lastSyncedAt, today)}</span>}
-                </p>
-                {inbox.lastError && inbox.status === "sync_failed" && <p className="mt-1 text-[14px] text-muted">{inbox.lastError}</p>}
-              </div>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {inbox.status === "connected" || inbox.status === "syncing" ? (
-                <>
-                  <Button variant="secondary" size="sm" disabled={busy} icon={<RefreshCw aria-hidden className="size-4" />} onClick={sync}>
-                    Sync Now
-                  </Button>
-                  <Button variant="ghost" size="sm" disabled={busy} onClick={() => actions.setConnection("sample_inbox", "disconnected")}>
-                    Disconnect
-                  </Button>
-                </>
-              ) : inbox.status === "sync_failed" ? (
-                <>
-                  <Button variant="secondary" size="sm" icon={<RefreshCw aria-hidden className="size-4" />} onClick={sync}>
-                    Retry Sync
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => actions.setConnection("sample_inbox", "disconnected")}>
-                    Disconnect
-                  </Button>
-                </>
-              ) : (
-                <Button variant="secondary" size="sm" disabled={busy} onClick={() => actions.connectSampleInbox()}>
-                  {inbox.status === "reauth_required" ? "Reconnect" : "Connect Sample Inbox"}
-                </Button>
-              )}
-            </div>
-            {syncNote && inbox.status === "connected" && <p className="mt-2 text-[14px] text-muted">{syncNote}</p>}
-          </div>
-
-          {[gmailConnector, outlookConnector].map((c) => (
-            <button key={c.id} type="button" onClick={() => setConsent(c)} className="flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-ivory-deep">
-              <Mail aria-hidden className="size-5 text-muted" />
-              <span className="flex-1">
-                <span className="block font-semibold">{c.displayName}</span>
-                <span className="block text-[14px] text-muted">Not connected · Not available yet</span>
-              </span>
-              <span className="text-[15px] font-semibold">Learn more</span>
-            </button>
+          {active.map((c) => (
+            <ConnectionRow key={c.id} c={c} today={today} />
           ))}
+          {active.length === 0 && <p className="p-4 text-[15px] text-muted">No inboxes connected. Add one, or import purchases without connecting.</p>}
+          {off.map((c) => (
+            <ConnectionRow key={c.id} c={c} today={today} />
+          ))}
+
+          {review > 0 && (
+            <Link href="/settings/history/" className="flex min-h-14 items-center gap-3 bg-sand px-4 py-3 hover:bg-ivory-deep">
+              <span className="flex-1 text-[15px] font-semibold">{plural(review, "email")} need a quick check</span>
+              <ChevronRight aria-hidden className="size-5 text-muted/60" />
+            </Link>
+          )}
 
           <Link href="/add/" className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-ivory-deep">
             <FileUp aria-hidden className="size-5 text-muted" />
             <span className="flex-1">
               <span className="block font-semibold">Import without connecting</span>
-              <span className="block text-[14px] text-muted">Paste an email, upload a receipt, or enter it yourself</span>
+              <span className="block text-[14px] text-muted">Paste an email or text, upload a receipt or PDF, or enter it yourself</span>
             </span>
             <ChevronRight aria-hidden className="size-5 text-muted/60" />
           </Link>
 
           <div className="px-4 pb-2 pt-3">
-            <CopyRow label="Forwarding address (placeholder, not receiving mail)" value={FORWARDING_ADDRESS_DEMO} />
+            <CopyRow label="Forwarding address (placeholder, not receiving mail yet)" value={FORWARDING_ADDRESS_DEMO} />
           </div>
         </Card>
+        <p className="mt-2 px-1 text-[14px] text-muted">Each inbox syncs on its own. Every purchase remembers which one it came from.</p>
       </section>
 
       {/* Notifications */}
@@ -162,7 +108,6 @@ export default function SettingsPage() {
           <Toggle label="Refunds that need checking" checked={prefs.refunds} onChange={(v) => actions.setPrefs({ refunds: v })} />
           <Toggle label="Credit expiring" checked={prefs.creditExpiry} onChange={(v) => actions.setPrefs({ creditExpiry: v })} />
           <Toggle label="Packages arriving" checked={prefs.deliveries ?? true} onChange={(v) => actions.setPrefs({ deliveries: v })} />
-          <Toggle label="Sales you'd care about" description="Wishlist items on sale, credit you can use, favorite brands" checked={prefs.deals ?? true} onChange={(v) => actions.setPrefs({ deals: v })} />
           <div className="py-3">
             <p className="mb-2 font-medium">Remind me before a deadline</p>
             <Choice
@@ -193,7 +138,7 @@ export default function SettingsPage() {
         <Card className="p-4">
           <p className="text-[15px] font-semibold">It can</p>
           <ul className="mt-1.5 space-y-2 text-[15px]">
-            {["Read shopping emails: orders, shipping, returns, refunds, gift cards and promotions.", "Fill in the details: store, items, prices, dates and codes.", "Answer your questions using only your own records."].map((t) => (
+            {["Read shopping emails: orders, shipping, returns, refunds and gift cards. Promotions are recognized and skipped.", "Fill in details the rules couldn't read, from a shortened copy with your address and card digits removed.", "Answer your questions using only your own records."].map((t) => (
               <li key={t} className="flex gap-2.5">
                 <ShieldCheck aria-hidden className="mt-0.5 size-[18px] shrink-0 text-sage-ink" />
                 {t}
@@ -222,7 +167,8 @@ export default function SettingsPage() {
               "Tote never asks for your retailer passwords.",
               "Tote never connects to your bank. You confirm refunds yourself.",
               "Gift card codes are hidden until you reveal them.",
-              "Your wishlist and preferences are only used to choose sales for you.",
+              "Your email is never used for advertising, and your shopping history is never sold.",
+              "Most emails are read by simple rules, with no AI at all.",
             ].map((t) => (
               <li key={t} className="flex gap-2.5">
                 <ShieldCheck aria-hidden className="mt-0.5 size-[18px] shrink-0 text-sage-ink" />
@@ -230,7 +176,13 @@ export default function SettingsPage() {
               </li>
             ))}
           </ul>
-          <Button variant="danger" size="md" className="mt-4 w-full" onClick={() => setConfirmDelete(true)}>
+        </Card>
+        <Card className="mt-3 divide-y divide-line overflow-hidden">
+          <MenuRow href="/settings/history/" icon={<ClockArrowUp aria-hidden />} title="Import history" body={`${plural(data.jobs.length, "email")} processed. What was imported, skipped, or needs a check`} />
+          <MenuRow href="/dev/" icon={<Gauge aria-hidden />} title="Processing dashboard" body="For developers: volumes, AI use and estimated cost" />
+        </Card>
+        <Card className="mt-3 p-4">
+          <Button variant="danger" size="md" className="w-full" onClick={() => setConfirmDelete(true)}>
             Delete All Imported Information
           </Button>
         </Card>
@@ -256,14 +208,11 @@ export default function SettingsPage() {
           </div>
           <Toggle label="Make the next sync fail" description="Preview the sync error and retry" checked={Boolean(preview.failNextSync)} onChange={(v) => actions.setPreview({ failNextSync: v })} />
           <div className="space-y-2 py-3">
-            <Button variant="secondary" size="md" className="w-full" onClick={() => actions.setConnection("sample_inbox", "reauth_required")}>
-              Require Inbox Reconnection
+            <Button variant="secondary" size="md" className="w-full" onClick={() => actions.setConnection(SCHOOL, "reauth_required", "Access expired. Sign in again to keep importing.")}>
+              Expire the School Email Login
             </Button>
             <Button variant="secondary" size="md" className="w-full" onClick={() => actions.loadBusyMonth()}>
               Load a Busy Month (+19 Orders)
-            </Button>
-            <Button variant="secondary" size="md" className="w-full" onClick={() => actions.setShopping({ onboarded: false })}>
-              Replay Welcome Screens
             </Button>
             <Button variant="secondary" size="md" className="w-full" onClick={() => actions.resetDemo()}>
               Reset Demo Data
@@ -279,7 +228,7 @@ export default function SettingsPage() {
         open={consent != null}
         onOpenChange={(v) => !v && setConsent(null)}
         title={consent ? `Connect ${consent.displayName}` : ""}
-        description="Tote would only read shopping emails, and you can disconnect any time."
+        description="Tote imports only shopping emails, and you can disconnect any time."
         footer={
           consent && (
             <>
@@ -307,6 +256,9 @@ export default function SettingsPage() {
                 ))}
               </ul>
             </div>
+            <Notice tone="info" title="About this permission">
+              {consent.consent.scopeReality}
+            </Notice>
             <p className="text-[13px] text-muted">
               Permission requested: {consent.consent.scope}. You sign in on {consent.displayName}&apos;s own page; Tote never sees your password.
             </p>
@@ -318,10 +270,65 @@ export default function SettingsPage() {
       </Sheet>
 
       <Sheet
+        open={adding}
+        onOpenChange={setAdding}
+        title="Add an email"
+        description="Connect every inbox you shop with. They all live under this one Tote profile."
+        footer={
+          <Button
+            disabled={!label.trim()}
+            onClick={async () => {
+              await actions.addConnection({ provider: "sample", label, address });
+              setAdding(false);
+              setLabel("");
+              setAddress("");
+            }}
+          >
+            Add Sample Inbox
+          </Button>
+        }
+      >
+        <div className="space-y-4">
+          {[gmailConnector, outlookConnector].map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => {
+                setAdding(false);
+                setConsent(c);
+              }}
+              className="flex min-h-16 w-full items-center gap-3 rounded-2xl border border-line px-4 py-3 text-left hover:bg-ivory-deep"
+            >
+              <Mail aria-hidden className="size-5 text-muted" />
+              <span className="flex-1">
+                <span className="block font-semibold">{c.displayName}</span>
+                <span className="block text-[14px] text-muted">Not available yet · Learn why</span>
+              </span>
+              <ChevronRight aria-hidden className="size-5 text-muted/60" />
+            </button>
+          ))}
+          <div className="rounded-2xl border border-line p-4">
+            <p className="flex items-center gap-2 font-semibold">
+              Sample inbox <Tag>Demo</Tag>
+            </p>
+            <p className="mb-3 text-[14px] text-muted">A pretend inbox for trying multiple accounts. It never reads real mail.</p>
+            <div className="space-y-3">
+              <Field label="Name" htmlFor="conn-label">
+                <Input id="conn-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Work email" autoComplete="off" />
+              </Field>
+              <Field label="Address (optional)" htmlFor="conn-address">
+                <Input id="conn-address" type="email" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="you@example.com" autoComplete="off" />
+              </Field>
+            </div>
+          </div>
+        </div>
+      </Sheet>
+
+      <Sheet
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         title="Delete everything?"
-        description="This removes all purchases, returns, refunds, saved emails, wishlist and wallet cards from Tote, and disconnects your inbox. It can't be undone."
+        description="This removes all purchases, returns, refunds, saved emails, saved items and wallet cards from Tote, and disconnects every inbox. It can't be undone."
         footer={
           <Button
             variant="danger"

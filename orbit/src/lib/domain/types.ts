@@ -20,11 +20,15 @@ export type Confidence = "high" | "medium" | "low";
 // ─── Retailers & policies ────────────────────────────────────────────────
 
 /**
- * How much of a retailer's return process Tote performs. Tote is read-only by design:
- * it reads shopping emails and prepares information, and the customer always completes
- * the retailer's own process. Tote never submits, buys or sends anything on anyone's behalf.
+ * How much of a retailer's return process Tote performs.
+ * - guided: Tote gives accurate information and opens the retailer's own process. (Built.)
+ * - assisted: Tote prepares the request in an authorized customer workflow; the customer
+ *   confirms and finishes restricted steps. (Interface only.)
+ * - integrated: Tote submits through an approved retailer API after explicit approval.
+ *   (Interface only; needs a retailer partnership.)
+ * Every retailer is "guided" today. Tote never submits anything without a real integration.
  */
-export type ReturnCapability = "guided";
+export type ReturnCapability = "guided" | "assisted" | "integrated";
 
 export type CardTone = "navy" | "sage" | "terracotta" | "sand" | "slate" | "ink";
 
@@ -72,6 +76,10 @@ export interface PolicyException {
 
 export interface ReturnPolicy {
   retailerId: string;
+  /** Policies are versioned. An order uses the version in effect when it was bought. */
+  version: number;
+  /** First day this version applies. null = since we started tracking it. */
+  effectiveFrom: DateOnly | null;
   /** Standard window in days. null = not known. */
   windowDays: number | null;
   windowStartsAt: WindowStart;
@@ -89,6 +97,19 @@ export interface ReturnPolicy {
   dropOff: DropOffKind[];
   /** Retailer must approve the request before a label is issued. */
   approvalRequired: Tri;
+  /**
+   * The three dates a return can have, kept separate:
+   * 1. start the return: `windowDays` from `windowStartsAt`;
+   * 2. get approval or create the label: `labelWithinDays` after starting;
+   * 3. ship or drop off: `shipWithinDays` after the label is issued.
+   * null = the retailer doesn't state a separate limit (or we don't know it).
+   */
+  labelWithinDays: number | null;
+  shipWithinDays: number | null;
+  /** Rules for purchases made in a physical store, when they differ from online ones. */
+  inStore: { accepted: Tri; windowDays: number | null; note: string | null };
+  /** Seasonal extensions, e.g. "Holiday purchases can be returned until Jan 31." */
+  holidayNote?: string | null;
   sourceUrl: string;
   lastCheckedAt: DateOnly;
   verification: "verified" | "sample" | "needs_review";
@@ -108,7 +129,7 @@ export type EvidenceKind =
   | "manual_entry"
   | "retailer_integration";
 
-export type EvidenceChannel = "gmail" | "outlook" | "forwarded" | "email_upload" | "screenshot" | "manual" | "sample_inbox";
+export type EvidenceChannel = "gmail" | "outlook" | "forwarded" | "email_upload" | "screenshot" | "pdf_upload" | "shared_text" | "manual" | "sample_inbox";
 
 /** A source document that supports one or more stored facts. */
 export interface Evidence {
@@ -122,6 +143,10 @@ export interface Evidence {
   excerpt: string | null;
   /** An uploaded or scanned receipt image or PDF (private storage in production). */
   attachment?: { name: string; type: string; dataUrl: string } | null;
+  /** The email connection this came from, when it came from a connected inbox. */
+  connectionId?: string | null;
+  /** Read off an image/PDF/text by Tote ("extracted") or checked by the customer ("verified"). */
+  verification?: "extracted" | "verified" | null;
 }
 
 /** Provenance for an individual extracted field. */
@@ -169,6 +194,10 @@ export interface Order {
   fieldSources: Partial<Record<"orderNumber" | "purchasedAt" | "shippedAt" | "deliveredAt" | "items", FieldSource>>;
   /** User chose to keep the items; suppresses return reminders. */
   keptItemIds: string[];
+  /** The email connection the order was first found in ("Purchased using: Personal Gmail"). */
+  sourceConnectionId?: string | null;
+  /** Bought in a physical store. In-store return rules may differ from online ones. */
+  channel?: "online" | "in_store" | null;
   createdAt: Timestamp;
   demo: boolean;
 }
@@ -245,6 +274,19 @@ export interface Refund {
   confirmed: { amount: number; at: DateOnly; by: "retailer_email" | "customer"; evidenceId: string | null } | null;
   /** The customer confirmed the money actually reached their account (optional). */
   arrivedAt?: DateOnly | null;
+  /**
+   * Refund Asker: the customer's answers to "Did it arrive?". Tote has no bank access,
+   * so a card refund is only "received" when the customer says so.
+   */
+  asker?: {
+    /** Last answer. "not_yet" and "later" snooze the question until `remindOn`. */
+    answer: "not_yet" | "later" | "missing" | null;
+    remindOn: DateOnly | null;
+    askedCount: number;
+    reportedMissingAt: DateOnly | null;
+    resolvedAt: DateOnly | null;
+    resolution: string | null;
+  };
   milestones: { at: Timestamp; label: string; evidenceId: string | null }[];
 }
 
@@ -302,49 +344,45 @@ export interface GiftTransfer {
 
 // ─── Connections & preferences ───────────────────────────────────────────
 
-export type ConnectorId = "gmail" | "outlook" | "sample_inbox";
+/** Email providers Tote can (eventually) connect to. "sample" is a clearly labeled fictional inbox. */
+export type ConnectorId = "gmail" | "outlook" | "sample";
 
 export type ConnectionStatus = "connected" | "disconnected" | "unavailable" | "connecting" | "syncing" | "sync_failed" | "reauth_required";
 
+/** Which kinds of shopping email a connection may import. Customers control this per address. */
+export interface ImportSettings {
+  orders: boolean;
+  shipping: boolean;
+  returnsAndRefunds: boolean;
+  giftCards: boolean;
+  /** Only look at mail received on or after this date. null = provider default (e.g. last 12 months). */
+  since: DateOnly | null;
+}
+
+/**
+ * One authorized email connection. A customer can have several, including several from
+ * the same provider. The id, not the address, identifies the connection: an address alone
+ * is never treated as authentication. Tokens never live here; production keeps them
+ * encrypted server-side, keyed by this id.
+ */
 export interface ConnectedAccount {
-  id: ConnectorId;
-  status: ConnectionStatus;
+  id: string;
+  provider: ConnectorId;
+  /** Customer-chosen name, e.g. "Personal Gmail". */
+  label: string;
   address: string | null;
+  status: ConnectionStatus;
   /** When the last sync finished successfully. */
   lastSyncedAt: Timestamp | null;
   lastError?: string | null;
+  importSettings: ImportSettings;
+  connectedAt: Timestamp | null;
+  demo: boolean;
 }
 
-// ─── Discover ────────────────────────────────────────────────────────────
+// ─── Saved for Later ─────────────────────────────────────────────────────
 
-/** A sale or code, found in promotional emails, shared by the community, or from a partner. */
-export interface Promotion {
-  id: string;
-  retailerId: string;
-  title: string;
-  detail: string | null;
-  /** Headline discount, e.g. 25 for "25% off". null when it isn't a percentage. */
-  discountPct: number | null;
-  code: string | null;
-  /** Where it came from. Sponsored promotions are always labeled. */
-  source: "email" | "community" | "partner";
-  sponsored: boolean;
-  /** Community verification of the code. */
-  votes: { worked: number; failed: number };
-  /** Words used to match wishlist items, e.g. ["dress", "dresses"]. */
-  tags: string[];
-  categories: ("clothing" | "shoes" | "beauty" | "accessories" | "home")[];
-  startsAt: DateOnly;
-  endsAt: DateOnly | null;
-  url: string;
-  /** Affiliate links are disclosed in the UI. */
-  affiliate: boolean;
-  addedByUser: boolean;
-}
-
-// ─── Wishlist ────────────────────────────────────────────────────────────
-
-/** Something the customer is looking for: an exact product or a broader interest. */
+/** Something the customer wants to remember: an exact product or a broader idea. Private; never used for ads. */
 export interface WishItem {
   id: string;
   kind: "product" | "interest";
@@ -365,22 +403,6 @@ export interface WishItem {
   addedAt: Timestamp;
 }
 
-export type ShopCategory = "clothing" | "shoes" | "beauty" | "accessories" | "home";
-
-/** Shopping preferences that shape Discover. Always editable, never inferred silently. */
-export interface ShoppingPrefs {
-  onboarded: boolean;
-  favoriteRetailerIds: string[];
-  hiddenRetailerIds: string[];
-  categories: ShopCategory[];
-  /** Hide sales smaller than this. 0 = show all. */
-  minDiscount: 0 | 15 | 25 | 40;
-  showSponsored: boolean;
-  hiddenPromotionIds: string[];
-  /** Points for sharing and verifying codes. */
-  points: number;
-}
-
 export interface NotificationPrefs {
   returnDeadlines: boolean;
   returnActions: boolean;
@@ -389,8 +411,6 @@ export interface NotificationPrefs {
   weeklySummary: boolean;
   /** Packages arriving soon. */
   deliveries?: boolean;
-  /** Wishlist sales, credit you can use, favorite-brand sales. */
-  deals?: boolean;
   /** Days before a deadline to remind. */
   leadDays: 3 | 5 | 7;
 }

@@ -3,14 +3,16 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, Camera, Check, ChevronRight, Copy, FileText, FileUp, ListChecks, Mail, ScanBarcode, ScrollText, Trash } from "lucide-react";
+import { ArrowUpRight, CalendarClock, CalendarDays, Camera, Check, ChevronRight, Copy, FileText, FileUp, Inbox, ListChecks, Mail, PackageCheck, PlugZap, ScanBarcode, ScrollText, Store, Trash } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { ProductThumb } from "@/components/orbit/retail";
 import { Button, ButtonLink, ExternalButton, TextLink } from "@/components/ui/button";
 import { Card, Row, Rows } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { Disclosure } from "@/components/ui/disclosure";
-import { CheckRow, Field, Input } from "@/components/ui/form";
+import { Field, Input } from "@/components/ui/form";
+import { RefundAsker } from "@/components/orbit/refund-asker";
+import { CapabilityList, ReturnDates } from "@/components/orbit/return-dates";
 import { Notice, Tag } from "@/components/ui/notice";
 import { Sheet } from "@/components/ui/sheet";
 import { EmptyState } from "@/components/ui/states";
@@ -19,7 +21,8 @@ import { formatDate } from "@/lib/domain/dates";
 import { downscaleImage, readSmallFile } from "@/lib/hooks/downscale";
 import { dropOffLabel, money, orderTotal, refundMethodLabel } from "@/lib/domain/format";
 import type { DateOnly, Evidence, FieldSource, ReturnPolicy } from "@/lib/domain/types";
-import { STAGES, orderView, refundOutlook, stageIndex, type MoneyKind } from "@/lib/store/selectors";
+import { STAGES, orderDeadlines, orderView, purchaseSource, refundOutlook, stageIndex, type MoneyKind } from "@/lib/store/selectors";
+import { capabilitiesOf } from "@/lib/retailers/capabilities";
 import { actions, useOrbit } from "@/lib/store/store";
 
 const evidenceLabel: Record<Evidence["kind"], string> = {
@@ -79,7 +82,7 @@ const moneyTag: Record<MoneyKind, { label: string; tone: "neutral" | "success" |
   last_known: { label: "Last known", tone: "warning" },
 };
 
-function PolicySection({ policy, retailerName, today }: { policy: ReturnPolicy | null; retailerName: string; today: DateOnly }) {
+function PolicySection({ policy, retailerName, today, inStore = false, newer = null }: { policy: ReturnPolicy | null; retailerName: string; today: DateOnly; inStore?: boolean; newer?: ReturnPolicy | null }) {
   if (!policy)
     return (
       <Notice tone="warning" title="No policy on file">
@@ -97,8 +100,16 @@ function PolicySection({ policy, retailerName, today }: { policy: ReturnPolicy |
         </Notice>
       )}
       <Rows>
+        {inStore && (
+          <Row label="Bought in store" hint={policy.inStore.note ?? undefined}>
+            {policy.inStore.accepted === false ? "In-store returns not listed" : policy.inStore.windowDays ? `${policy.inStore.windowDays} days from purchase` : "Same window, from the purchase date"}
+          </Row>
+        )}
         <Row label="Return window">{policy.windowDays ? `${policy.windowDays} days` : <Missing>Not confirmed</Missing>}</Row>
-        <Row label="Window starts">{startLabel}</Row>
+        <Row label="Window starts">{inStore ? "Purchase date" : startLabel}</Row>
+        <Row label="Label or approval">{policy.labelWithinDays != null ? `Within ${policy.labelWithinDays} days of starting` : policy.approvalRequired ? "Approval needed, no time limit stated" : "Comes when you start"}</Row>
+        <Row label="Ship or drop off">{policy.shipWithinDays != null ? `Within ${policy.shipWithinDays} days of starting` : <Missing>No separate limit stated</Missing>}</Row>
+        {!inStore && policy.inStore.accepted && <Row label="In-store returns" hint={policy.inStore.note ?? undefined}>{policy.inStore.windowDays ? `${policy.inStore.windowDays} days` : "Accepted"}</Row>}
         <Row label="Refund">{policy.refundMethods.map((m) => refundMethodLabel[m]).join(" or ")}</Row>
         <Row label="Mail return fee" hint={policy.fees.waivedForStoreCredit ? "Free if you choose store credit" : undefined}>
           {fee(policy.fees.mail)}
@@ -108,7 +119,11 @@ function PolicySection({ policy, retailerName, today }: { policy: ReturnPolicy |
         <Row label="Box needed">{tri(policy.shipping.boxRequired)}</Row>
         <Row label="Printer needed">{tri(policy.shipping.qrCodeAvailable ? false : policy.shipping.printingRequired)}</Row>
         <Row label="Last checked">{formatDate(policy.lastCheckedAt, today)}</Row>
+        <Row label="Policy version" hint={newer ? `Version ${newer.version} applies to purchases from ${formatDate(newer.effectiveFrom!, today)}. This order keeps the terms it was bought under.` : undefined}>
+          {policy.version}
+        </Row>
       </Rows>
+      {policy.holidayNote && <p className="mt-2 text-[15px] text-muted">{policy.holidayNote}</p>}
       {policy.exceptions.length > 0 && (
         <ul className="mt-2 space-y-1 text-[15px] text-muted">
           {policy.exceptions.map((e) => (
@@ -183,6 +198,12 @@ function PurchaseDetail() {
     }
   };
   const itemsSubtotal = orderTotal(order);
+  const source = purchaseSource(data, order);
+  const dates = orderDeadlines(v, today);
+  const caps = capabilitiesOf(retailer, policy);
+  const latestPolicy = data.policies.filter((p) => p.retailerId === order.retailerId).sort((a, b) => b.version - a.version)[0] ?? null;
+  const newerPolicy = latestPolicy && policy && latestPolicy.version > policy.version ? latestPolicy : null;
+  const inStore = order.channel === "in_store";
 
   const deadlineRow = (() => {
     const d = v.deadline;
@@ -211,6 +232,16 @@ function PurchaseDetail() {
         </div>
       </header>
 
+      <p className="-mt-2 mb-4 flex items-center gap-1.5 text-[14px] text-muted">
+        {inStore ? <Store aria-hidden className="size-4 shrink-0" /> : <Inbox aria-hidden className="size-4 shrink-0" />}
+        <span className="min-w-0 truncate">
+          {source.connectionId ? "Purchased using: " : "Source: "}
+          <span className="font-semibold text-navy">{source.label}</span>
+          {source.detail ? ` · ${source.detail}` : ""}
+          {inStore ? " · Bought in store" : ""}
+        </span>
+      </p>
+
       {/* Return overview */}
       <Card className="p-4">
         <div className="flex items-center justify-between gap-3">
@@ -231,14 +262,7 @@ function PurchaseDetail() {
           <Row label="Return method">{r?.dropOff ? (r.dropOff === "store" ? `${retailer.name} store` : `${dropOffLabel[r.dropOff]} drop-off`) : <Missing>Choose when you start</Missing>}</Row>
         </Rows>
 
-        {refundIssued && (
-          <div className="mt-2 rounded-2xl bg-ivory px-3">
-            <CheckRow checked={false} onChange={() => actions.markRefundArrived(v.refund!.id, v.refund!.confirmed!.amount)}>
-              <span className="block font-semibold">I&apos;ve received this refund</span>
-              <span className="block text-[14px] text-muted">Check {v.refund!.destinationLabel ?? "your original payment method"} for {money(v.refund!.confirmed!.amount)}.</span>
-            </CheckRow>
-          </div>
-        )}
+        {refundIssued && <RefundAsker compact refund={v.refund!} request={v.latestReturn ?? null} retailer={retailer} orderNumber={order.orderNumber} today={today} />}
         {v.refund?.arrivedAt && <p className="mt-2 text-[14px] font-medium text-sage-ink">You confirmed the refund arrived on {formatDate(v.refund.arrivedAt, today)}.</p>}
 
         {shipment && (
@@ -273,6 +297,12 @@ function PurchaseDetail() {
             </div>
             {fileError && <p role="alert" className="mt-1 text-[14px] text-terracotta">{fileError}</p>}
           </div>
+        )}
+
+        {shipment && (
+          <ButtonLink href={`/returns/kit/?id=${shipment.id}`} variant="secondary" size="md" className="mt-3 w-full" icon={<PackageCheck aria-hidden className="size-4" />}>
+            Open Return Kit
+          </ButtonLink>
         )}
 
         <div className="mt-3 space-y-2">
@@ -337,6 +367,11 @@ function PurchaseDetail() {
 
       {/* Secondary details */}
       <Card className="mt-6 overflow-hidden">
+        {(openItems.length > 0 || v.activeReturn) && (
+          <Disclosure title="Return dates" summary="Start, label and ship-by, kept separate" icon={<CalendarClock aria-hidden className="size-5" />}>
+            <ReturnDates dates={dates} today={today} />
+          </Disclosure>
+        )}
         {step >= 0 && (
           <Disclosure title="Return progress" summary={`Step ${step + 1} of ${STAGES.length}: ${STAGES[step].label}`} icon={<ListChecks aria-hidden className="size-5" />}>
             <ol>
@@ -408,7 +443,7 @@ function PurchaseDetail() {
             <Row label="Order total">{ch.total != null ? money(ch.total) : <Missing />}</Row>
             <Row label="Return label">
               {artifact && r ? (
-                <Link href={`/returns/label/?id=${r.id}`} className="font-semibold underline-offset-4 hover:underline">
+                <Link href={`/returns/kit/?id=${r.id}`} className="font-semibold underline-offset-4 hover:underline">
                   {artifact.kind === "qr_code" ? "Show QR code" : "View label"}
                 </Link>
               ) : (
@@ -435,6 +470,8 @@ function PurchaseDetail() {
                       <span className="block truncate text-[15px] font-semibold">{e.kind === "order_confirmation" ? "Receipt · " : ""}{e.title}</span>
                       <span className="block text-[13px] text-muted">
                         {evidenceLabel[e.kind]} · {formatDate(e.receivedAt.slice(0, 10), today)}
+                        {e.connectionId ? ` · ${data.connections.find((c) => c.id === e.connectionId)?.label ?? "Inbox"}` : ""}
+                        {e.verification === "extracted" ? " · Read from your receipt, not checked" : e.verification === "verified" ? " · Checked by you" : ""}
                         {e.channel === "sample_inbox" ? " · Sample" : ""}
                       </span>
                     </span>
@@ -452,12 +489,16 @@ function PurchaseDetail() {
         </Disclosure>
 
         <Disclosure title="Return policy" summary={policy?.windowDays ? `${policy.windowDays} days from ${policy.windowStartsAt}` : "Not on file"} icon={<ScrollText aria-hidden className="size-5" />}>
-          <PolicySection policy={policy} retailerName={retailer.name} today={today} />
+          <PolicySection policy={policy} retailerName={retailer.name} today={today} inStore={inStore} newer={newerPolicy} />
           {retailer.returnsUrl && (
             <ExternalButton href={retailer.returnsUrl} variant="secondary" size="md" className="mt-3 w-full">
               Open {retailer.name} Returns
             </ExternalButton>
           )}
+        </Disclosure>
+
+        <Disclosure title={`What Tote can do with ${retailer.name}`} summary={caps.approvedReturnSubmission === "no" ? "Guided returns. You finish on their site" : "Connected"} icon={<PlugZap aria-hidden className="size-5" />}>
+          <CapabilityList caps={caps} retailerName={retailer.name} />
         </Disclosure>
       </Card>
 

@@ -9,7 +9,8 @@
  */
 import { addDays, daysBetween } from "../domain/dates";
 import type { DateOnly, ItemCategory, OrderItem } from "../domain/types";
-import { retailerOf } from "../store/selectors";
+import { fromCents, mulMoney, toCents } from "../domain/money";
+import { purchaseSource, retailerOf } from "../store/selectors";
 import type { OrbitData } from "../store/state";
 
 export type RangeKind = "month" | "quarter" | "year" | "custom";
@@ -64,17 +65,8 @@ export interface Insights {
 }
 
 const inRange = (d: DateOnly | null, r: InsightRange) => d != null && d >= r.from && d <= r.to;
-const round = (n: number) => Math.round(n * 100) / 100;
-
-const channelLabel: Record<string, string> = {
-  sample_inbox: "Sample inbox (demo)",
-  gmail: "Gmail",
-  outlook: "Outlook",
-  forwarded: "Forwarded emails",
-  email_upload: "Emails you added",
-  screenshot: "Receipts you uploaded",
-  manual: "Added by you",
-};
+/** Accumulates in integer cents (see domain/money), returns dollars. */
+const round = (cents: number) => fromCents(cents);
 
 export function insights(d: OrbitData, range: InsightRange): Insights {
   const orders = d.orders.filter((o) => inRange(o.purchasedAt, range));
@@ -90,7 +82,7 @@ export function insights(d: OrbitData, range: InsightRange): Insights {
         unpriced++;
         continue;
       }
-      const v = i.unitPrice * i.quantity;
+      const v = toCents(mulMoney(i.unitPrice, i.quantity));
       gross += v;
       purchases.push({ orderId: o.id, retailerId: o.retailerId, date: o.purchasedAt!, item: i });
       cat.set(i.category, (cat.get(i.category) ?? 0) + v);
@@ -102,21 +94,20 @@ export function insights(d: OrbitData, range: InsightRange): Insights {
   let asCredit = 0;
   for (const f of d.refunds) {
     if (!f.confirmed || !inRange(f.confirmed.at, range)) continue;
-    if (f.destination === "store_credit") asCredit += f.confirmed.amount;
-    else toPayment += f.confirmed.amount;
+    if (f.destination === "store_credit") asCredit += toCents(f.confirmed.amount);
+    else toPayment += toCents(f.confirmed.amount);
   }
 
-  const creditSpent = d.wallet.flatMap((w) => w.history).filter((h) => h.amount < 0 && inRange(h.at, range)).reduce((s, h) => s - h.amount, 0);
+  const creditSpent = d.wallet.flatMap((w) => w.history).filter((h) => h.amount < 0 && inRange(h.at, range)).reduce((s, h) => s - toCents(h.amount), 0);
 
   const sources = new Map<string, number>();
   for (const o of orders) {
-    const channels = new Set(d.evidence.filter((e) => o.evidenceIds.includes(e.id)).map((e) => e.channel));
-    const key = channels.size ? [...channels][0] : "manual";
+    const key = purchaseSource(d, o).label;
     sources.set(key, (sources.get(key) ?? 0) + 1);
   }
 
   const sorted = (m: Map<string, number>, label: (k: string) => string) =>
-    [...m.entries()].map(([key, amount]) => ({ key, label: label(key), amount: round(amount) })).sort((a, b) => b.amount - a.amount);
+    [...m.entries()].map(([key, cents]) => ({ key, label: label(key), amount: round(cents) })).sort((a, b) => b.amount - a.amount);
 
   return {
     gross: round(gross),
@@ -128,7 +119,7 @@ export function insights(d: OrbitData, range: InsightRange): Insights {
     creditSpent: round(creditSpent),
     byCategory: sorted(cat, (k) => categoryLabel[k as ItemCategory] ?? k),
     byRetailer: sorted(ret, (k) => retailerOf(d, k).name),
-    coverage: [...sources.entries()].map(([k, count]) => ({ label: channelLabel[k] ?? k, count })),
+    coverage: [...sources.entries()].map(([k, count]) => ({ label: k, count })),
     purchases,
   };
 }
