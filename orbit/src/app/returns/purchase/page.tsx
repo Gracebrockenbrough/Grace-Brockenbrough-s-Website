@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowUpRight, CalendarClock, CalendarDays, Camera, Check, ChevronRight, Copy, FileText, FileUp, Inbox, ListChecks, Mail, PackageCheck, PlugZap, ScanBarcode, ScrollText, Store, Trash } from "lucide-react";
+import { ArrowUpRight, CalendarClock, CalendarDays, Camera, Check, ChevronRight, Copy, FileText, FileUp, Inbox, Mail, PackageCheck, PlugZap, ScanBarcode, ScrollText, Store, Trash } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { ProductThumb } from "@/components/orbit/retail";
 import { Button, ButtonLink, ExternalButton, TextLink } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { cn } from "@/components/ui/cn";
 import { Disclosure } from "@/components/ui/disclosure";
 import { Field, Input } from "@/components/ui/form";
 import { RefundAsker } from "@/components/orbit/refund-asker";
+import { Journey } from "@/components/orbit/journey";
+import { orderJourney } from "@/lib/intelligence/journey";
 import { CapabilityList, ReturnDates } from "@/components/orbit/return-dates";
 import { Notice, Tag } from "@/components/ui/notice";
 import { Sheet } from "@/components/ui/sheet";
@@ -21,7 +23,7 @@ import { formatDate } from "@/lib/domain/dates";
 import { downscaleImage, readSmallFile } from "@/lib/hooks/downscale";
 import { dropOffLabel, money, orderTotal, refundMethodLabel } from "@/lib/domain/format";
 import type { DateOnly, Evidence, FieldSource, ReturnPolicy } from "@/lib/domain/types";
-import { STAGES, orderDeadlines, orderView, purchaseSource, refundOutlook, stageIndex, type MoneyKind } from "@/lib/store/selectors";
+import { orderDeadlines, orderView, purchaseSource, refundOutlook, type MoneyKind } from "@/lib/store/selectors";
 import { capabilitiesOf } from "@/lib/retailers/capabilities";
 import { actions, useOrbit } from "@/lib/store/store";
 import { toast } from "@/components/ui/toast";
@@ -174,7 +176,6 @@ function PurchaseDetail() {
   const needsDelivery = v.deadline?.kind === "unknown" && v.deadline.missing === "start_date";
   const r = v.activeReturn ?? v.latestReturn;
   const artifact = r?.artifacts[0] ?? null;
-  const step = stageIndex(v);
   const ch = order.charges;
   const refundIssued = Boolean(v.refund?.confirmed && v.refund.destination !== "store_credit" && !v.refund.arrivedAt);
   const shipment = v.activeReturn && ["prepared", "reported_submitted", "approval_pending", "label_ready", "shipped"].includes(v.activeReturn.status) ? v.activeReturn : null;
@@ -339,6 +340,16 @@ function PurchaseDetail() {
         </div>
       </Card>
 
+      {/* Journey: what has happened and what's next, with how each step is known */}
+      <section aria-labelledby="journey" className="mt-6">
+        <h2 id="journey" className="mb-1 text-[17px] font-semibold">
+          Journey
+        </h2>
+        <Card className="px-4 py-2">
+          <Journey steps={orderJourney(data, v)} today={today} />
+        </Card>
+      </section>
+
       {/* Items (multi-item orders): return them individually */}
       {order.items.length > 1 && (
         <section className="mt-6" aria-labelledby="items">
@@ -376,38 +387,6 @@ function PurchaseDetail() {
             <ReturnDates dates={dates} today={today} />
           </Disclosure>
         )}
-        {step >= 0 && (
-          <Disclosure title="Return progress" summary={`Step ${step + 1} of ${STAGES.length}: ${STAGES[step].label}`} icon={<ListChecks aria-hidden className="size-5" />}>
-            <ol>
-              {STAGES.map((s, i) => (
-                <li key={s.key} className="relative flex gap-3 pb-4 last:pb-0">
-                  {i < STAGES.length - 1 && <span aria-hidden className={cn("absolute left-[9px] top-6 h-[calc(100%-16px)] w-0.5", i < step ? "bg-navy" : "bg-line")} />}
-                  <span aria-hidden className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2", i < step ? "border-navy bg-navy text-white" : i === step ? "border-navy bg-card" : "border-line bg-card")}>
-                    {i < step && <Check className="size-3" />}
-                  </span>
-                  <span className={cn("text-[15px]", i === step ? "font-semibold" : i < step ? "" : "text-muted")}>
-                    {s.label}
-                    {i === step && <span className="sr-only"> (current)</span>}
-                  </span>
-                </li>
-              ))}
-            </ol>
-            {r && r.history.length > 0 && (
-              <div className="mt-4 border-t border-line pt-3">
-                <p className="mb-1 text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">Activity</p>
-                <ul className="space-y-1.5 text-[14px]">
-                  {[...r.history].reverse().map((h, i) => (
-                    <li key={i} className="flex justify-between gap-3">
-                      <span>{h.note}</span>
-                      <span className="shrink-0 text-muted">{formatDate(h.at.slice(0, 10), today)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Disclosure>
-        )}
-
         <Disclosure title="Purchase details" summary={order.orderNumber ? `Order ${order.orderNumber}` : "Order number not found"} icon={<FileText aria-hidden className="size-5" />}>
           <Rows>
             <Row label="Order number" hint={sourceHint(order.fieldSources.orderNumber, evidence)}>

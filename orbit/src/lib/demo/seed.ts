@@ -16,6 +16,7 @@ import type {
 } from "../domain/types";
 import type { OrbitData } from "../store/state";
 import { SEED_RETAILERS, seedPolicies } from "./retailers";
+import { buildCircleDemo } from "./circle";
 
 export const DEMO_PROFILE = { firstName: "Alex", email: "alex@tote.example" };
 
@@ -511,7 +512,8 @@ export function buildDemoData(today: DateOnly): OrbitData {
       { retailerId: "reformation", visibility: "friends", addedAt: ts(-20) },
       { retailerId: "madewell", visibility: "private", addedAt: ts(-9) },
     ],
-    publicProfile: { displayName: DEMO_PROFILE.firstName, bio: null },
+    publicProfile: { displayName: DEMO_PROFILE.firstName, bio: "Vintage denim, good knits, fewer returns.", palette: "orchid", styleTags: ["Minimal", "Denim", "Neutrals"] },
+    ...buildCircleDemo(today),
     prefs,
     dismissed: [],
   };

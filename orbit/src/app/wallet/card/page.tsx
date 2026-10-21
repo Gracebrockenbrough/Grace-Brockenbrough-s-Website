@@ -63,9 +63,15 @@ function CardDetail() {
     <Shell nav={false}>
       <BackBar fallback="/wallet/" title={retailer.name} />
 
-      <div className="pt-2">
+      <div className="animate-reveal pt-2">
         <WalletCardFace item={item} retailer={retailer} today={today} />
       </div>
+      {item.restrictions.length > 0 && (
+        <p className="mt-3 text-center text-[13px] text-muted">
+          {item.restrictions[0]}
+          {item.restrictions.length > 1 ? ` · +${item.restrictions.length - 1} more below` : ""}
+        </p>
+      )}
 
       <div className="mt-5 text-center">
         <p className="text-[15px] text-muted">

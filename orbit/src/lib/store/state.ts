@@ -2,6 +2,9 @@ import type {
   ConnectedAccount,
   FavoriteStore,
   PublicProfile,
+  SocialPost,
+  CircleAuthor,
+  Collection,
   DateOnly,
   Evidence,
   GiftTransfer,
@@ -36,6 +39,11 @@ export interface OrbitData {
   prefs: NotificationPrefs;
   /** Stores the customer saved, each with its own visibility. */
   favoriteStores?: FavoriteStore[];
+  /** Circle: posts (own and clearly labeled demo), people, who you follow, collections. */
+  posts?: SocialPost[];
+  authors?: CircleAuthor[];
+  following?: string[];
+  collections?: Collection[];
   /** The optional public side of the profile. */
   publicProfile?: PublicProfile;
   /** Priority keys the user dismissed. Prevents identical repeat reminders. */
@@ -53,7 +61,7 @@ export interface PreviewFlags {
 }
 
 export interface PersistedState {
-  version: 4;
+  version: 5;
   /** Date the seeded demo data was last aligned to. */
   anchor: DateOnly;
   data: OrbitData;

@@ -29,6 +29,35 @@ export function rangeFor(kind: Exclude<RangeKind, "custom">, today: DateOnly): I
   return { from: `${today.slice(0, 4)}-01-01`, to: today };
 }
 
+/** Last day of the month containing `d`. */
+function monthEnd(y: number, m: number): number {
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+/**
+ * The comparable earlier period: the same stretch of the previous month, quarter or year
+ * (Oct 1–21 compares with Sep 1–21), so an unfinished period isn't compared with a full one.
+ */
+export function previousPeriod(kind: RangeKind, r: InsightRange): InsightRange {
+  if (kind === "custom") return previousRange(r);
+  const back = kind === "month" ? 1 : kind === "quarter" ? 3 : 12;
+  const shift = (d: DateOnly) => {
+    const y = Number(d.slice(0, 4));
+    const m = Number(d.slice(5, 7)) - back;
+    const yy = y + Math.floor((m - 1) / 12);
+    const mm = ((m - 1 + 1200) % 12) + 1;
+    const day = Math.min(Number(d.slice(8)), monthEnd(yy, mm));
+    return `${yy}-${String(mm).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  };
+  return { from: shift(r.from), to: shift(r.to) };
+}
+
+/** Whether the period is still running (so totals are "so far"). */
+export function isPartial(kind: RangeKind, r: InsightRange, today: DateOnly): boolean {
+  if (kind === "custom") return r.to >= today;
+  return r.to === today;
+}
+
 /** The same span immediately before, for "compared with last month". */
 export function previousRange(r: InsightRange): InsightRange {
   const len = daysBetween(r.from, r.to);
@@ -53,9 +82,18 @@ export interface Insights {
   orderCount: number;
   /** Items with no price in their email; not included in totals. */
   unpricedItems: number;
+  /** Card/original-payment refunds the store issued in the period. */
   refundsToPayment: number;
+  /** Of those, the ones you confirmed reached your account. */
+  refundsReceived: number;
+  /** Issued by the store but not yet confirmed by you. */
+  refundsAwaitingConfirmation: number;
+  /** Refunds given as store credit. Spendable only at that store; not cash. */
   refundsAsCredit: number;
+  /** Net merchandise kept: purchases minus everything returned for a refund or credit. */
   net: number;
+  /** Earliest purchase date Tote has for you, to explain coverage. */
+  coverageFrom: DateOnly | null;
   creditSpent: number;
   byCategory: { key: string; label: string; amount: number }[];
   byRetailer: { key: string; label: string; amount: number }[];
@@ -91,11 +129,16 @@ export function insights(d: OrbitData, range: InsightRange): Insights {
   }
 
   let toPayment = 0;
+  let received = 0;
   let asCredit = 0;
   for (const f of d.refunds) {
     if (!f.confirmed || !inRange(f.confirmed.at, range)) continue;
-    if (f.destination === "store_credit") asCredit += toCents(f.confirmed.amount);
-    else toPayment += toCents(f.confirmed.amount);
+    const c = toCents(f.confirmed.amount);
+    if (f.destination === "store_credit") asCredit += c;
+    else {
+      toPayment += c;
+      if (f.arrivedAt || f.confirmed.by === "customer") received += c;
+    }
   }
 
   const creditSpent = d.wallet.flatMap((w) => w.history).filter((h) => h.amount < 0 && inRange(h.at, range)).reduce((s, h) => s - toCents(h.amount), 0);
@@ -114,6 +157,8 @@ export function insights(d: OrbitData, range: InsightRange): Insights {
     orderCount: orders.length,
     unpricedItems: unpriced,
     refundsToPayment: round(toPayment),
+    refundsReceived: round(received),
+    refundsAwaitingConfirmation: round(toPayment - received),
     refundsAsCredit: round(asCredit),
     net: round(gross - toPayment - asCredit),
     creditSpent: round(creditSpent),
@@ -121,6 +166,7 @@ export function insights(d: OrbitData, range: InsightRange): Insights {
     byRetailer: sorted(ret, (k) => retailerOf(d, k).name),
     coverage: [...sources.entries()].map(([k, count]) => ({ label: k, count })),
     purchases,
+    coverageFrom: d.orders.map((o) => o.purchasedAt).filter((x): x is DateOnly => Boolean(x)).sort()[0] ?? null,
   };
 }
 

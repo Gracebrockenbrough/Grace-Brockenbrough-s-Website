@@ -14,7 +14,7 @@ import { actions } from "@/lib/store/store";
 import { Button } from "../ui/button";
 import { Field, Input, Toggle } from "../ui/form";
 import { Sheet } from "../ui/sheet";
-import { ItemArt, KIND_COLOR } from "./item-art";
+import { ItemArt } from "./item-art";
 
 /** Green within, yellow approaching (80%+), red over. Colors are paired with words. */
 export function goalStatus(amount: number, goal: number): { label: string; cls: string } {
@@ -25,7 +25,6 @@ export function goalStatus(amount: number, goal: number): { label: string; cls: 
 }
 
 function BucketCard({ b, onOpen }: { b: Bucket; onOpen: () => void }) {
-  const c = KIND_COLOR[b.kind];
   const pct = Math.round(b.fill * 100);
   const status = b.goal != null ? goalStatus(b.amount, b.goal) : null;
   return (
@@ -39,7 +38,7 @@ function BucketCard({ b, onOpen }: { b: Bucket; onOpen: () => void }) {
       <span
         aria-hidden
         className="absolute inset-x-0 bottom-0 transition-[height] duration-700 ease-out"
-        style={{ height: `${Math.max(pct, b.amount > 0 ? 8 : 0)}%`, background: c.tint }}
+        style={{ height: `${Math.max(pct, b.amount > 0 ? 8 : 0)}%`, background: "var(--color-you-soft)" }}
       />
       <span className="relative flex items-start justify-between gap-2">
         <ItemArt kind={b.kind} className="size-12" />
@@ -84,7 +83,7 @@ export function SpendBuckets({ data, r, multiplier, today }: { data: OrbitData; 
         What you&apos;ve bought
       </h2>
       <p className="mt-0.5 text-[14px] text-muted">
-        {useGoals ? `Each bucket fills toward your target${multiplier && multiplier > 1 ? ` (monthly target × ${multiplier})` : ""}.` : "Each bucket fills as you buy. Fuller buckets are where most of your shopping goes."}
+        {useGoals ? `Each bucket fills toward your target${multiplier && multiplier > 1 ? ` (monthly target × ${multiplier})` : ""}.` : "Tap a bucket to see exactly which purchases are in it."}
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
@@ -100,6 +99,7 @@ export function SpendBuckets({ data, r, multiplier, today }: { data: OrbitData; 
         ))}
       </div>
 
+      {goals.enabled && (
       <div className="mt-4 rounded-[18px] border border-line bg-card px-4">
         <Toggle
           label="Spending targets (optional)"
@@ -108,6 +108,7 @@ export function SpendBuckets({ data, r, multiplier, today }: { data: OrbitData; 
           onChange={(v) => actions.setGoalsEnabled(v)}
         />
       </div>
+      )}
 
       <Sheet
         open={openBucket != null}
@@ -130,7 +131,7 @@ export function SpendBuckets({ data, r, multiplier, today }: { data: OrbitData; 
       >
         {openBucket && (
           <div className="space-y-4">
-            <div className="flex justify-center rounded-2xl py-3" style={{ background: KIND_COLOR[openBucket.kind].tint }}>
+            <div className="flex justify-center rounded-2xl bg-you-soft py-3">
               <ItemArt kind={openBucket.kind} className="size-16" />
             </div>
             {inBucket.length === 0 ? (

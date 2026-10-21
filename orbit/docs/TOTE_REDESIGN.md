@@ -74,3 +74,59 @@ Section colors are identity only; a lilac wallet card can carry an amber "needs 
 8. Full audit on mobile and desktop.
 
 Social tables to add (Supabase, RLS): `public_profiles`, `friendships`, `friend_requests`, `saved_stores`, `collections`, `collection_items`, `collection_members`, `sharing_permissions`, `store_reviews`, `review_tags`, `review_votes`, `store_review_summaries`, `social_posts`, `user_reports`, `moderation_actions`. Friendship never grants access to financial tables.
+
+
+---
+
+# Visual and UX refinement (v3)
+
+## Critique of v2
+
+- **Sameness.** Nearly every block was the same white rounded card on beige. Today stacked three near-identical task cards; Circle Discover was an alphabetical list; You looked like a settings menu.
+- **Weak hierarchy.** "8 things need you" counted items Tote was only tracking. The most urgent thing had the same weight as the third.
+- **Calendar buried.** The week strip sat below three tall cards, and its dots were all one color, so a delivery and a deadline looked alike.
+- **Tall rows.** Returns rows used about 130 px each, plus a separate action row, so five orders needed two screens. Store and category filters took two lines before any content.
+- **Type.** Fraunces was elegant but read formal at heading sizes and didn't fit a fashion app.
+- **Insights.** It compared Oct 1–21 with Sep 11–30, showed "New this period" for everything, and called store credit a refund.
+
+## Direction
+
+Two directions were mocked side by side (`design-directions.png`):
+
+- **A, playful fashion editorial.** Condensed Bricolage headings, a dark "next up" block, collage art.
+- **B, sophisticated boutique.** Restrained serif, thin rules, quiet imagery.
+
+**Chosen: A for Today, Circle and You, with B's restraint for Returns and Wallet.** A is memorable at a glance, and Bricolage stays readable at UI sizes. Money, dates and forms stay in DM Sans everywhere.
+
+## System
+
+- **Section colors:** Returns `#B64E3A` / `#FCE3DC`, Wallet green `#28794E` / `#DDF0D8`, Today `#25213C`, Circle `#A05B16` / `#FFE7C5`, You orchid `#7948AF` / `#ECE1FA`.
+- **Status colors:** terracotta urgent, amber unverified, blue in progress, sage confirmed, gray archived. Always shown with words.
+- **Event colors** (calendar and agenda): return deadline, drop-off, delivery, refund, credit expiry. A legend is always shown.
+- **Washes:** soft corner gradients on Circle and You only. Content always sits on solid cards.
+- **Art:** `Collage` (geometric arch, disc and tile plus the garment illustrations) stands in for photography Tote has no rights to. It's deterministic per post or store. Customers' own photos use `Photo`.
+- **Components:** `NextUpCard`, `WeekStrip`, `AgendaRow`, `Journey`, `OrderRow`/`OrderList`, `FeedPost` (haul, styled, store favorite, review and collection layouts), `Carousel`, `StoreTile`, `CollectionTile`, `DoneCheck`, toasts.
+
+## What changed per screen
+
+- **Today:** headline counts only what needs you this week, and says how many orders Tote is watching. One dark "Next up" card plus one compact second item. A week strip with typed markers, a "Today" ring, week paging and a full-calendar link. A "Coming up" agenda of the next five dated events. A collapsed "Tote is watching" list. The hideable Circle note sits last. Counts come from `todayPlan`, which the "Everything ahead" page also uses.
+- **Calendar:** a month grid with the same markers and agenda rows.
+- **Order details:** a Journey timeline that shows only the stages that apply. Solid means recorded, dashed means estimated, hollow means not yet. Tap a step to see how Tote knows it. Refund received is never assumed.
+- **Returns:** about 68 px rows in one divided card per group, with a status dot and the deadline label. A QR shortcut appears on rows ready for drop-off. Store and category moved into a Filter sheet.
+- **Wallet:** green section identity. The card animates into detail, and the first restriction shows under the card.
+- **Circle:**
+  - Feed (Friends | Following) with image-first hauls, quote-style reviews, store-favorite cards, collection grids and a creators break. Demo content is labeled.
+  - Stores is an image-led grid showing one real fact (fee, refund method or "policy unknown") and friend counts from demo posts.
+  - Lists has collection collages, new collections, items with photo or link, and saved posts.
+- **Create Post:**
+  - Four steps: Type, Content, Details, Share.
+  - Purchases are a private picker; only ticked items are included, by name only.
+  - Audience has no default, and a final "Share these N pieces" confirmation is required before Publish.
+- **You:** style banner, avatar, Bricolage name, bio and style tags. Favorite boutiques with visibility, My collections, My reviews, then private rows. "View as a friend" hides everything private.
+- **Insights:**
+  - Comparisons use the same stretch of the previous period, and running periods are marked "So far."
+  - Net merchandise kept = purchases − refunds issued − store credit, with each part defined. Refunds received and refunds awaiting confirmation are shown separately. Store credit is labeled "not cash."
+  - Trends only appear with real prior data.
+  - Buckets share one color and open their purchases.
+  - Spending targets moved to Settings and are off by default.
+- **Settings:** Circle updates have their own notification switch, separate from deadlines.

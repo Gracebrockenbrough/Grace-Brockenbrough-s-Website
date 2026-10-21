@@ -102,6 +102,7 @@ export default function SettingsPage() {
           <Toggle label="Returns that need you" description="Labels to drop off, steps to finish" checked={prefs.returnActions} onChange={(v) => actions.setPrefs({ returnActions: v })} />
           <Toggle label="Refunds that need checking" checked={prefs.refunds} onChange={(v) => actions.setPrefs({ refunds: v })} />
           <Toggle label="Credit expiring" checked={prefs.creditExpiry} onChange={(v) => actions.setPrefs({ creditExpiry: v })} />
+          <Toggle label="Circle updates" description="Friends' posts and new reviews of stores you saved. Never mixed with deadlines" checked={prefs.social ?? false} onChange={(v) => actions.setPrefs({ social: v })} />
           <Toggle label="Circle on Today" description="A small note below your to-dos. Never above them" checked={prefs.circlePreview ?? true} onChange={(v) => actions.setPrefs({ circlePreview: v })} />
           <Toggle label="Packages arriving" checked={prefs.deliveries ?? true} onChange={(v) => actions.setPrefs({ deliveries: v })} />
           <div className="py-3">
@@ -126,6 +127,14 @@ export default function SettingsPage() {
           )}
         </Card>
         <p className="mt-2 px-1 text-[14px] text-muted">We never send promotions, and we never repeat the same reminder.</p>
+      </section>
+
+      {/* Insights */}
+      <section className="mt-8">
+        <SectionTitle>Shopping Insights</SectionTitle>
+        <Card className="px-4">
+          <Toggle label="Spending targets" description="Optional personal targets per category. Off by default; Insights is for awareness, not budgeting." checked={data.goals?.enabled ?? false} onChange={(v) => actions.setGoalsEnabled(v)} />
+        </Card>
       </section>
 
       {/* What the AI can and can't do */}

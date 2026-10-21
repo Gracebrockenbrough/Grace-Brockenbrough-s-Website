@@ -415,6 +415,8 @@ export interface NotificationPrefs {
   leadDays: 3 | 5 | 7;
   /** Show the small Circle note on Today (below anything urgent). */
   circlePreview?: boolean;
+  /** Circle updates (friends' posts, new reviews), kept separate from money deadlines. */
+  social?: boolean;
 }
 
 // ─── You and Circle ──────────────────────────────────────────────────────
@@ -433,4 +435,67 @@ export interface FavoriteStore {
 export interface PublicProfile {
   displayName: string;
   bio: string | null;
+  /** Banner color the customer picked for their profile. */
+  palette?: string;
+  /** A few words about their style, chosen by them. */
+  styleTags?: string[];
+}
+
+// ─── Circle ──────────────────────────────────────────────────────────────
+
+export type PostType = "haul" | "styled" | "store_favorite" | "review" | "collection";
+
+/** A post image: a customer's own photo, or collage art (used for demo content). */
+export type PostImage = { kind: "photo"; src: string; alt: string } | { kind: "art"; seed: string; kinds: string[]; palette: string; alt: string };
+
+/**
+ * Something a person chose to publish. Posts are never generated from imported email:
+ * every tagged item was picked by hand, and prices and dates are never included.
+ */
+export interface SocialPost {
+  id: string;
+  /** "me" for the customer's own posts. */
+  authorId: string;
+  type: PostType;
+  images: PostImage[];
+  caption: string;
+  retailerIds: string[];
+  items: { name: string; kind: string | null; retailerId: string | null }[];
+  notes: { sizing: "small" | "true" | "large" | null; quality: string | null; returnEase: "easy" | "okay" | "hard" | null };
+  audience: Visibility;
+  createdAt: Timestamp;
+  likes: number;
+  liked: boolean;
+  saved: boolean;
+  /** Fictional content shown only to demonstrate Circle. Always labeled. */
+  demo: boolean;
+}
+
+export interface CircleAuthor {
+  id: string;
+  name: string;
+  handle: string;
+  palette: string;
+  relation: "friend" | "creator";
+  demo: boolean;
+}
+
+export interface CollectionItem {
+  id: string;
+  name: string;
+  kind: string | null;
+  image: string | null;
+  url: string | null;
+  retailerId: string | null;
+  addedAt: Timestamp;
+}
+
+/** A moodboard or list. Works without friends; private until shared. */
+export interface Collection {
+  id: string;
+  title: string;
+  visibility: Visibility;
+  palette: string;
+  items: CollectionItem[];
+  createdAt: Timestamp;
 }

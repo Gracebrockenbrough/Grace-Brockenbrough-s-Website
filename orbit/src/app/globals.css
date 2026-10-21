@@ -1,17 +1,17 @@
 @import "tailwindcss";
 @import "@fontsource-variable/dm-sans";
-@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/bricolage-grotesque";
 
 @theme {
   --font-sans: "DM Sans Variable", "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  /* Expressive moments only: greetings, page titles, brand. Never for money or deadlines. */
-  --font-display: "Fraunces Variable", "Fraunces", ui-serif, Georgia, serif;
+  /* Expressive moments only: greetings, page titles, brand, Circle. Never for money or deadlines. */
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
 
   /* Base. Class names are kept from the first design so every screen updates at once. */
   --color-ivory: #fbf9f6; /* global background */
   --color-ivory-deep: #f2efe9;
-  --color-navy: #26233d; /* Today indigo: primary text and actions */
-  --color-navy-soft: #3a3657;
+  --color-navy: #25213c; /* Today plum navy: primary text and actions */
+  --color-navy-soft: #383255;
   --color-muted: #636675;
   --color-card: #ffffff;
   --color-line: #e8e5df;
@@ -27,16 +27,23 @@
   --color-sage-ink: #33623f;
   --color-archived: #7a7c86; /* inactive */
 
-  /* Section identity colors: tints and small accents, never full-screen fills. */
-  --color-returns: #ad503e;
-  --color-returns-soft: #fbe9e4;
-  --color-wallet: #7453a5;
-  --color-wallet-soft: #f1eafb;
-  --color-today: #26233d;
-  --color-circle: #a56b2f;
-  --color-circle-soft: #fff0dd;
-  --color-you: #41766f;
-  --color-you-soft: #e9f2f0;
+  /* Section identity colors: where you are. Tints and small accents, never full-screen fills. */
+  --color-returns: #b64e3a;
+  --color-returns-soft: #fce3dc;
+  --color-wallet: #28794e;
+  --color-wallet-soft: #ddf0d8;
+  --color-today: #25213c;
+  --color-circle: #a05b16;
+  --color-circle-soft: #ffe7c5;
+  --color-you: #7948af;
+  --color-you-soft: #ece1fa;
+
+  /* Calendar event types: what kind of date it is (always shown with a label). */
+  --color-ev-return: #b64e3a;
+  --color-ev-dropoff: #25213c;
+  --color-ev-delivery: #2e5c9e;
+  --color-ev-refund: #b37a12;
+  --color-ev-credit: #28794e;
 
   --radius-card: 18px;
   --shadow-card: 0 1px 2px rgb(38 35 61 / 0.04), 0 2px 8px rgb(38 35 61 / 0.05);
@@ -66,12 +73,20 @@
   }
 }
 
-/* Fraunces at a soft, friendly optical setting. */
+/* Bricolage Grotesque, slightly condensed and tight: confident, a little fashion-editorial. */
 @utility font-display {
   font-family: var(--font-display);
-  font-weight: 560;
-  font-variation-settings: "SOFT" 60, "WONK" 0;
-  letter-spacing: -0.015em;
+  font-weight: 740;
+  font-stretch: 90%;
+  letter-spacing: -0.03em;
+}
+
+/* Section washes: soft corner light for the expressive tabs. Content sits on solid cards. */
+@utility wash-circle {
+  background: radial-gradient(120% 60% at 100% 0%, #ffe7c5 0%, rgb(255 231 197 / 0) 60%), radial-gradient(80% 40% at 0% 8%, #fce3dc 0%, rgb(252 227 220 / 0) 70%);
+}
+@utility wash-you {
+  background: radial-gradient(120% 55% at 100% 0%, #ece1fa 0%, rgb(236 225 250 / 0) 62%), radial-gradient(70% 35% at 0% 6%, #ffe7c5 0%, rgb(255 231 197 / 0) 70%);
 }
 
 @utility tabular {

@@ -12,6 +12,10 @@ import type {
   ConnectionStatus,
   FavoriteStore,
   PublicProfile,
+  SocialPost,
+  Collection,
+  CollectionItem,
+  Visibility,
   ConnectorId,
   ImportSettings,
   DateOnly,
@@ -40,7 +44,7 @@ import { policyForOrder } from "./selectors";
 import { shiftSeedDates } from "./shift";
 import { EMPTY_PREVIEW, emptied, type OrbitData, type PersistedState, type PreviewFlags } from "./state";
 
-const KEY = "tote:v4";
+const KEY = "tote:v5";
 const listeners = new Set<() => void>();
 let state: PersistedState | null = null;
 
@@ -49,7 +53,7 @@ const now = () => new Date().toISOString();
 export const today = (): DateOnly => toDateOnly(new Date());
 
 function fresh(): PersistedState {
-  return { version: 4, anchor: today(), data: buildDemoData(today()), preview: EMPTY_PREVIEW };
+  return { version: 5, anchor: today(), data: buildDemoData(today()), preview: EMPTY_PREVIEW };
 }
 
 function load(): PersistedState {
@@ -57,7 +61,7 @@ function load(): PersistedState {
     const raw = window.localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as PersistedState;
-      if (parsed.version === 4) {
+      if (parsed.version === 5) {
         const shift = daysBetween(parsed.anchor, today());
         return { ...parsed, anchor: today(), data: shiftSeedDates(parsed.data, shift), preview: parsed.preview ?? EMPTY_PREVIEW };
       }
@@ -665,6 +669,61 @@ export const actions = {
 
   setPublicProfile(patch: Partial<PublicProfile>) {
     setData((d) => ({ ...d, publicProfile: { displayName: DEMO_PROFILE.firstName, bio: null, ...d.publicProfile, ...patch } }));
+  },
+
+  // ── Circle ───────────────────────────────────────────────────────────
+  toggleLike(postId: string) {
+    setData((d) => ({ ...d, posts: (d.posts ?? []).map((p) => (p.id === postId ? { ...p, liked: !p.liked, likes: p.likes + (p.liked ? -1 : 1) } : p)) }));
+  },
+
+  toggleSavePost(postId: string): boolean {
+    let saved = false;
+    setData((d) => ({ ...d, posts: (d.posts ?? []).map((p) => (p.id === postId ? ((saved = !p.saved), { ...p, saved }) : p)) }));
+    return saved;
+  },
+
+  toggleFollow(authorId: string) {
+    setData((d) => {
+      const f = d.following ?? [];
+      return { ...d, following: f.includes(authorId) ? f.filter((x) => x !== authorId) : [...f, authorId] };
+    });
+  },
+
+  /**
+   * Publishes the customer's own post. Everything in it was chosen by hand in the
+   * Create Post flow; nothing is pulled in from orders or email automatically.
+   */
+  publishPost(input: Omit<SocialPost, "id" | "authorId" | "createdAt" | "likes" | "liked" | "saved" | "demo">): string {
+    const id = uid("post");
+    setData((d) => ({ ...d, posts: [{ ...input, id, authorId: "me", createdAt: now(), likes: 0, liked: false, saved: false, demo: false }, ...(d.posts ?? [])] }));
+    return id;
+  },
+
+  deletePost(postId: string) {
+    setData((d) => ({ ...d, posts: (d.posts ?? []).filter((p) => !(p.id === postId && p.authorId === "me")) }));
+  },
+
+  createCollection(title: string, visibility: Visibility = "private"): string {
+    const id = uid("col");
+    const palettes = ["apricot", "orchid", "rose", "sage", "sky"];
+    setData((d) => ({ ...d, collections: [{ id, title: title.trim() || "Untitled", visibility, palette: palettes[(d.collections?.length ?? 0) % palettes.length], items: [], createdAt: now() }, ...(d.collections ?? [])] }));
+    return id;
+  },
+
+  addCollectionItem(collectionId: string, item: Omit<CollectionItem, "id" | "addedAt">) {
+    setData((d) => ({ ...d, collections: (d.collections ?? []).map((c) => (c.id === collectionId ? { ...c, items: [{ ...item, id: uid("ci"), addedAt: now() }, ...c.items] } : c)) }));
+  },
+
+  removeCollectionItem(collectionId: string, itemId: string) {
+    setData((d) => ({ ...d, collections: (d.collections ?? []).map((c) => (c.id === collectionId ? { ...c, items: c.items.filter((i) => i.id !== itemId) } : c)) }));
+  },
+
+  setCollection(collectionId: string, patch: Partial<Pick<Collection, "title" | "visibility">>) {
+    setData((d) => ({ ...d, collections: (d.collections ?? []).map((c) => (c.id === collectionId ? { ...c, ...patch } : c)) }));
+  },
+
+  deleteCollection(collectionId: string) {
+    setData((d) => ({ ...d, collections: (d.collections ?? []).filter((c) => c.id !== collectionId) }));
   },
 
   // ── Saved for Later ─────────────────────────────────────────────────────────

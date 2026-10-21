@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/states";
 import { formatDate } from "@/lib/domain/dates";
 import { money, plural } from "@/lib/domain/format";
 import { useSessionState } from "@/lib/hooks/useSessionState";
-import { goalMultiplier, insights, previousRange, rangeFor, type InsightRange, type RangeKind } from "@/lib/intelligence/insights";
+import { goalMultiplier, insights, isPartial, previousPeriod, rangeFor, type InsightRange, type RangeKind } from "@/lib/intelligence/insights";
 import { buildBuckets } from "@/lib/intelligence/buckets";
 import { ItemArt } from "@/components/orbit/item-art";
 import { useOrbit } from "@/lib/store/store";
@@ -57,11 +57,14 @@ export default function InsightsPage() {
   const range = kind === "custom" ? custom ?? rangeFor("year", today) : rangeFor(kind, today);
   const r = insights(data, range);
   const sourceTotal = r.coverage.reduce((s, c) => s + c.count, 0);
-  const before = insights(data, previousRange(range));
+  const prev = previousPeriod(kind, range);
+  const before = insights(data, prev);
+  // Compare only when Tote actually has history for the earlier period.
+  const hasHistory = before.orderCount > 0 && r.coverageFrom != null && r.coverageFrom <= prev.from;
   const prevByKind = new Map(buildBuckets(before.purchases.map((p) => p.item), null).map((b) => [b.kind, b.amount]));
-  const trends = buildBuckets(r.purchases.map((p) => p.item), null)
+  const trends = (hasHistory ? buildBuckets(r.purchases.map((p) => p.item), null) : [])
     .map((b) => ({ kind: b.kind, label: b.label, now: b.amount, before: prevByKind.get(b.kind) ?? 0 }))
-    .filter((t) => Math.abs(t.now - t.before) >= 1)
+    .filter((t) => t.before > 0 && Math.abs(t.now - t.before) >= 1)
     .sort((a, b) => Math.abs(b.now - b.before) - Math.abs(a.now - a.before))
     .slice(0, 4);
 
@@ -107,30 +110,34 @@ export default function InsightsPage() {
         <>
           <section className="mt-6" aria-labelledby="net">
             <p id="net" className="text-[15px] text-muted">
-              Net recorded spending · {formatDate(range.from, today)} to {formatDate(range.to, today)}
+              Net merchandise kept · {formatDate(range.from, today)} to {formatDate(range.to, today)}
+              {isPartial(kind, range, today) && <span className="ml-1.5 rounded-full bg-progress-soft px-2 py-0.5 text-[12px] font-semibold text-progress">So far</span>}
             </p>
-            <p className="tabular text-[40px] font-semibold leading-tight tracking-[-0.03em]">{money(r.net)}</p>
-            <p className="text-[14px] text-muted">Purchases minus refunds the store has issued.</p>
+            <p className="font-display tabular text-[46px] leading-tight">{money(r.net)}</p>
+            <p className="text-[14px] text-muted">What you bought, minus what went back for a refund or store credit.</p>
           </section>
 
           <Card className="mt-5 px-4">
             <Rows>
-              <Row label="Purchases" hint={`${plural(r.orderCount, "order")}, before tax and shipping`}>
+              <Row label="Purchases" hint={`${plural(r.orderCount, "order")}, item prices before tax and shipping`}>
                 {money(r.gross)}
               </Row>
-              <Row label="Refunds to your card" hint="Issued by the store">
-                {r.refundsToPayment ? `−${money(r.refundsToPayment)}` : money(0)}
+              <Row label="Refunds received" hint="Card refunds you confirmed arrived">
+                {r.refundsReceived ? `−${money(r.refundsReceived)}` : money(0)}
               </Row>
-              <Row label="Refunds as store credit" hint="Now in your wallet">
+              <Row label="Refunds issued, not yet confirmed" hint="The store says it's sent. Check your statement">
+                {r.refundsAwaitingConfirmation ? `−${money(r.refundsAwaitingConfirmation)}` : money(0)}
+              </Row>
+              <Row label="Store credit issued" hint="Not cash: only spendable at that store">
                 {r.refundsAsCredit ? `−${money(r.refundsAsCredit)}` : money(0)}
               </Row>
-              <Row label="Net recorded spending">{money(r.net)}</Row>
+              <Row label="Net merchandise kept">{money(r.net)}</Row>
             </Rows>
           </Card>
 
           <Card className="mt-3 px-4">
             <Rows>
-              <Row label="Gift cards & credit used" hint="Already counted in purchases, so not subtracted">
+              <Row label="Gift cards & store credit used" hint="Those purchases are already counted above, so this isn't subtracted again">
                 {money(r.creditSpent)}
               </Row>
             </Rows>
@@ -143,7 +150,9 @@ export default function InsightsPage() {
               <h2 id="trends" className="text-[17px] font-semibold">
                 Trends
               </h2>
-              <p className="mt-0.5 text-[14px] text-muted">Compared with the {kind === "custom" ? "same number of days before" : `previous ${kind}`}.</p>
+              <p className="mt-0.5 text-[14px] text-muted">
+                Compared with {formatDate(prev.from, today)} to {formatDate(prev.to, today)}, the same stretch of the {kind === "custom" ? "days before" : `previous ${kind}`}.
+              </p>
               <Card className="mt-3 divide-y divide-line">
                 {trends.map((t) => (
                   <div key={t.kind} className="flex items-center gap-3 px-4 py-2.5">
@@ -151,19 +160,20 @@ export default function InsightsPage() {
                     <span className="flex-1 text-[15px] font-medium">{t.label}</span>
                     <span className="tabular text-right text-[15px]">
                       {money(t.now)}
-                      <span className="block text-[13px] text-muted">{t.before === 0 ? "New this period" : `${t.now >= t.before ? "Up" : "Down"} ${money(Math.abs(t.now - t.before))}`}</span>
+                      <span className="block text-[13px] text-muted">{`${t.now >= t.before ? "Up" : "Down"} ${money(Math.abs(t.now - t.before))}`}</span>
                     </span>
                   </div>
                 ))}
               </Card>
             </section>
           )}
+          {!hasHistory && <p className="mt-6 rounded-[18px] bg-ivory-deep px-4 py-3 text-[14px] text-muted">No trends yet: Tote doesn&apos;t have purchases from the earlier period to compare with.</p>}
           {r.byRetailer.length > 0 && <Bars title="By store" rows={r.byRetailer} />}
 
           <section className="mt-6 rounded-[18px] bg-ivory-deep px-4 py-3.5 text-[14px] text-muted">
             <p className="font-semibold text-navy">What&apos;s included</p>
             <p className="mt-1">
-              {plural(sourceTotal, "order")} from {r.coverage.map((c) => `${c.label} (${c.count})`).join(", ")}. Purchases that never reached Tote aren&apos;t counted.
+              {plural(sourceTotal, "order")} from {r.coverage.map((c) => `${c.label} (${c.count})`).join(", ")}. {r.coverageFrom ? `Tote's history starts ${formatDate(r.coverageFrom, today)}. ` : ""}Purchases that never reached Tote aren&apos;t counted.
               {r.unpricedItems > 0 ? ` ${plural(r.unpricedItems, "item")} had no price in the email and ${r.unpricedItems === 1 ? "is" : "are"} left out.` : ""}
             </p>
           </section>

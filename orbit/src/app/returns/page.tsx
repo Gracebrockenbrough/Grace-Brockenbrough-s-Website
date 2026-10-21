@@ -1,11 +1,15 @@
 "use client";
 
-import { CalendarDays, PackageOpen, Plus, Search } from "lucide-react";
+import { useState } from "react";
+import { CalendarDays, PackageOpen, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { PageHeader, Shell } from "@/components/layout/shell";
-import { OrderRow } from "@/components/orbit/order-row";
+import { OrderList, OrderRow } from "@/components/orbit/order-row";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/components/ui/cn";
+import { Sheet } from "@/components/ui/sheet";
 import { ButtonLink, IconLink } from "@/components/ui/button";
 import { FilterChips } from "@/components/ui/chips";
-import { Input, Select } from "@/components/ui/form";
+import { Field, Input, Select } from "@/components/ui/form";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { money } from "@/lib/domain/format";
 import { sumMoney } from "@/lib/domain/money";
@@ -33,13 +37,14 @@ export default function ReturnsPage() {
   const [q, setQ] = useSessionState("purchases-q", "");
   const [store, setStore] = useSessionState("purchases-store", "");
   const [cat, setCat] = useSessionState<"" | ItemCategory>("purchases-cat", "");
+  const [filterSheet, setFilterSheet] = useState(false);
   if (!o) return <Shell loading />;
 
   const header = (
     <PageHeader
       accent="returns"
       title="Returns"
-      subtitle="What you can send back, what's on its way, and refunds to confirm."
+      subtitle="Send back, track, and get your money."
       action={
         <>
           <IconLink href="/calendar/" label="Calendar of dates">
@@ -101,7 +106,8 @@ export default function ReturnsPage() {
         <Input id="p-search" type="search" className="pl-11" placeholder="Store, item or order number" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
-      <div className="mt-3">
+      <div className="mt-3 flex items-center gap-2">
+        <div className="min-w-0 flex-1">
         <FilterChips
           label="Show"
           value={filter}
@@ -110,37 +116,59 @@ export default function ReturnsPage() {
             { value: "returns", label: "To return", count: count("returns") },
             { value: "refunds", label: "Refunds", count: count("refunds") },
             { value: "deliveries", label: "Arriving", count: count("deliveries") },
-            { value: "all", label: "All purchases", count: narrowed.length },
+            { value: "all", label: "All", count: narrowed.length },
           ]}
         />
+        </div>
       </div>
+      <button
+        type="button"
+        onClick={() => setFilterSheet(true)}
+        className={cn("mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-1 text-[14px] font-semibold", store || cat ? "text-returns" : "text-muted")}
+      >
+        <SlidersHorizontal aria-hidden className="size-4" />
+        {store || cat ? `Filtered: ${[store && stores.find(([id]) => id === store)?.[1], cat && categoryLabel[cat]].filter(Boolean).join(", ")}` : "Store and category"}
+      </button>
+      <Sheet
+        open={filterSheet}
+        onOpenChange={setFilterSheet}
+        title="Filter"
+        footer={
+          <>
+            <Button onClick={() => setFilterSheet(false)}>Show Results</Button>
+            {(store || cat) && (
+              <Button variant="ghost" size="md" className="w-full" onClick={() => { setStore(""); setCat(""); }}>
+                Clear Filters
+              </Button>
+            )}
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Field label="Store" htmlFor="p-store">
+            <Select id="p-store" value={store} onChange={(e) => setStore(e.target.value)}>
+              <option value="">All stores</option>
+              {stores.map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Category" htmlFor="p-cat">
+            <Select id="p-cat" value={cat} onChange={(e) => setCat(e.target.value as "" | ItemCategory)}>
+              <option value="">All categories</option>
+              {cats.map((c) => (
+                <option key={c} value={c}>
+                  {categoryLabel[c]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+      </Sheet>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <label className="sr-only" htmlFor="p-store">
-          Store
-        </label>
-        <Select id="p-store" className="h-11 text-[15px]" value={store} onChange={(e) => setStore(e.target.value)}>
-          <option value="">All stores</option>
-          {stores.map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </Select>
-        <label className="sr-only" htmlFor="p-cat">
-          Category
-        </label>
-        <Select id="p-cat" className="h-11 text-[15px]" value={cat} onChange={(e) => setCat(e.target.value as "" | ItemCategory)}>
-          <option value="">All categories</option>
-          {cats.map((c) => (
-            <option key={c} value={c}>
-              {categoryLabel[c]}
-            </option>
-          ))}
-        </Select>
-      </div>
-
-      <p className="mt-4 text-[14px] text-muted">{hints[filter]}</p>
+      <p className="mt-1 text-[14px] text-muted">{hints[filter]}</p>
 
       {list.length === 0 ? (
         <p className="mt-3 rounded-[18px] bg-sage px-4 py-3.5 text-[15px] font-medium text-sage-ink">{query || store || cat ? "Nothing matches these filters." : "Nothing here right now."}</p>
@@ -150,26 +178,26 @@ export default function ReturnsPage() {
           if (!group.length) return null;
           return (
             <section key={b} className="mt-5" aria-labelledby={`pb-${b}`}>
-              <div className="mb-2.5 flex items-baseline justify-between gap-3">
-                <h2 id={`pb-${b}`} className="text-[17px] font-semibold">
-                  {bucketMeta[b].title} <span className="tabular font-normal text-muted">· {group.length}</span>
+              <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
+                <h2 id={`pb-${b}`} className="text-[13px] font-bold uppercase tracking-[0.07em] text-muted">
+                  {bucketMeta[b].title} <span className="tabular font-medium">· {group.length}</span>
                 </h2>
-                <span className="tabular text-[14px] text-muted">{money(sum(group))}</span>
+                <span className="tabular text-[13px] font-semibold text-muted">{money(sum(group))}</span>
               </div>
-              <div className="space-y-2.5">
+              <OrderList>
                 {group.map((v) => (
-                  <OrderRow key={v.order.id} v={v} />
+                  <OrderRow key={v.order.id} v={v} today={o.today} />
                 ))}
-              </div>
+              </OrderList>
             </section>
           );
         })
       ) : (
-        <div className="mt-3 space-y-2.5">
+        <OrderList className="mt-3">
           {list.map((v) => (
-            <OrderRow key={v.order.id} v={v} />
+            <OrderRow key={v.order.id} v={v} today={o.today} />
           ))}
-        </div>
+        </OrderList>
       )}
     </Shell>
   );

@@ -1,54 +1,68 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Unplug, UsersRound, WalletCards, X } from "lucide-react";
-import { DoneCheck } from "@/components/ui/done-check";
+import { ChevronRight, Eye, Unplug, UsersRound, WalletCards, X } from "lucide-react";
 import { Shell, TopBar } from "@/components/layout/shell";
 import { AskBar } from "@/components/orbit/ask-bar";
 import { PriorityRow } from "@/components/orbit/priority-row";
-import { WeekCalendar } from "@/components/orbit/week-calendar";
+import { AgendaRow, NextUpCard, WeekStrip } from "@/components/orbit/timeline";
 import { ButtonLink, TextLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Disclosure } from "@/components/ui/disclosure";
+import { DoneCheck } from "@/components/ui/done-check";
 import { Notice } from "@/components/ui/notice";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { money, plural } from "@/lib/domain/format";
-import { sumMoney } from "@/lib/domain/money";
-import { presetSession } from "@/lib/hooks/useSessionState";
 import { calendarEvents } from "@/lib/intelligence/calendar";
-import { buildPriorities, potentialReturnValue } from "@/lib/intelligence/priorities";
+import { todayPlan } from "@/lib/intelligence/today";
 import { connectionProblems, retailerOf, walletTotals } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
 function greeting(name: string) {
   const h = new Date().getHours();
-  return `${h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"}, ${name}`;
+  return `${h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening"}, ${name}.`;
 }
 
-/** Today: the few things that need you, the week ahead, and a way into the wallet. */
+/**
+ * Today: one clear next action, the week at a glance, a short agenda, and everything Tote
+ * is quietly tracking folded away. Counts come from one plan so they always agree.
+ */
 export default function TodayPage() {
   const o = useOrbit();
   if (!o) return <Shell loading />;
   const { data, today, preview, profile } = o;
 
   const outage = preview.outage === "returns";
-  const todos = outage ? [] : buildPriorities(data, today);
-  const needs = todos.filter((p) => p.bucket !== "updates");
-  const top = (needs.length ? needs : todos).slice(0, 3);
-  const potential = potentialReturnValue(todos);
-  const pendingRefunds = data.refunds.filter((f) => !f.arrivedAt && (f.expected || (f.confirmed && f.confirmed.by === "retailer_email" && f.destination !== "store_credit")));
-  const refundAmount = sumMoney(pendingRefunds.map((f) => f.confirmed?.amount ?? f.expected?.amount));
+  const plan = outage ? { now: [], later: [], watching: [], agenda: [] } : todayPlan(data, today);
+  const [hero, second] = plan.now;
   const wallet = walletTotals(data, today);
   const problems = connectionProblems(data);
   const review = data.jobs.filter((j) => j.status === "needs_review").length;
   const isEmpty = data.orders.length === 0 && data.wallet.length === 0;
+  const events = calendarEvents(data, today);
+
+  const summary = isEmpty
+    ? "Let's bring your purchases into Tote."
+    : plan.now.length
+      ? null
+      : plan.watching.length
+        ? `Nothing needs you this week. Tote is watching ${plural(plan.watching.length, "order")}.`
+        : "Nothing needs you this week.";
 
   return (
     <Shell>
-      <TopBar date={new Date(`${today}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })} />
-      <div className="pb-4 pt-2">
-        <h1 className="font-display text-[34px] leading-[1.08]">{greeting(profile.firstName)}</h1>
-        <p className="mt-1 text-[17px] text-muted">
-          {isEmpty ? "Let's bring your purchases into Tote." : needs.length ? `${plural(needs.length, "thing")} ${needs.length === 1 ? "needs" : "need"} you.` : "Everything's in order."}
+      <TopBar date={new Date(`${today}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })} />
+      <div className="pb-4 pt-1">
+        <h1 className="font-display text-[40px] leading-[0.98]">{greeting(profile.firstName)}</h1>
+        <p className="mt-2 text-[16px] text-muted">
+          {summary ?? (
+            <>
+              <span className="font-semibold text-navy">
+                {plural(plan.now.length, "thing")} {plan.now.length === 1 ? "needs" : "need"} you this week.
+              </span>{" "}
+              {plan.watching.length ? `Tote is watching ${plan.watching.length} more.` : ""}
+            </>
+          )}
         </p>
       </div>
 
@@ -84,75 +98,98 @@ export default function TodayPage() {
         </div>
       ) : (
         <>
-          <section aria-labelledby="attention" className="mt-6">
-            <div className="mb-2.5 flex items-baseline justify-between">
-              <h2 id="attention" className="text-[17px] font-semibold">
-                Needs attention
-              </h2>
-              {todos.length > top.length && <TextLink href="/attention/">See all {todos.length}</TextLink>}
-            </div>
-            {top.length ? (
-              <div className="space-y-2.5">
-                {top.map((p, i) => (
-                  <PriorityRow key={p.key} p={p} retailer={retailerOf(data, p.retailerId)} today={today} prominent={i === 0} />
-                ))}
-              </div>
+          {/* 1. The next action */}
+          <section aria-label="Next up" className="mt-5">
+            {hero ? (
+              <>
+                <NextUpCard p={hero} data={data} today={today} />
+                {second && (
+                  <div className="mt-2.5">
+                    <PriorityRow p={second} retailer={retailerOf(data, second.retailerId)} today={today} />
+                  </div>
+                )}
+                {plan.now.length > 2 && (
+                  <Link href="/attention/" className="mt-1 flex min-h-11 items-center justify-between px-1 text-[15px] font-semibold">
+                    {plural(plan.now.length - 2, "more thing")} this week
+                    <ChevronRight aria-hidden className="size-5 text-muted" />
+                  </Link>
+                )}
+              </>
             ) : (
               <Card className="flex items-center gap-4 p-5">
                 <DoneCheck className="size-12" />
                 <span>
-                  <span className="font-display block text-[22px] leading-tight">All taken care of.</span>
-                  <span className="block text-[15px] text-muted">No deadlines, labels or refunds need you right now.</span>
+                  <span className="font-display block text-[24px] leading-tight">All taken care of.</span>
+                  <span className="block text-[15px] text-muted">{plan.later.length ? `Next decision: ${plan.later[0].title}, ${plan.later[0].dueDate ? `in ${plan.later[0].daysLeft} days` : "later"}.` : "No deadlines, labels or refunds need you."}</span>
                 </span>
               </Card>
             )}
           </section>
 
-          {/* Only the money tied to what's above: what could come back, and what's on its way. */}
-          {(potential.count > 0 || pendingRefunds.length > 0) && (
-            <div className="mt-4 grid grid-cols-2 gap-2.5">
-              {potential.count > 0 && (
-                <Link href="/attention/" className="rounded-[20px] bg-ivory-deep px-4 py-3 hover:bg-[#ebe7e0]">
-                  <span className="block text-[13px] font-semibold text-muted">Could come back</span>
-                  <span className="tabular block text-[22px] font-semibold tracking-[-0.02em]">{money(potential.amount)}</span>
-                  <span className="block text-[13px] text-muted">{plural(potential.count, "return")} due in 2 weeks</span>
-                </Link>
-              )}
-              {pendingRefunds.length > 0 && (
-                <Link href="/returns/" onClick={() => presetSession("purchases-filter", "refunds")} className="rounded-[20px] bg-ivory-deep px-4 py-3 hover:bg-[#ebe7e0]">
-                  <span className="block text-[13px] font-semibold text-muted">Refunds on the way</span>
-                  <span className="tabular block text-[22px] font-semibold tracking-[-0.02em]">{money(refundAmount)}</span>
-                  <span className="block text-[13px] text-muted">{plural(pendingRefunds.length, "refund")}, not confirmed yet</span>
-                </Link>
-              )}
-            </div>
+          {/* 2. The week at a glance */}
+          <div className="mt-8">
+            <WeekStrip events={events} today={today} data={data} />
+          </div>
+
+          {/* 3. Coming up, in order */}
+          {plan.agenda.length > 0 && (
+            <section aria-labelledby="agenda" className="mt-6">
+              <h2 id="agenda" className="font-display text-[22px] leading-none">
+                Coming up
+              </h2>
+              <ul className="mt-1 divide-y divide-line">
+                {plan.agenda.map((e) => (
+                  <AgendaRow key={e.id} e={e} data={data} today={today} />
+                ))}
+              </ul>
+            </section>
           )}
 
-          <section aria-labelledby="upcoming" className="mt-8">
-            <h2 id="upcoming" className="sr-only">
-              Upcoming
-            </h2>
-            <WeekCalendar events={calendarEvents(data, today)} today={today} data={data} />
-          </section>
+          {/* 4. What Tote is tracking for you */}
+          {plan.watching.length > 0 && (
+            <Card className="mt-6 overflow-hidden">
+              <Disclosure title="Tote is watching" summary={`${plural(plan.watching.length, "order")} on the way, in transit or waiting on a store`} icon={<Eye aria-hidden className="size-5" />}>
+                <ul className="divide-y divide-line">
+                  {plan.watching.map((w) => (
+                    <li key={w.orderId}>
+                      <Link href={w.href} className="flex min-h-12 items-center gap-3 py-2">
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-semibold">{w.title}</span>
+                          <span className="block truncate text-[13px] text-muted">
+                            {retailerOf(data, w.retailerId).name} · {w.label}
+                          </span>
+                        </span>
+                        <ChevronRight aria-hidden className="size-4 text-muted/60" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[13px] text-muted">Nothing to do here. We&apos;ll tell you if anything changes.</p>
+              </Disclosure>
+            </Card>
+          )}
 
-          {/* Circle stays below anything urgent, and can be hidden. */}
+          {/* 5. Circle stays below anything urgent, and can be hidden. */}
           {(data.prefs.circlePreview ?? true) && (
-            <section aria-label="From your Circle" className="mt-8 flex items-center gap-3 rounded-[20px] bg-circle-soft px-4 py-3.5">
-              <UsersRound aria-hidden className="size-5 shrink-0 text-circle" />
-              <Link href="/circle/" className="min-w-0 flex-1">
-                <span className="block text-[15px] font-semibold">See what returns are like before you buy</span>
-                <span className="block text-[14px] text-muted">Store policies and friends&apos; favorite shops, in Circle</span>
-              </Link>
-              <button type="button" aria-label="Hide Circle on Today" onClick={() => actions.setPrefs({ circlePreview: false })} className="-mr-2 inline-flex size-11 items-center justify-center rounded-full text-muted hover:bg-white/60">
-                <X aria-hidden className="size-4" />
-              </button>
+            <section aria-label="From your Circle" className="relative mt-6 overflow-hidden rounded-[22px] bg-circle-soft px-4 py-4">
+              <span aria-hidden className="absolute -right-6 -top-8 size-24 rounded-full bg-[#f5be73]/60" />
+              <div className="relative flex items-center gap-3">
+                <UsersRound aria-hidden className="size-5 shrink-0 text-circle" />
+                <Link href="/circle/" className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold">New in Circle: hauls, stores and lists</span>
+                  <span className="block text-[14px] text-muted">See what returns are like before you buy</span>
+                </Link>
+                <button type="button" aria-label="Hide Circle on Today" onClick={() => actions.setPrefs({ circlePreview: false })} className="-mr-2 inline-flex size-11 items-center justify-center rounded-full text-muted hover:bg-white/60">
+                  <X aria-hidden className="size-4" />
+                </button>
+              </div>
             </section>
           )}
         </>
       )}
 
       {data.wallet.length > 0 && preview.outage !== "wallet" && (
-        <Link href="/wallet/" className="mt-8 flex min-h-16 items-center gap-3 border-t border-line pt-4 text-left">
+        <Link href="/wallet/" className="mt-6 flex min-h-16 items-center gap-3 border-t border-line pt-4 text-left">
           <span className="flex size-10 items-center justify-center rounded-xl bg-wallet-soft text-wallet">
             <WalletCards aria-hidden className="size-5" />
           </span>
