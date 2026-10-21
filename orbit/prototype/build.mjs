@@ -33,7 +33,7 @@ const css = await postcss([tailwind({ base: root, optimize: true })]).process(so
 
 const script = js.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
 const html = `<title>Tote</title>
-<meta name="description" content="Tote: all your shopping in one place. Interactive prototype with fictional demo data.">
+<meta name="description" content="Tote: returns, refunds and gift cards in one place. Interactive prototype with fictional demo data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap">
