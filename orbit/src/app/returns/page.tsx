@@ -1,40 +1,90 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { CalendarDays, PackageOpen, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, PackageOpen, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { Shell } from "@/components/layout/shell";
 import { TabBanner } from "@/components/layout/tab-banner";
 import { OrderList, OrderRow } from "@/components/orbit/order-row";
-import { Button } from "@/components/ui/button";
+import { ProductThumb } from "@/components/orbit/retail";
+import { Button, ButtonLink, IconLink } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
-import { Sheet } from "@/components/ui/sheet";
-import { ButtonLink, IconLink } from "@/components/ui/button";
-import { FilterChips } from "@/components/ui/chips";
 import { Field, Input, Select } from "@/components/ui/form";
+import { Sheet } from "@/components/ui/sheet";
 import { EmptyState, ErrorState } from "@/components/ui/states";
+import { formatDate } from "@/lib/domain/dates";
 import { money } from "@/lib/domain/format";
-import { sumMoney } from "@/lib/domain/money";
-import type { ItemCategory } from "@/lib/domain/types";
+import type { DateOnly, ItemCategory } from "@/lib/domain/types";
 import { useSessionState } from "@/lib/hooks/useSessionState";
-import { bucketFor, bucketMeta, type Bucket } from "@/lib/intelligence/priorities";
 import { categoryLabel } from "@/lib/intelligence/insights";
-import { orderViews, purchaseFilter, type OrderView, type PurchaseFilter } from "@/lib/store/selectors";
+import { orderJourney, type Milestone } from "@/lib/intelligence/journey";
+import { orderViews, type OrderView } from "@/lib/store/selectors";
+import type { OrbitData } from "@/lib/store/state";
 import { actions, useOrbit } from "@/lib/store/store";
 
-type Filter = "all" | PurchaseFilter;
-const BUCKETS: Bucket[] = ["overdue", "soon", "week", "later", "missing"];
-const sum = (list: OrderView[]) => sumMoney(list.map((v) => v.amount));
+type Tab = "orders" | "returns";
 
-const hints: Record<Filter, string> = {
-  all: "Everything you've bought, newest first.",
-  deliveries: "On the way. Return windows start when these arrive.",
-  returns: "Items you can still return, soonest deadline first.",
-  refunds: "Returns on their way back, and refunds to confirm.",
-};
+/** The four return steps shown on a tracking card. Store-credit returns end at "Refund". */
+const STEPS: { label: string; keys: string[] }[] = [
+  { label: "Started", keys: ["started"] },
+  { label: "Label", keys: ["label"] },
+  { label: "Dropped off", keys: ["dropped", "received"] },
+  { label: "Refund", keys: ["issued", "arrived"] },
+];
+
+function stepState(journey: Milestone[], keys: string[]): "done" | "next" | "todo" {
+  const hits = journey.filter((m) => keys.includes(m.key));
+  if (hits.length && hits.every((m) => m.state === "done")) return "done";
+  return "todo";
+}
+
+/** One return you chose to make: what it is, a 4-step tracker, and the next date. */
+function ReturnCard({ v, data, today }: { v: OrderView; data: OrbitData; today: DateOnly }) {
+  const journey = orderJourney(data, v);
+  const states = STEPS.map((s) => stepState(journey, s.keys));
+  const nextIdx = states.indexOf("todo");
+  const next = journey.find((m) => m.state !== "done" && m.key !== "window");
+  const c = v.current;
+  return (
+    <li>
+      <Link href={`/returns/purchase/?id=${v.order.id}`} className="block rounded-[22px] bg-card p-4 shadow-[var(--shadow-card)] hover:bg-ivory/60">
+        <div className="flex items-center gap-3">
+          <ProductThumb category={v.order.items[0]?.category ?? "other"} name={v.order.items[0]?.name} tone={v.retailer.tone} className="size-11 rounded-[12px]" count={v.focusItems.length} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[12px] font-bold uppercase tracking-[0.06em] text-muted">{v.retailer.name}</span>
+            <span className="block truncate text-[16px] font-bold">{v.title}</span>
+          </span>
+          <span className="tabular text-[15px] font-bold">{v.amount != null ? money(v.amount) : ""}</span>
+        </div>
+        <ol className="mt-4 grid grid-cols-4" aria-label="Return progress">
+          {STEPS.map((s, i) => {
+            const st = i === nextIdx ? "next" : states[i];
+            return (
+              <li key={s.label} className="relative flex flex-col items-center text-center">
+                {i < STEPS.length - 1 && <span aria-hidden className={cn("absolute left-1/2 top-[11px] h-0.5 w-full", states[i] === "done" ? "bg-navy" : "bg-line")} />}
+                <span className={cn("relative z-10 flex size-[22px] items-center justify-center rounded-full border-2", st === "done" ? "border-navy bg-navy text-white" : st === "next" ? "border-navy bg-card" : "border-line bg-card")}>
+                  {st === "done" && <Check aria-hidden className="size-3" strokeWidth={3} />}
+                </span>
+                <span className={cn("mt-1.5 text-[12px]", st === "todo" ? "text-muted" : "font-bold")}>{s.label}</span>
+              </li>
+            );
+          })}
+        </ol>
+        <p className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-2.5 text-[14px]">
+          <span className="min-w-0 truncate">
+            <span className="font-bold">{c.label}</span>
+            {next?.date ? <span className="text-muted"> · {next.label} {formatDate(next.date, today)}{next.state === "estimated" ? " (est.)" : ""}</span> : null}
+          </span>
+          <ChevronRight aria-hidden className="size-4 shrink-0 text-muted/60" />
+        </p>
+      </Link>
+    </li>
+  );
+}
 
 export default function ReturnsPage() {
   const o = useOrbit();
-  const [filter, setFilter] = useSessionState<Filter>("purchases-filter", "returns");
+  const [tab, setTab] = useSessionState<Tab>("returns-tab", "orders");
   const [q, setQ] = useSessionState("purchases-q", "");
   const [store, setStore] = useSessionState("purchases-store", "");
   const [cat, setCat] = useSessionState<"" | ItemCategory>("purchases-cat", "");
@@ -44,31 +94,26 @@ export default function ReturnsPage() {
   const header = (
     <TabBanner
       tab="returns"
-      title="Make returns easy"
-      subtitle="Send it back, track it, and watch for refunds."
+      title="Returns made easy"
       right={
         <>
           <IconLink href="/calendar/" label="Calendar of dates">
             <CalendarDays aria-hidden className="size-[22px]" />
           </IconLink>
-          <IconLink href="/add/" label="Add a purchase or receipt">
+          <IconLink href="/add/" label="Add a purchase or receipt" className="-mr-2">
             <Plus aria-hidden className="size-[22px]" />
           </IconLink>
         </>
       }
     />
   );
-  const spacer = <div className="h-4" />;
 
   if (o.preview.outage === "returns")
     return (
       <Shell>
         {header}
-        {spacer}
-      {spacer}
-        <ErrorState title="We couldn't load your returns" onRetry={() => actions.setPreview({ outage: "none" })}>
-          Your wallet and saved labels are unaffected.
-        </ErrorState>
+        <div className="h-4" />
+        <ErrorState title="We couldn't load your returns" onRetry={() => actions.setPreview({ outage: "none" })} />
       </Shell>
     );
 
@@ -77,65 +122,89 @@ export default function ReturnsPage() {
     return (
       <Shell>
         {header}
-        {spacer}
-      {spacer}
-        <EmptyState icon={<PackageOpen aria-hidden />} title="No purchases yet" action={<ButtonLink href="/add/">Add a Purchase</ButtonLink>}>
-          Forward an order email, upload a receipt, or add one yourself.
-        </EmptyState>
+        <div className="h-4" />
+        <EmptyState icon={<PackageOpen aria-hidden />} title="No orders yet" action={<ButtonLink href="/add/">Add a Purchase</ButtonLink>} />
       </Shell>
     );
 
   const query = q.trim().toLowerCase();
-  const narrowed = views.filter(
-    (v) =>
-      (!store || v.order.retailerId === store) &&
-      (!cat || v.order.items.some((i) => i.category === cat)) &&
-      (!query || [v.retailer.name, v.order.orderNumber ?? "", ...v.order.items.map((i) => `${i.name} ${i.variant ?? ""}`)].some((s) => s.toLowerCase().includes(query))),
-  );
-  const count = (f: PurchaseFilter) => narrowed.filter((v) => purchaseFilter(v) === f).length;
-  const list =
-    filter === "all"
-      ? [...narrowed].sort((a, b) => (b.order.purchasedAt ?? b.order.createdAt).localeCompare(a.order.purchasedAt ?? a.order.createdAt))
-      : narrowed.filter((v) => purchaseFilter(v) === filter);
+  const matches = (v: OrderView) =>
+    (!store || v.order.retailerId === store) &&
+    (!cat || v.order.items.some((i) => i.category === cat)) &&
+    (!query || [v.retailer.name, v.order.orderNumber ?? "", ...v.order.items.map((i) => `${i.name} ${i.variant ?? ""}`)].some((s) => s.toLowerCase().includes(query)));
+  const orders = views.filter(matches).sort((a, b) => (b.order.purchasedAt ?? b.order.createdAt).localeCompare(a.order.purchasedAt ?? a.order.createdAt));
+  // Orders you chose to return, newest first. Finished ones drop to the bottom.
+  const returning = views.filter((v) => (v.activeReturn || v.latestReturn) && matches(v));
+  const active = returning.filter((v) => v.current.group !== "history");
+  const done = returning.filter((v) => v.current.group === "history");
   const stores = [...new Map(views.map((v) => [v.retailer.id, v.retailer.name])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
   const cats = [...new Set(views.flatMap((v) => v.order.items.map((i) => i.category)))];
 
   return (
     <Shell>
       {header}
-      {spacer}
 
-      <div className="relative">
+      <div role="tablist" aria-label="Orders or returns" className="mt-4 grid grid-cols-2 gap-1 rounded-full bg-card p-1 shadow-[var(--shadow-card)]">
+        {(
+          [
+            ["orders", `Orders · ${views.length}`],
+            ["returns", `My returns · ${active.length}`],
+          ] as [Tab, string][]
+        ).map(([v, label]) => (
+          <button key={v} type="button" role="tab" aria-selected={tab === v} onClick={() => setTab(v)} className={cn("min-h-11 rounded-full text-[15px] font-bold transition-colors", tab === v ? "bg-navy text-white" : "text-muted hover:text-navy")}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative mt-3">
         <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
         <label htmlFor="p-search" className="sr-only">
-          Search returns and purchases
+          Search orders
         </label>
-        <Input id="p-search" type="search" className="pl-11" placeholder="Store, item or order number" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Input id="p-search" type="search" className="pl-11 pr-12" placeholder="Store, item or order number" value={q} onChange={(e) => setQ(e.target.value)} />
+        <button type="button" aria-label="Filter by store or category" onClick={() => setFilterSheet(true)} className={cn("absolute right-1.5 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full", store || cat ? "bg-navy text-white" : "text-muted hover:bg-ivory-deep")}>
+          <SlidersHorizontal aria-hidden className="size-4" />
+        </button>
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-        <FilterChips
-          label="Show"
-          value={filter}
-          onChange={setFilter}
-          options={[
-            { value: "returns", label: "To return", count: count("returns") },
-            { value: "refunds", label: "Refunds", count: count("refunds") },
-            { value: "deliveries", label: "Arriving", count: count("deliveries") },
-            { value: "all", label: "All", count: narrowed.length },
-          ]}
-        />
+      {tab === "orders" ? (
+        orders.length === 0 ? (
+          <p className="mt-4 rounded-[18px] bg-card px-4 py-3.5 text-[15px] text-muted">Nothing matches.</p>
+        ) : (
+          <OrderList className="mt-4">
+            {orders.map((v) => (
+              <OrderRow key={v.order.id} v={v} today={o.today} />
+            ))}
+          </OrderList>
+        )
+      ) : active.length === 0 && done.length === 0 ? (
+        <div className="mt-4 rounded-[22px] bg-card px-4 py-5 text-center shadow-[var(--shadow-card)]">
+          <p className="font-display text-[20px]">No returns yet</p>
+          <button type="button" onClick={() => setTab("orders")} className="mt-2 inline-flex min-h-11 items-center font-bold text-navy underline underline-offset-4">
+            Pick something from your orders
+          </button>
         </div>
-      </div>
-      <button
-        type="button"
-        onClick={() => setFilterSheet(true)}
-        className={cn("mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-1 text-[14px] font-semibold", store || cat ? "text-returns" : "text-muted")}
-      >
-        <SlidersHorizontal aria-hidden className="size-4" />
-        {store || cat ? `Filtered: ${[store && stores.find(([id]) => id === store)?.[1], cat && categoryLabel[cat]].filter(Boolean).join(", ")}` : "Store and category"}
-      </button>
+      ) : (
+        <>
+          <ul className="mt-4 space-y-3">
+            {active.map((v) => (
+              <ReturnCard key={v.order.id} v={v} data={o.data} today={o.today} />
+            ))}
+          </ul>
+          {done.length > 0 && (
+            <>
+              <h2 className="mb-2 mt-6 px-1 text-[13px] font-bold uppercase tracking-[0.07em] text-muted">Done · {done.length}</h2>
+              <OrderList>
+                {done.map((v) => (
+                  <OrderRow key={v.order.id} v={v} today={o.today} />
+                ))}
+              </OrderList>
+            </>
+          )}
+        </>
+      )}
+
       <Sheet
         open={filterSheet}
         onOpenChange={setFilterSheet}
@@ -144,7 +213,15 @@ export default function ReturnsPage() {
           <>
             <Button onClick={() => setFilterSheet(false)}>Show Results</Button>
             {(store || cat) && (
-              <Button variant="ghost" size="md" className="w-full" onClick={() => { setStore(""); setCat(""); }}>
+              <Button
+                variant="ghost"
+                size="md"
+                className="w-full"
+                onClick={() => {
+                  setStore("");
+                  setCat("");
+                }}
+              >
                 Clear Filters
               </Button>
             )}
@@ -174,38 +251,6 @@ export default function ReturnsPage() {
           </Field>
         </div>
       </Sheet>
-
-      <p className="mt-1 text-[14px] text-muted">{hints[filter]}</p>
-
-      {list.length === 0 ? (
-        <p className="mt-3 rounded-[18px] bg-sage px-4 py-3.5 text-[15px] font-medium text-sage-ink">{query || store || cat ? "Nothing matches these filters." : "Nothing here right now."}</p>
-      ) : filter === "returns" ? (
-        BUCKETS.map((b) => {
-          const group = list.filter((v) => bucketFor(v.current.daysLeft) === b);
-          if (!group.length) return null;
-          return (
-            <section key={b} className="mt-5" aria-labelledby={`pb-${b}`}>
-              <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
-                <h2 id={`pb-${b}`} className="text-[13px] font-bold uppercase tracking-[0.07em] text-muted">
-                  {bucketMeta[b].title} <span className="tabular font-medium">· {group.length}</span>
-                </h2>
-                <span className="tabular text-[13px] font-semibold text-muted">{money(sum(group))}</span>
-              </div>
-              <OrderList>
-                {group.map((v) => (
-                  <OrderRow key={v.order.id} v={v} today={o.today} />
-                ))}
-              </OrderList>
-            </section>
-          );
-        })
-      ) : (
-        <OrderList className="mt-3">
-          {list.map((v) => (
-            <OrderRow key={v.order.id} v={v} today={o.today} />
-          ))}
-        </OrderList>
-      )}
     </Shell>
   );
 }

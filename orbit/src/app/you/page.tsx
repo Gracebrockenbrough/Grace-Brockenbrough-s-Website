@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChartNoAxesColumn, ChevronRight, Eye, EyeOff, Inbox, Lock, MessageSquareQuote, Settings, ShieldCheck } from "lucide-react";
+import { ChartNoAxesColumn, ChevronRight, Eye, EyeOff, Inbox, Lock, Plus, Settings, ShieldCheck } from "lucide-react";
+import { toast } from "@/components/ui/toast";
+import { itemKind } from "@/lib/intelligence/buckets";
 import { Shell } from "@/components/layout/shell";
 import { type Palette } from "@/components/orbit/art";
 import { TabBanner } from "@/components/layout/tab-banner";
@@ -18,7 +20,7 @@ import type { Visibility } from "@/lib/domain/types";
 import { connectionProblems, retailerOf } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
-const nextVis: Record<Visibility, Visibility> = { private: "friends", friends: "public", public: "private" };
+const nextVis: Record<Visibility, Visibility> = { private: "public", friends: "private", public: "private" };
 const PALETTES: Palette[] = ["orchid", "apricot", "rose", "sage", "sky", "ink"];
 const SWATCH: Record<Palette, string> = { orchid: "#7948AF", apricot: "#A05B16", rose: "#E58FAA", sage: "#28794E", sky: "#2E5C9E", ink: "#25213C" };
 
@@ -45,13 +47,16 @@ function NavRow({ href, icon, title, body }: { href: string; icon: React.ReactNo
 }
 
 /**
- * You: a personal style profile first, private tools second. "View as a friend" shows
- * exactly what friends would see: only things deliberately shared, never money or orders.
+ * You: a personal style profile first, private tools second. "Preview public profile"
+ * shows exactly what others could see: public stores and lists, never money or orders.
  */
 export default function YouPage() {
   const o = useOrbit();
   const [edit, setEdit] = useState(false);
   const [asFriend, setAsFriend] = useState(false);
+  const [newList, setNewList] = useState(false);
+  const [listTitle, setListTitle] = useState("");
+  const [listPublic, setListPublic] = useState(false);
   const [form, setForm] = useState({ name: "", bio: "", tags: "", palette: "orchid" as Palette });
   if (!o) return <Shell loading />;
   const { data, profile } = o;
@@ -59,9 +64,9 @@ export default function YouPage() {
   const palette = (pub.palette ?? "orchid") as Palette;
   const shown = (v: Visibility) => !asFriend || v !== "private";
   const favs = (data.favoriteStores ?? []).filter((f) => shown(f.visibility));
-  const cols = (data.collections ?? []).filter((c) => shown(c.visibility));
-  const reviews = (data.posts ?? []).filter((p) => p.authorId === "me" && (p.type === "review" || p.type === "store_favorite") && shown(p.audience));
-  const myPosts = (data.posts ?? []).filter((p) => p.authorId === "me" && shown(p.audience)).length;
+  // Your own lists, plus others' lists you saved (those stay in your view only).
+  const cols = (data.collections ?? []).filter((c) => (!c.ownerId && shown(c.visibility)) || (!asFriend && c.ownerId && c.saved));
+  const authors = data.authors ?? [];
   const conns = data.connections.filter((c) => c.status !== "disconnected");
   const problems = connectionProblems(data);
 
@@ -71,7 +76,6 @@ export default function YouPage() {
         <TabBanner
           tab="you"
           title="Your style, your space"
-          subtitle="Saved items, favorite stores, and a little more you."
           right={
             <IconLink href="/settings/" label="Settings" className="-mr-2">
               <Settings aria-hidden className="size-5" />
@@ -86,7 +90,7 @@ export default function YouPage() {
             className={cn("inline-flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold", asFriend ? "bg-you text-white" : "bg-white/70 text-you")}
           >
             {asFriend ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
-            {asFriend ? "Back to my view" : "View as a friend"}
+            {asFriend ? "Back to my view" : "Preview public profile"}
           </button>
         </div>
 
@@ -120,21 +124,21 @@ export default function YouPage() {
             </div>
           )}
           <p className="mt-3 text-[14px] text-muted">
-            {plural(favs.length, "favorite store")} · {plural(cols.length, "collection")} · {plural(myPosts, "post")}
+            {plural(favs.length, "favorite store")} · {plural(cols.filter((c) => !c.ownerId).length, "list")}
           </p>
         </section>
 
         {asFriend && (
           <p className="mt-4 rounded-[18px] bg-you-soft px-4 py-3 text-[14px] font-medium text-you">
-            This is what friends see. Purchases, returns, refunds, balances, email and spending are never shown.
+            Only public stores and lists are shown. Orders, returns, money and email never are.
           </p>
         )}
 
         {/* Favorite boutiques */}
         <section id="favorites" className="mt-8 scroll-mt-16">
-          <Heading action={!asFriend && <Link href="/circle/" className="inline-flex min-h-11 items-center text-[14px] font-semibold text-you">Find stores</Link>}>Favorite boutiques</Heading>
+          <Heading action={!asFriend && <Link href="/discover/" className="inline-flex min-h-11 items-center text-[14px] font-semibold text-you">Find stores</Link>}>Favorite boutiques</Heading>
           {favs.length === 0 ? (
-            <p className="rounded-[18px] bg-card px-4 py-3.5 text-[15px] text-muted shadow-[var(--shadow-card)]">{asFriend ? "Nothing shared yet." : "Tap the heart on a store in Circle to save it here."}</p>
+            <p className="rounded-[18px] bg-card px-4 py-3.5 text-[15px] text-muted shadow-[var(--shadow-card)]">{asFriend ? "No public stores." : "Tap the heart on a store in Discover."}</p>
           ) : (
             <div className="-mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
               {favs.map((f) => {
@@ -165,37 +169,21 @@ export default function YouPage() {
 
         {/* Collections */}
         <section className="mt-8">
-          <Heading action={<Link href="/circle/" className="inline-flex min-h-11 items-center text-[14px] font-semibold text-you">All lists</Link>}>My collections</Heading>
-          {cols.length === 0 ? (
-            <p className="rounded-[18px] bg-card px-4 py-3.5 text-[15px] text-muted shadow-[var(--shadow-card)]">{asFriend ? "No shared collections." : "Make one in Circle → Lists."}</p>
+          <Heading action={!asFriend && <button type="button" onClick={() => setNewList(true)} className="inline-flex min-h-11 items-center gap-1 text-[14px] font-semibold text-you"><Plus aria-hidden className="size-4" /> New list</button>}>My lists</Heading>
+          {cols.length === 0 && asFriend ? (
+            <p className="rounded-[18px] bg-card px-4 py-3.5 text-[15px] text-muted shadow-[var(--shadow-card)]">{asFriend ? "No public lists." : "Start a list of things you love."}</p>
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-4">
-              {cols.slice(0, 4).map((c) => (
-                <CollectionTile key={c.id} c={c} href={`/circle/list/?id=${c.id}`} />
+              {!asFriend && (
+                <CollectionTile
+                  c={{ id: "saved", title: "Saved for Later", visibility: "private", palette: "apricot", createdAt: "", items: data.wishlist.filter((w) => w.status === "active").map((w) => ({ id: w.id, name: w.text, kind: itemKind({ name: `${w.text} ${w.tags.join(" ")}`, category: w.tags.some((t) => /sneaker|boot|shoe|heel/.test(t)) ? "shoes" : "clothing" }), image: w.image, url: w.url, retailerId: w.retailerId, addedAt: w.addedAt })) }}
+                  href="/saved/"
+                />
+              )}
+              {cols.map((c) => (
+                <CollectionTile key={c.id} c={c} href={`/discover/list/?id=${c.id}`} owner={authors.find((a) => a.id === c.ownerId) ?? null} />
               ))}
             </div>
-          )}
-        </section>
-
-        {/* Reviews */}
-        <section className="mt-8">
-          <Heading>My reviews</Heading>
-          {reviews.length === 0 ? (
-            <Card className="flex items-center gap-3 p-4">
-              <MessageSquareQuote aria-hidden className="size-5 shrink-0 text-you" />
-              <p className="text-[15px] text-muted">{asFriend ? "No shared reviews." : "Reviews you choose to write show here. Tote never writes one for you, even after a return."}</p>
-            </Card>
-          ) : (
-            <ul className="space-y-2">
-              {reviews.map((p) => (
-                <li key={p.id} className="rounded-[18px] bg-card px-4 py-3 shadow-[var(--shadow-card)]">
-                  <p className="text-[13px] font-semibold text-muted">
-                    {p.retailerIds.map((id) => retailerOf(data, id).name).join(", ")} · {visibilityLabel[p.audience]}
-                  </p>
-                  <p className="text-[15px]">“{p.caption}”</p>
-                </li>
-              ))}
-            </ul>
           )}
         </section>
 
@@ -217,6 +205,38 @@ export default function YouPage() {
             <NavRow href="/settings/" icon={<Settings aria-hidden />} title="Settings" body="Notifications, preferences, data" />
           </Card>
         )}
+
+        <Sheet
+          open={newList}
+          onOpenChange={setNewList}
+          title="New list"
+          footer={
+            <Button
+              disabled={!listTitle.trim()}
+              onClick={() => {
+                actions.createCollection(listTitle, listPublic ? "public" : "private");
+                toast(`${listTitle.trim()} created`, listPublic ? "Public. You can share it." : "Private. Only you can see it.");
+                setListTitle("");
+                setNewList(false);
+              }}
+            >
+              Create List
+            </Button>
+          }
+        >
+          <div className="space-y-4">
+            <Field label="Name" htmlFor="list-title">
+              <Input id="list-title" value={listTitle} maxLength={40} onChange={(e) => setListTitle(e.target.value)} placeholder="e.g. Summer trip" />
+            </Field>
+            <div role="radiogroup" aria-label="Who can see it" className="grid grid-cols-2 gap-2">
+              {[false, true].map((pub2) => (
+                <button key={String(pub2)} type="button" role="radio" aria-checked={listPublic === pub2} onClick={() => setListPublic(pub2)} className={cn("min-h-11 rounded-full border text-[15px] font-semibold", listPublic === pub2 ? "border-navy bg-navy text-white" : "border-line bg-card")}>
+                  {pub2 ? "Public" : "Private"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </Sheet>
 
         <Sheet
           open={edit}

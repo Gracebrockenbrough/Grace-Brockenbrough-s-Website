@@ -4,7 +4,7 @@ import { ItemArt } from "./item-art";
 
 /**
  * Fashion-sketch art: loose ink lines on warm paper, grey washes, one red accent.
- * Scenes are drawn, not photographed, so Tote never needs rights to someone else's
+ * Scenes are drawn, not photographed, so Penny never needs rights to someone else's
  * images, and every scene is deterministic for its seed.
  */
 export type Palette = "apricot" | "orchid" | "rose" | "sage" | "ink" | "sky";
@@ -89,7 +89,7 @@ export function Collage({ seed, kinds, palette = "apricot", className, label, ch
   );
 }
 
-/** Tote's signature illustration: shopping bags sketched in ink, one of them red. */
+/** Penny's signature illustration: shopping bags sketched in ink, one of them red. */
 export function BagsSketch({ className }: { className?: string }) {
   const bag = (x: number, y: number, w: number, h: number, fill: string, tilt: number, key: string) => (
     <g key={key} transform={`rotate(${tilt} ${x + w / 2} ${y + h})`}>

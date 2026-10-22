@@ -100,7 +100,7 @@ function LabelView() {
         <Card className="px-6 py-6 text-center">
           <Printer aria-hidden className="mx-auto size-8 text-muted" />
           <p className="mt-3 text-[17px] font-semibold">Your label is in {retailer.name}&apos;s email</p>
-          <p className="mt-1 text-[15px] text-muted">Open the email to print it, then attach it to your package. Tote saved the email with this return.</p>
+          <p className="mt-1 text-[15px] text-muted">Open the email to print it, then attach it to your package. Penny saved the email with this return.</p>
         </Card>
       ) : artifact ? (
         <Card className="px-6 py-6 text-center">
@@ -111,7 +111,7 @@ function LabelView() {
         </Card>
       ) : (
         <Notice tone="warning" title="No label yet">
-          {retailer.name} hasn&apos;t sent a label or QR code. Forward their return email to Tote when it arrives.
+          {retailer.name} hasn&apos;t sent a label or QR code. Forward their return email to Penny when it arrives.
         </Notice>
       )}
 

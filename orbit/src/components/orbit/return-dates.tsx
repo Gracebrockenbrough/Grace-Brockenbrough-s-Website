@@ -47,7 +47,7 @@ export function ReturnDates({ dates, today }: { dates: ReturnDeadlines; today: D
   );
 }
 
-/** What Tote can and can't do with this store, straight from the compatibility registry. */
+/** What Penny can and can't do with this store, straight from the compatibility registry. */
 export function CapabilityList({ caps, retailerName }: { caps: RetailerCapabilities; retailerName: string }) {
   return (
     <>
@@ -69,7 +69,7 @@ export function CapabilityList({ caps, retailerName }: { caps: RetailerCapabilit
           ))}
         </ul>
       )}
-      <p className="mt-2 text-[13px] text-muted">Tote has no partnership with {retailerName}. Everything above works from your own emails and receipts.</p>
+      <p className="mt-2 text-[13px] text-muted">Penny has no partnership with {retailerName}. Everything above works from your own emails and receipts.</p>
     </>
   );
 }

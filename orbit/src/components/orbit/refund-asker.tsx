@@ -14,7 +14,7 @@ import { cn } from "../ui/cn";
 import { toast } from "@/components/ui/toast";
 
 /**
- * Refund Asker. Tote can't see a bank account, so after the store issues a card refund it
+ * Refund Asker. Penny can't see a bank account, so after the store issues a card refund it
  * asks once, with three plain answers, and only marks it received when the customer says so.
  */
 export function RefundAsker({ refund, request, retailer, orderNumber, today, compact = false }: { refund: Refund; request: ReturnRequest | null; retailer: Retailer; orderNumber: string | null; today: DateOnly; compact?: boolean }) {

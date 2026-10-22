@@ -59,7 +59,7 @@ export default function InsightsPage() {
   const sourceTotal = r.coverage.reduce((s, c) => s + c.count, 0);
   const prev = previousPeriod(kind, range);
   const before = insights(data, prev);
-  // Compare only when Tote actually has history for the earlier period.
+  // Compare only when Penny actually has history for the earlier period.
   const hasHistory = before.orderCount > 0 && r.coverageFrom != null && r.coverageFrom <= prev.from;
   const prevByKind = new Map(buildBuckets(before.purchases.map((p) => p.item), null).map((b) => [b.kind, b.amount]));
   const trends = (hasHistory ? buildBuckets(r.purchases.map((p) => p.item), null) : [])
@@ -71,7 +71,6 @@ export default function InsightsPage() {
   return (
     <Shell nav={false}>
       <BackBar fallback="/you/" title="Shopping Insights" />
-      <p className="pb-4 pt-1 text-[16px] text-muted">Private awareness, not a budget. Only purchases Tote knows about count.</p>
 
       <div role="radiogroup" aria-label="Time period" className="mt-4 inline-flex rounded-full bg-ivory-deep p-1">
         {(["month", "quarter", "year", "custom"] as RangeKind[]).map((k) => (
@@ -167,13 +166,13 @@ export default function InsightsPage() {
               </Card>
             </section>
           )}
-          {!hasHistory && <p className="mt-6 rounded-[18px] bg-ivory-deep px-4 py-3 text-[14px] text-muted">No trends yet: Tote doesn&apos;t have purchases from the earlier period to compare with.</p>}
+          {!hasHistory && <p className="mt-6 rounded-[18px] bg-ivory-deep px-4 py-3 text-[14px] text-muted">No trends yet: Penny doesn&apos;t have purchases from the earlier period to compare with.</p>}
           {r.byRetailer.length > 0 && <Bars title="By store" rows={r.byRetailer} />}
 
           <section className="mt-6 rounded-[18px] bg-ivory-deep px-4 py-3.5 text-[14px] text-muted">
             <p className="font-semibold text-navy">What&apos;s included</p>
             <p className="mt-1">
-              {plural(sourceTotal, "order")} from {r.coverage.map((c) => `${c.label} (${c.count})`).join(", ")}. {r.coverageFrom ? `Tote's history starts ${formatDate(r.coverageFrom, today)}. ` : ""}Purchases that never reached Tote aren&apos;t counted.
+              {plural(sourceTotal, "order")} from {r.coverage.map((c) => `${c.label} (${c.count})`).join(", ")}. {r.coverageFrom ? `Penny's history starts ${formatDate(r.coverageFrom, today)}. ` : ""}Purchases that never reached Penny aren&apos;t counted.
               {r.unpricedItems > 0 ? ` ${plural(r.unpricedItems, "item")} had no price in the email and ${r.unpricedItems === 1 ? "is" : "are"} left out.` : ""}
             </p>
           </section>

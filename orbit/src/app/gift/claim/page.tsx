@@ -24,7 +24,7 @@ function Claim() {
     return (
       <Shell nav={false}>
         <div className="flex h-16 items-center"><OrbitWordmark /></div>
-        <EmptyState icon={<Gift aria-hidden />} title="This gift link isn't valid" action={<ButtonLink href="/">Go to Tote</ButtonLink>}>
+        <EmptyState icon={<Gift aria-hidden />} title="This gift link isn't valid" action={<ButtonLink href="/">Go to Penny</ButtonLink>}>
           It may have expired, or it was created on another device in this demo.
         </EmptyState>
       </Shell>
@@ -67,7 +67,7 @@ function Claim() {
           </>
         ) : (
           <>
-            <Button onClick={() => actions.claimGift(gift.id)}>Add to Tote Wallet</Button>
+            <Button onClick={() => actions.claimGift(gift.id)}>Add to Penny Wallet</Button>
             <p className="text-center text-[14px] text-muted">Demo: claiming adds this fictional card to the wallet in this browser.</p>
           </>
         )}

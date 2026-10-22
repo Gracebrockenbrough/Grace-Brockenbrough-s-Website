@@ -43,15 +43,15 @@ export const dropOffLabel: Record<DropOffKind, string> = {
 export const capabilityLabel: Record<ReturnCapability, { name: string; summary: string }> = {
   guided: {
     name: "Guided",
-    summary: "Tote prepares your details and links you to the store. You finish on their site.",
+    summary: "Penny prepares your details and links you to the store. You finish on their site.",
   },
   assisted: {
     name: "Assisted",
-    summary: "Tote prepares the request in the store's own process. You confirm and finish any protected steps.",
+    summary: "Penny prepares the request in the store's own process. You confirm and finish any protected steps.",
   },
   integrated: {
     name: "Integrated",
-    summary: "Tote submits the return through the store's approved system, only after you approve it.",
+    summary: "Penny submits the return through the store's approved system, only after you approve it.",
   },
 };
 

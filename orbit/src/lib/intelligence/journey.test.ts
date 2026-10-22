@@ -41,11 +41,15 @@ describe("insights periods and money language", () => {
   });
 });
 
-describe("Circle privacy", () => {
-  it("never creates posts from purchases: demo posts are labeled and the customer has none until they publish", () => {
-    expect((data.posts ?? []).every((p) => p.demo)).toBe(true);
-    expect((data.posts ?? []).some((p) => p.authorId === "me")).toBe(false);
-    // No post contains prices.
-    expect(JSON.stringify(data.posts)).not.toMatch(/unitPrice|"amount"|purchasedAt|orderId/);
+describe("Discover privacy", () => {
+  it("lists never carry prices, order ids or dates, and others' lists are labeled demo", () => {
+    const cols = data.collections ?? [];
+    expect(JSON.stringify(cols)).not.toMatch(/unitPrice|"amount"|purchasedAt|orderId/);
+    expect(cols.filter((c) => c.ownerId).every((c) => c.demo)).toBe(true);
+  });
+  it("you have your own lists", () => {
+    expect(cols().length).toBeGreaterThan(0);
   });
 });
+
+const cols = () => (data.collections ?? []).filter((c) => !c.ownerId);

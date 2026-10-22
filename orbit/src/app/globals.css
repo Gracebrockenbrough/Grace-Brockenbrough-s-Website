@@ -1,20 +1,21 @@
 @import "tailwindcss";
-@import "@fontsource-variable/dm-sans";
+@import "@fontsource-variable/nunito";
 @import "@fontsource-variable/fraunces";
 
 @theme {
-  --font-sans: "DM Sans Variable", "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Nunito Variable", "Nunito", ui-rounded, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   /* Expressive moments only: greetings, page titles, brand, Circle. Never for money or deadlines. */
   --font-display: "Fraunces Variable", "Fraunces", ui-serif, Georgia, serif;
 
   /* Base. Class names are kept from the first design so every screen updates at once. */
-  --color-ivory: #fbf9f6; /* global background */
-  --color-ivory-deep: #f2efe9;
-  --color-navy: #25213c; /* Today plum navy: primary text and actions */
-  --color-navy-soft: #383255;
-  --color-muted: #636675;
+  /* Penny green: a soft sage page, deep forest for text and actions. */
+  --color-ivory: #e9f1e4; /* page background */
+  --color-ivory-deep: #dbe8d4;
+  --color-navy: #1f3b2d; /* primary text and actions */
+  --color-navy-soft: #2e5341;
+  --color-muted: #5b6a60;
   --color-card: #ffffff;
-  --color-line: #e8e5df;
+  --color-line: #d4e1cd;
 
   /* Status colors. Each means one thing everywhere, and always comes with words. */
   --color-terracotta: #b0473a; /* urgent: act soon */
@@ -30,9 +31,9 @@
   /* Section identity colors: where you are. Tints and small accents, never full-screen fills. */
   --color-returns: #b64e3a;
   --color-returns-soft: #fce3dc;
-  --color-wallet: #28794e;
-  --color-wallet-soft: #ddf0d8;
-  --color-today: #25213c;
+  --color-wallet: #a8642c; /* penny copper */
+  --color-wallet-soft: #f7e9da;
+  --color-today: #1f3b2d;
   --color-circle: #a05b16;
   --color-circle-soft: #ffe7c5;
   --color-you: #7948af;
@@ -40,14 +41,14 @@
 
   /* Calendar event types: what kind of date it is (always shown with a label). */
   --color-ev-return: #b64e3a;
-  --color-ev-dropoff: #25213c;
+  --color-ev-dropoff: #1f3b2d;
   --color-ev-delivery: #2e5c9e;
   --color-ev-refund: #b37a12;
-  --color-ev-credit: #28794e;
+  --color-ev-credit: #a8642c;
 
   --radius-card: 18px;
-  --shadow-card: 0 1px 2px rgb(38 35 61 / 0.04), 0 2px 8px rgb(38 35 61 / 0.05);
-  --shadow-lift: 0 10px 30px -12px rgb(38 35 61 / 0.35);
+  --shadow-card: 0 1px 2px rgb(31 59 45 / 0.05), 0 2px 10px rgb(31 59 45 / 0.06);
+  --shadow-lift: 0 12px 30px -14px rgb(31 59 45 / 0.4);
 }
 
 @layer base {
@@ -73,12 +74,12 @@
   }
 }
 
-/* Fraunces, bold and tight at large optical sizes: editorial, like a fashion masthead. */
+/* Fraunces at its softest, with its playful "wonky" letters: cute, but still grown-up. */
 @utility font-display {
   font-family: var(--font-display);
-  font-weight: 640;
-  font-variation-settings: "SOFT" 30, "WONK" 0;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+  letter-spacing: -0.015em;
 }
 
 /* Section washes: soft corner light for the expressive tabs. Content sits on solid cards. */
@@ -154,7 +155,7 @@
   animation: tote-reveal 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 @utility skeleton {
-  background: linear-gradient(90deg, #f0ede7 0px, #f8f6f2 80px, #f0ede7 160px);
+  background: linear-gradient(90deg, #dce8d6 0px, #eef4ea 80px, #dce8d6 160px);
   background-size: 400px 100%;
   animation: orbit-shimmer 1.4s linear infinite;
   border-radius: 10px;

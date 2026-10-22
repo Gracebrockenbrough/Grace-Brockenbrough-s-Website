@@ -102,8 +102,8 @@ export default function SettingsPage() {
           <Toggle label="Returns that need you" description="Labels to drop off, steps to finish" checked={prefs.returnActions} onChange={(v) => actions.setPrefs({ returnActions: v })} />
           <Toggle label="Refunds that need checking" checked={prefs.refunds} onChange={(v) => actions.setPrefs({ refunds: v })} />
           <Toggle label="Credit expiring" checked={prefs.creditExpiry} onChange={(v) => actions.setPrefs({ creditExpiry: v })} />
-          <Toggle label="Circle updates" description="Friends' posts and new reviews of stores you saved. Never mixed with deadlines" checked={prefs.social ?? false} onChange={(v) => actions.setPrefs({ social: v })} />
-          <Toggle label="Circle on Today" description="A small note below your to-dos. Never above them" checked={prefs.circlePreview ?? true} onChange={(v) => actions.setPrefs({ circlePreview: v })} />
+          <Toggle label="Shared lists" description="When a friend shares a list with you" checked={prefs.social ?? false} onChange={(v) => actions.setPrefs({ social: v })} />
+          <Toggle label="Discover on Today" checked={prefs.circlePreview ?? true} onChange={(v) => actions.setPrefs({ circlePreview: v })} />
           <Toggle label="Packages arriving" checked={prefs.deliveries ?? true} onChange={(v) => actions.setPrefs({ deliveries: v })} />
           <div className="py-3">
             <p className="mb-2 font-medium">Remind me before a deadline</p>
@@ -139,7 +139,7 @@ export default function SettingsPage() {
 
       {/* What the AI can and can't do */}
       <section className="mt-8">
-        <SectionTitle>What Tote&apos;s AI can and can&apos;t do</SectionTitle>
+        <SectionTitle>What Penny&apos;s AI can and can&apos;t do</SectionTitle>
         <Card className="p-4">
           <p className="text-[15px] font-semibold">It can</p>
           <ul className="mt-1.5 space-y-2 text-[15px]">
@@ -159,7 +159,7 @@ export default function SettingsPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-[14px] text-muted">You take every action yourself. Tote prepares the details and links you to the store.</p>
+          <p className="mt-4 text-[14px] text-muted">You take every action yourself. Penny prepares the details and links you to the store.</p>
         </Card>
       </section>
 
@@ -169,11 +169,11 @@ export default function SettingsPage() {
         <Card className="p-4">
           <ul className="space-y-2.5 text-[15px]">
             {[
-              "Tote never asks for your retailer passwords.",
-              "Tote never connects to your bank. You confirm refunds yourself.",
+              "Penny never asks for your retailer passwords.",
+              "Penny never connects to your bank. You confirm refunds yourself.",
               "Gift card codes are hidden until you reveal them.",
               "Your email is never used for advertising, and your shopping history is never sold.",
-              "Nothing you buy or return is ever posted to Circle. You choose what friends see.",
+              "Lists and stores are private unless you make them public. Orders are never shared.",
               "Most emails are read by simple rules, with no AI at all.",
             ].map((t) => (
               <li key={t} className="flex gap-2.5">
@@ -234,7 +234,7 @@ export default function SettingsPage() {
         open={consent != null}
         onOpenChange={(v) => !v && setConsent(null)}
         title={consent ? `Connect ${consent.displayName}` : ""}
-        description="Tote imports only shopping emails, and you can disconnect any time."
+        description="Penny imports only shopping emails, and you can disconnect any time."
         footer={
           consent && (
             <>
@@ -247,7 +247,7 @@ export default function SettingsPage() {
         {consent && (
           <div className="space-y-4 text-[15px]">
             <div>
-              <p className="font-semibold">Tote would read</p>
+              <p className="font-semibold">Penny would read</p>
               <ul className="mt-1 space-y-1 text-muted">
                 {consent.consent.reads.map((r) => (
                   <li key={r}>• {r}</li>
@@ -255,7 +255,7 @@ export default function SettingsPage() {
               </ul>
             </div>
             <div>
-              <p className="font-semibold">Tote would never</p>
+              <p className="font-semibold">Penny would never</p>
               <ul className="mt-1 space-y-1 text-muted">
                 {consent.consent.neverDoes.map((r) => (
                   <li key={r}>• {r}</li>
@@ -266,7 +266,7 @@ export default function SettingsPage() {
               {consent.consent.scopeReality}
             </Notice>
             <p className="text-[13px] text-muted">
-              Permission requested: {consent.consent.scope}. You sign in on {consent.displayName}&apos;s own page; Tote never sees your password.
+              Permission requested: {consent.consent.scope}. You sign in on {consent.displayName}&apos;s own page; Penny never sees your password.
             </p>
             <Link href="/add/" className="inline-flex min-h-11 items-center font-semibold text-navy underline-offset-4 hover:underline">
               Import an email instead
@@ -279,7 +279,7 @@ export default function SettingsPage() {
         open={adding}
         onOpenChange={setAdding}
         title="Add an email"
-        description="Connect every inbox you shop with. They all live under this one Tote profile."
+        description="Connect every inbox you shop with. They all live under this one Penny profile."
         footer={
           <Button
             disabled={!label.trim()}
@@ -334,7 +334,7 @@ export default function SettingsPage() {
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         title="Delete everything?"
-        description="This removes all purchases, returns, refunds, saved emails, saved items and wallet cards from Tote, and disconnects every inbox. It can't be undone."
+        description="This removes all purchases, returns, refunds, saved emails, saved items and wallet cards from Penny, and disconnects every inbox. It can't be undone."
         footer={
           <Button
             variant="danger"

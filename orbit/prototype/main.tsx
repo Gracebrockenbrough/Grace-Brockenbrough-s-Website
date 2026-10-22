@@ -5,9 +5,8 @@ import Account from "@/app/settings/account/page";
 import History from "@/app/settings/history/page";
 import Saved from "@/app/saved/page";
 import Dev from "@/app/dev/page";
-import Circle from "@/app/circle/page";
-import CircleList from "@/app/circle/list/page";
-import NewPost from "@/app/circle/new/page";
+import Discover from "@/app/discover/page";
+import DiscoverList from "@/app/discover/list/page";
 import Stores from "@/app/stores/page";
 import You from "@/app/you/page";
 import Kit from "@/app/returns/kit/page";
@@ -31,9 +30,8 @@ import { usePathname } from "./shims/navigation";
 const routes: Record<string, ComponentType> = {
   "/": Today,
   "/dev/": Dev,
-  "/circle/": Circle,
-  "/circle/list/": CircleList,
-  "/circle/new/": NewPost,
+  "/discover/": Discover,
+  "/discover/list/": DiscoverList,
   "/stores/": Stores,
   "/you/": You,
   "/saved/": Saved,

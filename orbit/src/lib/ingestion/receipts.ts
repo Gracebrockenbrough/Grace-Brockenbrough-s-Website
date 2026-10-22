@@ -1,6 +1,6 @@
 /**
  * Customer-shared receipts: pasted receipt text, text messages (SMS) and text copied from
- * a PDF or screenshot. Tote can't read anyone's text messages in the background (phones
+ * a PDF or screenshot. Penny can't read anyone's text messages in the background (phones
  * don't allow it, and we wouldn't), so the customer shares what they want imported.
  *
  * Printed receipts write prices without "$" and use shouty item names; this normalizes

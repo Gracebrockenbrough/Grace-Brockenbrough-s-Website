@@ -215,7 +215,7 @@ function CardDetail() {
         <p className="text-[14px] text-muted">In the full app, revealing a code requires Face ID, Touch ID or your device passcode, and codes are stored encrypted.</p>
       </Sheet>
 
-      <Sheet open={noCode} onOpenChange={setNoCode} title="No code saved" description={`This ${creditTypeLabel[item.type].toLowerCase()} doesn't have a code in Tote.`}>
+      <Sheet open={noCode} onOpenChange={setNoCode} title="No code saved" description={`This ${creditTypeLabel[item.type].toLowerCase()} doesn't have a code in Penny.`}>
         <p className="text-[15px]">{item.redemption}</p>
       </Sheet>
 
@@ -246,7 +246,7 @@ function CardDetail() {
         open={removeSheet}
         onOpenChange={setRemoveSheet}
         title="Remove this card?"
-        description="It will be deleted from Tote, including its saved code. The balance stays with the retailer."
+        description="It will be deleted from Penny, including its saved code. The balance stays with the retailer."
         footer={
           <Button
             variant="danger"

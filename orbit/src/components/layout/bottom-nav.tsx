@@ -2,21 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleUserRound, PackageOpen, UsersRound, WalletCards } from "lucide-react";
+import { CircleUserRound, Compass, PackageOpen, WalletCards } from "lucide-react";
 import { cn } from "../ui/cn";
 import { OrbitMark } from "./logo";
 
 type Tab = { href: string; label: string; icon: typeof PackageOpen | null; accent: string; match: (p: string) => boolean };
 
 /**
- * Returns | Wallet | Today | Circle | You. Practical tools on the left, the assistant in
+ * Returns | Wallet | Today | Discover | You. Practical tools on the left, the assistant in
  * the center, discovery and identity on the right. Each tab lights up in its section color.
  */
 const tabs: Tab[] = [
   { href: "/returns/", label: "Returns", icon: PackageOpen, accent: "text-returns", match: (p) => p.startsWith("/returns") || p.startsWith("/add") },
   { href: "/wallet/", label: "Wallet", icon: WalletCards, accent: "text-wallet", match: (p) => p.startsWith("/wallet") || p.startsWith("/gift") },
   { href: "/", label: "Today", icon: null, accent: "text-today", match: (p) => p === "/" || ["/ask", "/attention", "/calendar"].some((x) => p.startsWith(x)) },
-  { href: "/circle/", label: "Circle", icon: UsersRound, accent: "text-circle", match: (p) => p.startsWith("/circle") || p.startsWith("/stores") },
+  { href: "/discover/", label: "Discover", icon: Compass, accent: "text-circle", match: (p) => p.startsWith("/discover") || p.startsWith("/stores") },
   { href: "/you/", label: "You", icon: CircleUserRound, accent: "text-you", match: (p) => ["/you", "/settings", "/insights", "/saved", "/dev"].some((x) => p.startsWith(x)) },
 ];
 

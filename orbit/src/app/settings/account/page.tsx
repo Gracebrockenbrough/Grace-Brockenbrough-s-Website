@@ -123,7 +123,7 @@ function Account() {
         open={disconnect}
         onOpenChange={setDisconnect}
         title={`Disconnect ${c.label}?`}
-        description="Tote stops reading this inbox right away. In a live connection, access is also revoked with the provider."
+        description="Penny stops reading this inbox right away. In a live connection, access is also revoked with the provider."
         footer={
           <Button
             variant="danger"

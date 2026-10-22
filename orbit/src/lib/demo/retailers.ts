@@ -14,7 +14,7 @@ type PolicyInput = Omit<ReturnPolicy, "version" | "effectiveFrom" | "labelWithin
 export const SEED_RETAILERS: Retailer[] = [
   {
     // Amazon is supported through emails, shared receipts and manual entry, with handoff
-    // to Amazon's own Your Orders page for returns. Tote has no Amazon API access.
+    // to Amazon's own Your Orders page for returns. Penny has no Amazon API access.
     id: "amazon",
     name: "Amazon",
     websiteUrl: "https://www.amazon.com",

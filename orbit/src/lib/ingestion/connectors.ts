@@ -19,7 +19,7 @@ export interface EmailConnector {
   /** What the customer is consenting to, shown before authorization. */
   readonly consent: { reads: string[]; neverDoes: string[]; scope: string; scopeReality: string };
   availability(): ConnectorAvailability;
-  /** Starts the provider's own OAuth consent flow. Tote never sees the email password. */
+  /** Starts the provider's own OAuth consent flow. Penny never sees the email password. */
   authorize(): Promise<{ ok: true; address: string } | { ok: false; reason: string }>;
   /**
    * Incremental fetch from a cursor (Gmail historyId, Graph delta link). Production runs a
@@ -80,7 +80,7 @@ export const gmailConnector = new OAuthMailConnector(
   {
     ...sharedConsent,
     scope: "gmail.readonly (a restricted scope: needs Google's app verification and an annual independent security assessment before public launch)",
-    scopeReality: "Google's read-only permission technically covers your whole mailbox. Tote's own filters decide what it looks at, and only shopping mail is imported. Google doesn't enforce that limit; Tote does.",
+    scopeReality: "Google's read-only permission technically covers your whole mailbox. Penny's own filters decide what it looks at, and only shopping mail is imported. Google doesn't enforce that limit; Penny does.",
   },
   false,
   "Gmail connection isn't available yet. It requires Google's app verification and security review.",
@@ -92,7 +92,7 @@ export const outlookConnector = new OAuthMailConnector(
   {
     ...sharedConsent,
     scope: "Mail.Read (Microsoft Graph, delegated; needs a verified publisher)",
-    scopeReality: "Microsoft's Mail.Read permission technically covers your whole mailbox. Tote's own filters decide what it looks at, and only shopping mail is imported.",
+    scopeReality: "Microsoft's Mail.Read permission technically covers your whole mailbox. Penny's own filters decide what it looks at, and only shopping mail is imported.",
   },
   false,
   "Outlook connection isn't available yet. It requires a registered Microsoft app.",

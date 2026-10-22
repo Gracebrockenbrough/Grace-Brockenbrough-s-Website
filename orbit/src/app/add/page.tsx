@@ -46,7 +46,7 @@ function Value<T>({ x, render }: { x: Extracted<T> | null; render?: (v: T) => st
 
 function Chooser() {
   const options = [
-    { mode: "forward", icon: Forward, title: "Forward an email", body: "Send confirmations to your Tote address" },
+    { mode: "forward", icon: Forward, title: "Forward an email", body: "Send confirmations to your Penny address" },
     { mode: "paste", icon: Mail, title: "Paste an email", body: "An order, shipping, return or refund email" },
     { mode: "text", icon: MessageSquareText, title: "Paste a receipt or text message", body: "From a store, a text message, or a PDF" },
     { mode: "upload", icon: FileUp, title: "Upload a photo, screenshot or PDF", body: "Keep the receipt with the purchase" },
@@ -55,7 +55,7 @@ function Chooser() {
   return (
     <>
       <h1 className="pb-1 pt-2 text-[28px] font-semibold tracking-[-0.02em]">Add a purchase</h1>
-      <p className="pb-5 text-[16px] text-muted">Tote reads the details and tracks the return window for you.</p>
+      <p className="pb-5 text-[16px] text-muted">Penny reads the details and tracks the return window for you.</p>
       <Card className="divide-y divide-line">
         {options.map(({ mode, icon: Icon, title, body }) => (
           <Link key={mode} href={`/add/?mode=${mode}`} className="flex min-h-[72px] items-center gap-4 px-4 py-3 hover:bg-ivory-deep">
@@ -71,7 +71,7 @@ function Chooser() {
         ))}
       </Card>
       <p className="mt-5 text-center text-[14px] text-muted">
-        Tote can&apos;t read your text messages on its own. Share the ones you want to keep. <Link href="/settings/#email" className="font-semibold text-navy underline-offset-4 hover:underline">Connected accounts</Link>
+        Penny can&apos;t read your text messages on its own. Share the ones you want to keep. <Link href="/settings/#email" className="font-semibold text-navy underline-offset-4 hover:underline">Connected accounts</Link>
       </p>
     </>
   );
@@ -103,9 +103,9 @@ function PasteFlow({ initialText, shared = false }: { initialText?: string; shar
     const copy = {
       added: { title: "Purchase added", body: "We'll keep an eye on the return window." },
       merged: { title: "Matched to an existing order", body: "We added the new details to the order you already had. No duplicate was created." },
-      duplicate_message: { title: "Already imported", body: "This is already in Tote, so nothing changed." },
+      duplicate_message: { title: "Already imported", body: "This is already in Penny, so nothing changed." },
       unrecognized: { title: "We couldn't read this", body: "It doesn't look like an order, shipping, return or refund message. You can enter the details yourself." },
-      skipped: { title: "Not imported", body: result.job?.reason ?? "This message isn't something Tote imports." },
+      skipped: { title: "Not imported", body: result.job?.reason ?? "This message isn't something Penny imports." },
       needs_review: { title: "Saved for a quick check", body: result.job?.reason ?? "Some details need you before we can save this." },
     }[result.status];
     return (
@@ -199,7 +199,7 @@ function PasteFlow({ initialText, shared = false }: { initialText?: string; shar
             setResult(r);
           }}
         >
-          Save to Tote
+          Save to Penny
         </Button>
         <Button variant="ghost" size="md" className="w-full" onClick={() => setX(null)}>
           Edit Text
@@ -296,7 +296,7 @@ function UploadFlow() {
       </label>
       {error && <Notice tone="warning">{error}</Notice>}
       <Notice tone="info" title="Reading images and PDFs comes next">
-        Text recognition isn&apos;t switched on yet, so we won&apos;t pretend to read the file. If you can copy the text out of a PDF, <Link href="/add/?mode=text" className="font-semibold underline-offset-4 hover:underline">paste it instead</Link> and Tote reads it.
+        Text recognition isn&apos;t switched on yet, so we won&apos;t pretend to read the file. If you can copy the text out of a PDF, <Link href="/add/?mode=text" className="font-semibold underline-offset-4 hover:underline">paste it instead</Link> and Penny reads it.
       </Notice>
     </section>
   );
@@ -391,10 +391,10 @@ function ForwardInfo() {
     <section className="animate-in space-y-5 pt-2">
       <div>
         <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Forward your emails</h1>
-        <p className="mt-1 text-[16px] text-muted">Forward order, shipping, return and refund emails to your private Tote address.</p>
+        <p className="mt-1 text-[16px] text-muted">Forward order, shipping, return and refund emails to your private Penny address.</p>
       </div>
       <Card className="px-4 pb-2 pt-3">
-        <CopyRow label="Your Tote address" value={FORWARDING_ADDRESS_DEMO} />
+        <CopyRow label="Your Penny address" value={FORWARDING_ADDRESS_DEMO} />
       </Card>
       <Notice tone="demo" title="Not receiving mail yet">
         This is a placeholder address. Inbound email isn&apos;t live in this preview, so paste the email text instead.

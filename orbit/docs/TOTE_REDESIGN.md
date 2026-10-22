@@ -130,3 +130,33 @@ Two directions were mocked side by side (`design-directions.png`):
   - Buckets share one color and open their purchases.
   - Spending targets moved to Settings and are off by default.
 - **Settings:** Circle updates have their own notification switch, separate from deadlines.
+
+# Penny (v4): green, quieter, lists instead of a feed
+
+The product is now called **Penny**. Internal identifiers (`useOrbit`, `OrbitData`, the `orbit/` folder) are unchanged.
+
+## What changed
+- **Look:** green page background (`#e9f1e4`), deep green primary (`#1f3b2d`), copper wallet accent and a copper-coin logo. Body text is Nunito and headings are a soft Fraunces (`SOFT 100, WONK 1`).
+- **Fewer subtitles:** intro lines under page titles are gone. Only Today keeps a one-line summary under the greeting.
+- **Returns:** split into two tabs.
+  - **Orders** lists every order, newest first, with search and a store/category filter.
+  - **My returns** lists only the orders you chose to return. Each card has a four-step tracker (Started, Label, Dropped off, Refund) and the next dated milestone. Finished returns drop into "Done".
+- **Discover replaces Circle:** no feed, posts, likes or hauls.
+  - Rows for "Shared with you" (lists from friends) and "Popular lists" (lists from creators).
+  - A store grid underneath.
+  - Others' people and lists are fictional and labeled Demo.
+- **Public and private:** every list and favorite store is either Private or Public.
+  - Public lists can be shared by link.
+  - You can save other people's lists to your You page.
+  - Lists never carry prices, order numbers or purchase dates (covered by a unit test).
+
+## Tests
+- `journey.test.ts` has a "Discover privacy" block.
+- The browser regression suite checks the following at 390px and 320px:
+  - nav order and green background
+  - the Orders and My returns tabs
+  - the Discover rows
+  - saving someone else's list
+  - private lists hide Share, public lists show it
+  - creating a new list
+  - no horizontal overflow and no page errors

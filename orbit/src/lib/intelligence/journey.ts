@@ -14,7 +14,7 @@ export interface Milestone {
   label: string;
   date: DateOnly | null;
   state: MilestoneState;
-  /** How Tote knows, in plain words. */
+  /** How Penny knows, in plain words. */
   source: string;
   href?: string;
 }
@@ -69,7 +69,7 @@ export function orderJourney(d: OrbitData, v: OrderView): Milestone[] {
     label: r.submission.at ? "Return started" : "Return prepared",
     date: (r.submission.at ?? r.createdAt).slice(0, 10),
     state: "done",
-    source: r.submission.confirmedByRetailer ? evidenceTitle(d, r.submission.confirmationEvidenceId) ?? "Confirmed by the store" : r.submission.at ? "You told us you submitted it" : "Prepared in Tote. Not sent to the store",
+    source: r.submission.confirmedByRetailer ? evidenceTitle(d, r.submission.confirmationEvidenceId) ?? "Confirmed by the store" : r.submission.at ? "You told us you submitted it" : "Prepared in Penny. Not sent to the store",
   });
   if (s === "cancelled") return [...out, { key: "cancelled", label: "Return cancelled", date: null, state: "done", source: "You cancelled it" }];
 
@@ -90,7 +90,7 @@ export function orderJourney(d: OrbitData, v: OrderView): Milestone[] {
   }
   if (!credit) {
     if (f?.arrivedAt) out.push({ key: "arrived", label: "Refund received", date: f.arrivedAt, state: "done", source: "You confirmed it arrived", href: `/returns/refund/?id=${f.id}` });
-    else out.push({ key: "arrived", label: "Refund received", date: null, state: "upcoming", source: "Only you can confirm this. Tote never sees your bank", href: f ? `/returns/refund/?id=${f.id}` : undefined });
+    else out.push({ key: "arrived", label: "Refund received", date: null, state: "upcoming", source: "Only you can confirm this. Penny never sees your bank", href: f ? `/returns/refund/?id=${f.id}` : undefined });
   }
   return out;
 }

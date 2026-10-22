@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Eye, Unplug, UsersRound, WalletCards, X } from "lucide-react";
+import { ChevronRight, Eye, Unplug, Compass, WalletCards, X } from "lucide-react";
 import { Shell } from "@/components/layout/shell";
 import { TabBanner } from "@/components/layout/tab-banner";
 import { AskBar } from "@/components/orbit/ask-bar";
@@ -26,7 +26,7 @@ function greeting(name: string) {
 }
 
 /**
- * Today: one clear next action, the week at a glance, a short agenda, and everything Tote
+ * Today: one clear next action, the week at a glance, a short agenda, and everything Penny
  * is quietly tracking folded away. Counts come from one plan so they always agree.
  */
 export default function TodayPage() {
@@ -42,13 +42,14 @@ export default function TodayPage() {
   const review = data.jobs.filter((j) => j.status === "needs_review").length;
   const isEmpty = data.orders.length === 0 && data.wallet.length === 0;
   const events = calendarEvents(data, today);
+  const sharedCount = (data.collections ?? []).filter((c) => c.sharedWithMe).length;
 
   const summary = isEmpty
-    ? "Let's bring your purchases into Tote."
+    ? "Let's bring your purchases into Penny."
     : plan.now.length
       ? null
       : plan.watching.length
-        ? `Nothing needs you this week. Tote is watching ${plural(plan.watching.length, "order")}.`
+        ? `Nothing needs you this week. Penny is watching ${plural(plan.watching.length, "order")}.`
         : "Nothing needs you this week.";
 
   return (
@@ -62,7 +63,7 @@ export default function TodayPage() {
               <span className="font-semibold text-navy">
                 {plural(plan.now.length, "thing")} {plan.now.length === 1 ? "needs" : "need"} you this week.
               </span>{" "}
-              {plan.watching.length ? `Tote is watching ${plan.watching.length} more.` : ""}
+              {plan.watching.length ? `Penny is watching ${plan.watching.length} more.` : ""}
             </>
           )
         }
@@ -91,7 +92,7 @@ export default function TodayPage() {
       {isEmpty ? (
         <Card className="mt-6">
           <EmptyState icon={<Unplug aria-hidden />} title="Nothing here yet" action={<ButtonLink href="/add/">Add a Purchase</ButtonLink>}>
-            Connect an inbox, forward an order email, or upload a receipt, and Tote will track the return window for you.
+            Connect an inbox, forward an order email, or upload a receipt, and Penny will track the return window for you.
           </EmptyState>
         </Card>
       ) : outage ? (
@@ -149,10 +150,10 @@ export default function TodayPage() {
             </section>
           )}
 
-          {/* 4. What Tote is tracking for you */}
+          {/* 4. What Penny is tracking for you */}
           {plan.watching.length > 0 && (
             <Card className="mt-6 overflow-hidden">
-              <Disclosure title="Tote is watching" summary={`${plural(plan.watching.length, "order")} on the way, in transit or waiting on a store`} icon={<Eye aria-hidden className="size-5" />}>
+              <Disclosure title="Penny is watching" summary={`${plural(plan.watching.length, "order")} on the way, in transit or waiting on a store`} icon={<Eye aria-hidden className="size-5" />}>
                 <ul className="divide-y divide-line">
                   {plan.watching.map((w) => (
                     <li key={w.orderId}>
@@ -168,22 +169,20 @@ export default function TodayPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-[13px] text-muted">Nothing to do here. We&apos;ll tell you if anything changes.</p>
               </Disclosure>
             </Card>
           )}
 
-          {/* 5. Circle stays below anything urgent, and can be hidden. */}
-          {(data.prefs.circlePreview ?? true) && (
-            <section aria-label="From your Circle" className="relative mt-6 overflow-hidden rounded-[22px] border border-line bg-[#FAF8F4] px-4 py-4">
+          {/* 5. Discover stays below anything urgent, and can be hidden. */}
+          {(data.prefs.circlePreview ?? true) && sharedCount > 0 && (
+            <section aria-label="From Discover" className="relative mt-6 overflow-hidden rounded-[22px] border border-line bg-[#FAF8F4] px-4 py-4">
               <BagsSketch className="pointer-events-none absolute -right-2 bottom-0 h-16 opacity-80" />
               <div className="relative flex items-center gap-3">
-                <UsersRound aria-hidden className="size-5 shrink-0 text-circle" />
-                <Link href="/circle/" className="min-w-0 flex-1 pr-20">
-                  <span className="block text-[15px] font-semibold">New in Circle: hauls, stores and lists</span>
-                  <span className="block text-[14px] text-muted">See what returns are like before you buy</span>
+                <Compass aria-hidden className="size-5 shrink-0 text-circle" />
+                <Link href="/discover/" className="min-w-0 flex-1 pr-20">
+                  <span className="block text-[15px] font-semibold">{sharedCount === 1 ? "A list was" : `${sharedCount} lists were`} shared with you</span>
                 </Link>
-                <button type="button" aria-label="Hide Circle on Today" onClick={() => actions.setPrefs({ circlePreview: false })} className="relative -mr-2 inline-flex size-11 items-center justify-center rounded-full bg-white/80 text-muted hover:bg-white">
+                <button type="button" aria-label="Hide Discover on Today" onClick={() => actions.setPrefs({ circlePreview: false })} className="relative -mr-2 inline-flex size-11 items-center justify-center rounded-full bg-white/80 text-muted hover:bg-white">
                   <X aria-hidden className="size-4" />
                 </button>
               </div>

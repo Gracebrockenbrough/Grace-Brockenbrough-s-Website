@@ -1,6 +1,6 @@
 /**
  * Today's plan, in one place so every count agrees: what needs the customer now,
- * what's coming up later, and what Tote is simply watching.
+ * what's coming up later, and what Penny is simply watching.
  */
 import type { DateOnly } from "../domain/types";
 import { orderViews } from "../store/selectors";
@@ -19,7 +19,7 @@ export interface TodayPlan {
   now: Priority[];
   /** Needs the customer, but later than a week out. */
   later: Priority[];
-  /** Orders Tote is tracking with nothing for the customer to do: arriving, in transit, awaiting the store. */
+  /** Orders Penny is tracking with nothing for the customer to do: arriving, in transit, awaiting the store. */
   watching: { orderId: string; label: string; title: string; retailerId: string; href: string }[];
   /** The next dated events from today on, chronologically. */
   agenda: CalendarEvent[];

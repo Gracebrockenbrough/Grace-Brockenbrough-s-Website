@@ -35,7 +35,6 @@ export function shiftSeedDates(data: OrbitData, days: number): OrbitData {
     evidence: pick(data.evidence),
     connections: shiftDeep(data.connections, days),
     jobs: data.jobs,
-    posts: data.posts ? pick(data.posts) : data.posts,
     collections: data.collections ? pick(data.collections) : data.collections,
     dismissed: shiftDeep(data.dismissed, days),
   };

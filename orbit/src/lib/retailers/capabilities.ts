@@ -1,5 +1,5 @@
 /**
- * Retailer compatibility registry: what Tote can and can't do with each store.
+ * Retailer compatibility registry: what Penny can and can't do with each store.
  *
  * The UI reads this instead of assuming. If a capability is "no", the feature isn't shown
  * as working. "partial" means it works from evidence the customer has (emails, receipts)
@@ -40,7 +40,7 @@ const OVERRIDES: Partial<Record<string, Partial<RetailerCapabilities>>> = {
     apis: [],
     limitations: [
       "No access to Amazon order history. Amazon's Selling Partner API is for sellers, not shoppers.",
-      "Returns start on Amazon's Your Orders page. Tote never submits them.",
+      "Returns start on Amazon's Your Orders page. Penny never submits them.",
       "Third-party sellers can have different return terms.",
     ],
   },

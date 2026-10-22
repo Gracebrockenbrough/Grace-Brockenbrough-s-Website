@@ -29,7 +29,7 @@ export function Shell({ children, nav = true, loading = false, className }: { ch
 export function TopBar({ date }: { date?: string }) {
   return (
     <header className="flex h-16 items-center justify-between">
-      <Link href="/" aria-label="Tote home" className="-ml-1 rounded-lg px-1">
+      <Link href="/" aria-label="Penny home" className="-ml-1 rounded-lg px-1">
         <OrbitWordmark />
       </Link>
       {date && <p className="text-[14px] font-medium text-muted">{date}</p>}

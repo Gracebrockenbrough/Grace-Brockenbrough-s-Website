@@ -1,7 +1,7 @@
 /**
  * Return Workflow Service: submission adapters, one per capability level.
  *
- * Tote is read-only: it never submits a return. A request only moves past "prepared"
+ * Penny is read-only: it never submits a return. A request only moves past "prepared"
  * when the customer says they submitted it on the retailer's site, and only becomes
  * "confirmed" when the retailer's own email arrives.
  */
@@ -26,7 +26,7 @@ export interface ReturnSubmissionAdapter {
   submit(request: ReturnRequest, details: PreparedReturnDetails, approvedAt: string): Promise<SubmissionResult>;
 }
 
-/** Level 1: Tote prepares; the customer submits on the retailer's site. */
+/** Level 1: Penny prepares; the customer submits on the retailer's site. */
 export const guidedAdapter: ReturnSubmissionAdapter = {
   capability: "guided",
   async submit(_r, _d, _approvedAt) {
@@ -59,7 +59,7 @@ export const integratedAdapter: ReturnSubmissionAdapter = {
   capability: "integrated",
   async submit(_r, _d, approvedAt) {
     if (!approvedAt) return { submitted: false, reason: "approval_missing", message: "You need to approve this return first." };
-    return { submitted: false, reason: "integration_unavailable", message: "This store isn't connected to Tote, so the return wasn't submitted." };
+    return { submitted: false, reason: "integration_unavailable", message: "This store isn't connected to Penny, so the return wasn't submitted." };
   },
 };
 
@@ -69,7 +69,7 @@ export function adapterFor(capability: ReturnCapability): ReturnSubmissionAdapte
 
 /**
  * Placeholder for an officially authorized Amazon returns integration, should one ever be
- * offered. Until then Amazon returns are guided: Tote links to Your Orders and never
+ * offered. Until then Amazon returns are guided: Penny links to Your Orders and never
  * automates amazon.com.
  */
 export const amazonReturnsAdapter: ReturnSubmissionAdapter = { ...integratedAdapter };

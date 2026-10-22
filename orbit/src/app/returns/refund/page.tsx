@@ -19,7 +19,7 @@ import { retailerOf, returnStatusText } from "@/lib/store/selectors";
 import { actions, useOrbit } from "@/lib/store/store";
 
 /**
- * Tote never connects to bank accounts. What it can know:
+ * Penny never connects to bank accounts. What it can know:
  *   1. the store received the return (store email),
  *   2. the store issued the refund (store's refund email),
  *   3. the money arrived (only if the customer tells us).
@@ -123,7 +123,7 @@ function RefundView() {
 
       <p className="mt-3 flex gap-2 px-1 text-[14px] text-muted">
         <Mail aria-hidden className="mt-0.5 size-4 shrink-0" />
-        Tote doesn&apos;t connect to your bank. We follow the store&apos;s emails, and you can tell us when the money lands.
+        Penny doesn&apos;t connect to your bank. We follow the store&apos;s emails, and you can tell us when the money lands.
       </p>
 
       <Card className="mt-5 px-4">

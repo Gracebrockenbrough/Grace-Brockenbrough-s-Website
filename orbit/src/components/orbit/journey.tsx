@@ -10,7 +10,7 @@ import { cn } from "../ui/cn";
 
 /**
  * Compact order journey. Solid dots are recorded facts, dashed rings are estimates,
- * hollow dots are still to come. Tap a step to see how Tote knows it.
+ * hollow dots are still to come. Tap a step to see how Penny knows it.
  */
 export function Journey({ steps, today }: { steps: Milestone[]; today: DateOnly }) {
   const [open, setOpen] = useState<string | null>(null);

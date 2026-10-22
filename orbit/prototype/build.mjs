@@ -32,13 +32,13 @@ const source = (await readFile(path.join(root, "src/app/globals.css"), "utf8")).
 const css = await postcss([tailwind({ base: root, optimize: true })]).process(source, { from: path.join(root, "src/app/globals.css") });
 
 const script = js.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
-const html = `<title>Tote</title>
-<meta name="description" content="Tote: returns, refunds and gift cards in one place. Interactive prototype with fictional demo data.">
+const html = `<title>Penny</title>
+<meta name="description" content="Penny: returns, refunds and gift cards in one place. Interactive prototype with fictional demo data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..800,0..100,0..1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400..800&family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..800,0..100,0..1&display=swap">
 <style>${css.css}
-html, body { background: #F8F7F4; color: #19243B; }
+html, body { background: #e9f1e4; color: #1f3b2d; }
 </style>
 <div id="root"></div>
 <script>${script}</script>

@@ -21,7 +21,7 @@ describe("Store Profile facts", () => {
     expect(everlane.find((f) => f.label === "Mail return fee")).toMatchObject({ value: "Not confirmed", known: false });
   });
 
-  it("filters only on facts Tote holds", () => {
+  it("filters only on facts Penny holds", () => {
     expect(matchesStoreFilter(r("sephora"), policyOf(data, "sephora"), "beauty")).toBe(true);
     expect(matchesStoreFilter(r("cos"), policyOf(data, "cos"), "free_returns")).toBe(true);
     expect(matchesStoreFilter(r("everlane"), policyOf(data, "everlane"), "free_returns")).toBe(false); // fee unknown, not assumed free

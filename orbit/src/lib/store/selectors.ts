@@ -1,7 +1,7 @@
 /**
  * Shared selectors: the single place where an order's status, next action,
  * deadline and amounts are decided. Today, Returns, order details, the calendar
- * and Ask Tote all read from here, so they can never disagree.
+ * and Ask Penny all read from here, so they can never disagree.
  */
 import { daysBetween, formatDate } from "../domain/dates";
 import { money } from "../domain/format";

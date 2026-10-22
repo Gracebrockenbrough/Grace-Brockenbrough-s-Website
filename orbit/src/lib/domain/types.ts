@@ -1,5 +1,5 @@
 /**
- * Tote domain model.
+ * Penny domain model.
  *
  * Conventions:
  * - `null` always means "unknown". Never substitute a guess for a null.
@@ -20,13 +20,13 @@ export type Confidence = "high" | "medium" | "low";
 // ─── Retailers & policies ────────────────────────────────────────────────
 
 /**
- * How much of a retailer's return process Tote performs.
- * - guided: Tote gives accurate information and opens the retailer's own process. (Built.)
- * - assisted: Tote prepares the request in an authorized customer workflow; the customer
+ * How much of a retailer's return process Penny performs.
+ * - guided: Penny gives accurate information and opens the retailer's own process. (Built.)
+ * - assisted: Penny prepares the request in an authorized customer workflow; the customer
  *   confirms and finishes restricted steps. (Interface only.)
- * - integrated: Tote submits through an approved retailer API after explicit approval.
+ * - integrated: Penny submits through an approved retailer API after explicit approval.
  *   (Interface only; needs a retailer partnership.)
- * Every retailer is "guided" today. Tote never submits anything without a real integration.
+ * Every retailer is "guided" today. Penny never submits anything without a real integration.
  */
 export type ReturnCapability = "guided" | "assisted" | "integrated";
 
@@ -145,7 +145,7 @@ export interface Evidence {
   attachment?: { name: string; type: string; dataUrl: string } | null;
   /** The email connection this came from, when it came from a connected inbox. */
   connectionId?: string | null;
-  /** Read off an image/PDF/text by Tote ("extracted") or checked by the customer ("verified"). */
+  /** Read off an image/PDF/text by Penny ("extracted") or checked by the customer ("verified"). */
   verification?: "extracted" | "verified" | null;
 }
 
@@ -209,7 +209,7 @@ export interface Order {
  * Nothing becomes `submitted_confirmed` or later without retailer evidence.
  */
 export type ReturnStatus =
-  | "prepared" // Tote prepared it. Nothing has been sent to the retailer.
+  | "prepared" // Penny prepared it. Nothing has been sent to the retailer.
   | "reported_submitted" // Customer says they submitted it on the retailer's site. Awaiting retailer confirmation.
   | "approval_pending" // Retailer confirmed receipt of the request; approval pending.
   | "label_ready" // Retailer confirmed; label/QR available. Customer must ship.
@@ -268,14 +268,14 @@ export interface Refund {
   /** What we expect, and why. Never shown as received. */
   expected: { amount: number | null; by: DateOnly | null; basis: string } | null;
   /**
-   * The refund was issued. Tote has no bank access, so this comes from the
+   * The refund was issued. Penny has no bank access, so this comes from the
    * retailer's refund email, or from the customer telling us it arrived.
    */
   confirmed: { amount: number; at: DateOnly; by: "retailer_email" | "customer"; evidenceId: string | null } | null;
   /** The customer confirmed the money actually reached their account (optional). */
   arrivedAt?: DateOnly | null;
   /**
-   * Refund Asker: the customer's answers to "Did it arrive?". Tote has no bank access,
+   * Refund Asker: the customer's answers to "Did it arrive?". Penny has no bank access,
    * so a card refund is only "received" when the customer says so.
    */
   asker?: {
@@ -344,7 +344,7 @@ export interface GiftTransfer {
 
 // ─── Connections & preferences ───────────────────────────────────────────
 
-/** Email providers Tote can (eventually) connect to. "sample" is a clearly labeled fictional inbox. */
+/** Email providers Penny can (eventually) connect to. "sample" is a clearly labeled fictional inbox. */
 export type ConnectorId = "gmail" | "outlook" | "sample";
 
 export type ConnectionStatus = "connected" | "disconnected" | "unavailable" | "connecting" | "syncing" | "sync_failed" | "reauth_required";
@@ -441,36 +441,9 @@ export interface PublicProfile {
   styleTags?: string[];
 }
 
-// ─── Circle ──────────────────────────────────────────────────────────────
+// ─── Discover ────────────────────────────────────────────────────────────
 
-export type PostType = "haul" | "styled" | "store_favorite" | "review" | "collection";
-
-/** A post image: a customer's own photo, or collage art (used for demo content). */
-export type PostImage = { kind: "photo"; src: string; alt: string } | { kind: "art"; seed: string; kinds: string[]; palette: string; alt: string };
-
-/**
- * Something a person chose to publish. Posts are never generated from imported email:
- * every tagged item was picked by hand, and prices and dates are never included.
- */
-export interface SocialPost {
-  id: string;
-  /** "me" for the customer's own posts. */
-  authorId: string;
-  type: PostType;
-  images: PostImage[];
-  caption: string;
-  retailerIds: string[];
-  items: { name: string; kind: string | null; retailerId: string | null }[];
-  notes: { sizing: "small" | "true" | "large" | null; quality: string | null; returnEase: "easy" | "okay" | "hard" | null };
-  audience: Visibility;
-  createdAt: Timestamp;
-  likes: number;
-  liked: boolean;
-  saved: boolean;
-  /** Fictional content shown only to demonstrate Circle. Always labeled. */
-  demo: boolean;
-}
-
+/** Someone whose lists can appear in Discover: a friend who shares with you, or a creator. */
 export interface CircleAuthor {
   id: string;
   name: string;
@@ -490,7 +463,11 @@ export interface CollectionItem {
   addedAt: Timestamp;
 }
 
-/** A moodboard or list. Works without friends; private until shared. */
+/**
+ * A list: a moodboard, wishlist or shopping list. Yours are private until you make them
+ * public. Others' lists appear when a friend shares one with you or a creator publishes one.
+ * Lists never include prices, order details or anything from your purchases.
+ */
 export interface Collection {
   id: string;
   title: string;
@@ -498,4 +475,11 @@ export interface Collection {
   palette: string;
   items: CollectionItem[];
   createdAt: Timestamp;
+  /** null = yours. Otherwise the author's id. */
+  ownerId?: string | null;
+  /** A friend shared this list with you directly. */
+  sharedWithMe?: boolean;
+  /** You saved someone else's list to keep. */
+  saved?: boolean;
+  demo?: boolean;
 }

@@ -253,7 +253,6 @@ export default function SavedPage() {
   return (
     <Shell>
       <BackBar fallback="/you/" title="Saved for Later" />
-      <p className="pb-1 pt-1 text-[16px] text-muted">Products and ideas you want to remember. Only you can see them.</p>
 
       <div className="mt-4 grid grid-cols-4 gap-2" role="group" aria-label="Save something for later">
         {methods.map((m) => (
@@ -294,7 +293,7 @@ export default function SavedPage() {
       )}
 
       <Notice tone="info" className="mt-6">
-        Saved items are private. Tote never uses them for advertising or shares them.
+        Saved items are private. Penny never uses them for advertising or shares them.
       </Notice>
 
       {mode && <AddWish mode={mode} onClose={() => setMode(null)} />}

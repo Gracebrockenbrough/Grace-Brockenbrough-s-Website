@@ -3,14 +3,14 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ChevronRight, Lock, MessageSquareQuote, Share2, Store, UsersRound } from "lucide-react";
+import { ChevronRight, Lock, Share2, Store } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { RetailerMark } from "@/components/orbit/retail";
 import { SaveStoreButton } from "@/components/orbit/save-store";
 import { ButtonLink, ExternalButton, TextLink } from "@/components/ui/button";
-import { Card, Row, Rows, SectionTitle } from "@/components/ui/card";
+import { Card, Row, Rows } from "@/components/ui/card";
 import { Disclosure } from "@/components/ui/disclosure";
-import { Notice, Tag } from "@/components/ui/notice";
+import { Tag } from "@/components/ui/notice";
 import { toast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/states";
 import { formatDate } from "@/lib/domain/dates";
@@ -19,8 +19,6 @@ import { beforeYouBuy, storeCategoryLabel } from "@/lib/retailers/storeFacts";
 import { creditAt, policyOf, retailerOf } from "@/lib/store/selectors";
 import { useOrbit } from "@/lib/store/store";
 
-/** Reviews needed before Tote shows a rating or a summary. Fewer would overstate a consensus. */
-const MIN_REVIEWS = 5;
 
 /**
  * Store Profile: what buying from a store is actually like. Official policy facts and
@@ -34,8 +32,8 @@ function StoreProfile() {
   if (!id || !exists)
     return (
       <Shell nav={false}>
-        <BackBar fallback="/circle/" />
-        <EmptyState icon={<Store aria-hidden />} title="Store not found" action={<ButtonLink href="/circle/">Back to Circle</ButtonLink>} />
+        <BackBar fallback="/discover/" />
+        <EmptyState icon={<Store aria-hidden />} title="Store not found" action={<ButtonLink href="/discover/">Back to Discover</ButtonLink>} />
       </Shell>
     );
 
@@ -46,10 +44,10 @@ function StoreProfile() {
   const credit = creditAt(o.data, id, o.today);
   const orders = o.data.orders.filter((x) => x.retailerId === id).length;
   const card = o.data.wallet.find((w) => w.retailerId === id && (w.balance ?? 0) > 0);
-  const reviews = 0; // Reviews arrive with accounts. Nothing here is made up.
+  const onLists = (o.data.collections ?? []).filter((c) => (c.ownerId ? c.visibility !== "private" : true) && c.items.some((i) => i.retailerId === id));
 
   const share = async () => {
-    const text = `${r.name} on Tote`;
+    const text = r.name;
     try {
       if (navigator.share) await navigator.share({ title: text, url: r.websiteUrl });
       else {
@@ -63,7 +61,7 @@ function StoreProfile() {
 
   return (
     <Shell nav={false}>
-      <BackBar fallback="/circle/" title={r.name} />
+      <BackBar fallback="/discover/" title={r.name} />
 
       {/* 1. Store header */}
       <header className="flex items-center gap-4 pb-4 pt-2">
@@ -146,43 +144,27 @@ function StoreProfile() {
             </Card>
           </>
         )}
-        <p className="mt-2 text-[13px] text-muted">From the store&apos;s policy, not from reviews. Your order&apos;s own instructions always come first.</p>
       </section>
 
-      {/* 3–5. Community: shown only when there's enough real feedback */}
-      <section aria-labelledby="community" className="mt-7">
-        <SectionTitle>
-          <span id="community">Community experience</span>
-        </SectionTitle>
-        <Card className="p-4">
-          <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-circle-soft text-circle">
-              <UsersRound aria-hidden className="size-5" />
-            </span>
-            <div>
-              <p className="font-semibold">Not enough feedback yet</p>
-              <p className="text-[15px] text-muted">
-                {reviews === 0 ? "No one has reviewed" : `${plural(reviews, "shopper")} reviewed`} {r.name} on Tote yet. We show ratings for returns, sizing, quality and service once at least {MIN_REVIEWS} shoppers have.
-              </p>
-            </div>
-          </div>
-        </Card>
-        <Card className="mt-3 p-4">
-          <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-ivory-deep text-navy">
-              <MessageSquareQuote aria-hidden className="size-5" />
-            </span>
-            <div>
-              <p className="font-semibold">What shoppers are saying</p>
-              <p className="text-[15px] text-muted">A short summary of real reviews appears here once there are enough of them. It always links to the reviews it&apos;s based on.</p>
-            </div>
-          </div>
-        </Card>
-      </section>
-
-      <Notice tone="info" className="mt-6">
-        Reviewing a store comes with Tote accounts. Reviews are never posted for you, even after a return.
-      </Notice>
+      {/* Lists from friends that include this store */}
+      {onLists.length > 0 && (
+        <section className="mt-7" aria-label="On lists">
+          <h2 className="font-display mb-3 text-[22px] leading-none">On lists</h2>
+          <ul className="space-y-2">
+            {onLists.map((c) => (
+              <li key={c.id}>
+                <Link href={`/discover/list/?id=${c.id}`} className="flex min-h-14 items-center gap-3 rounded-[18px] bg-card px-4 py-2.5 shadow-[var(--shadow-card)]">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{c.title}</span>
+                    <span className="block text-[13px] text-muted">{(o.data.authors ?? []).find((x) => x.id === c.ownerId)?.name ?? "You"}</span>
+                  </span>
+                  <ChevronRight aria-hidden className="size-4 text-muted/60" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </Shell>
   );
 }

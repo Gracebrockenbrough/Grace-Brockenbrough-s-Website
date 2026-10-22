@@ -14,7 +14,7 @@ const SPECS: Spec[] = [
   ["everlane", "Court Sneaker", "White · 10", 98, "shoes", 28],
   ["everlane", "Cashmere Beanie", "Charcoal", 55, "accessories", 6],
   ["cos", "Wool Overcoat", "Navy · L", 290, "clothing", 27],
-  ["cos", "Leather Tote", "Black", 175, "accessories", 20],
+  ["cos", "Leather Penny", "Black", 175, "accessories", 20],
   ["zara", "Linen Shirt", "White · M", 46, "clothing", 9],
   ["zara", "Satin Midi Skirt", "Green · S", 50, "clothing", 15],
   ["madewell", "Denim Jacket", "Indigo · M", 128, "clothing", 3],

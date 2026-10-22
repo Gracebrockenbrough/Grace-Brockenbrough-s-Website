@@ -2,7 +2,6 @@ import type {
   ConnectedAccount,
   FavoriteStore,
   PublicProfile,
-  SocialPost,
   CircleAuthor,
   Collection,
   DateOnly,
@@ -20,7 +19,7 @@ import type {
 import type { ItemKind } from "../intelligence/buckets";
 import type { AiUsageEntry, ProcessingJob } from "../ingestion/types";
 
-/** Everything Tote knows for one user. Mirrors the relational schema in supabase/migrations. */
+/** Everything Penny knows for one user. Mirrors the relational schema in supabase/migrations. */
 export interface OrbitData {
   retailers: Retailer[];
   policies: ReturnPolicy[];
@@ -39,10 +38,8 @@ export interface OrbitData {
   prefs: NotificationPrefs;
   /** Stores the customer saved, each with its own visibility. */
   favoriteStores?: FavoriteStore[];
-  /** Circle: posts (own and clearly labeled demo), people, who you follow, collections. */
-  posts?: SocialPost[];
+  /** Discover: people whose lists you can see, and lists (yours and shared with you). */
   authors?: CircleAuthor[];
-  following?: string[];
   collections?: Collection[];
   /** The optional public side of the profile. */
   publicProfile?: PublicProfile;

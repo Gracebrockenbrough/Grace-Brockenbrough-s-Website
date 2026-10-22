@@ -38,7 +38,6 @@ export default function DevPage() {
   return (
     <Shell nav={false}>
       <BackBar fallback="/settings/" title="Processing dashboard" />
-      <p className="pb-4 pt-1 text-[16px] text-muted">For developers. Numbers come from this browser&apos;s import log; production reads the processing_jobs and ai_usage tables.</p>
 
       <div className="grid grid-cols-2 gap-2.5">
         <Stat label="Messages processed" value={String(m.processed)} hint={`${m.total} including duplicates`} />

@@ -1,4 +1,4 @@
-/** Public tracking pages. Live status inside Tote needs carrier integrations (future). */
+/** Public tracking pages. Live status inside Penny needs carrier integrations (future). */
 export function trackingUrl(carrier: string | null, number: string): string | null {
   const n = encodeURIComponent(number);
   switch ((carrier ?? "").toUpperCase()) {

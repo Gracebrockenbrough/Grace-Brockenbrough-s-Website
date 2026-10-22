@@ -479,7 +479,7 @@ function PurchaseDetail() {
           )}
         </Disclosure>
 
-        <Disclosure title={`What Tote can do with ${retailer.name}`} summary={caps.approvedReturnSubmission === "no" ? "Guided returns. You finish on their site" : "Connected"} icon={<PlugZap aria-hidden className="size-5" />}>
+        <Disclosure title={`What Penny can do with ${retailer.name}`} summary={caps.approvedReturnSubmission === "no" ? "Guided returns. You finish on their site" : "Connected"} icon={<PlugZap aria-hidden className="size-5" />}>
           <CapabilityList caps={caps} retailerName={retailer.name} />
         </Disclosure>
       </Card>
@@ -557,7 +557,7 @@ function PurchaseDetail() {
         open={deleteSheet}
         onOpenChange={setDeleteSheet}
         title="Delete this purchase?"
-        description="This removes the order, its returns, refund tracking and saved emails from Tote. It doesn't affect anything at the retailer."
+        description="This removes the order, its returns, refund tracking and saved emails from Penny. It doesn't affect anything at the retailer."
         footer={
           <Button
             variant="danger"

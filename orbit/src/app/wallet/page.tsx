@@ -29,7 +29,6 @@ export default function WalletPage() {
       <TabBanner
         tab="wallet"
         title="Your credit, simplified"
-        subtitle="Gift cards and store credit in one place."
         right={
           <IconLink href="/wallet/add/" label="Add a gift card or credit" className="-mr-2">
             <Plus aria-hidden className="size-[22px]" />
@@ -65,7 +64,7 @@ export default function WalletPage() {
           title="Your wallet is empty"
           action={<ButtonLink href="/wallet/add/">Add a Gift Card</ButtonLink>}
         >
-          Add gift cards and store credit, and Tote will keep each balance with its store.
+          Add gift cards and store credit, and Penny will keep each balance with its store.
         </EmptyState>
       ) : (
         <>

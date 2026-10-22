@@ -92,7 +92,7 @@ export interface Insights {
   refundsAsCredit: number;
   /** Net merchandise kept: purchases minus everything returned for a refund or credit. */
   net: number;
-  /** Earliest purchase date Tote has for you, to explain coverage. */
+  /** Earliest purchase date Penny has for you, to explain coverage. */
   coverageFrom: DateOnly | null;
   creditSpent: number;
   byCategory: { key: string; label: string; amount: number }[];

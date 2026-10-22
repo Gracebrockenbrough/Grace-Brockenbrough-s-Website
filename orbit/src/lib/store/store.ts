@@ -12,7 +12,6 @@ import type {
   ConnectionStatus,
   FavoriteStore,
   PublicProfile,
-  SocialPost,
   Collection,
   CollectionItem,
   Visibility,
@@ -202,7 +201,7 @@ export const actions = {
       submission: { by: null, at: null, confirmedByRetailer: false, confirmationEvidenceId: null },
       artifacts: [],
       rmaNumber: null,
-      history: [{ at: now(), status: "prepared", note: "Tote prepared your return. Nothing has been sent yet." }],
+      history: [{ at: now(), status: "prepared", note: "Penny prepared your return. Nothing has been sent yet." }],
     };
     setData((x) => ({ ...x, returns: [...x.returns, req] }));
     return id;
@@ -295,7 +294,7 @@ export const actions = {
 
   /**
    * Refund Asker answers. "Not yet" and "Remind me later" snooze the question (no repeat
-   * reminders in between); "missing" flags it so Tote helps follow up with the store.
+   * reminders in between); "missing" flags it so Penny helps follow up with the store.
    */
   answerRefund(refundId: string, answer: "not_yet" | "later" | "missing") {
     const t = today();
@@ -489,7 +488,7 @@ export const actions = {
   // ── Wallet ───────────────────────────────────────────────────────────
   addWalletItem(item: Omit<WalletItem, "id" | "addedAt" | "demo" | "currency" | "history">): string {
     const id = uid("w");
-    const history = item.balance != null ? [{ at: today(), amount: item.balance, label: "Added to Tote" }] : [];
+    const history = item.balance != null ? [{ at: today(), amount: item.balance, label: "Added to Penny" }] : [];
     setData((d) => ({ ...d, wallet: [...d.wallet, { ...item, id, currency: "USD", history, addedAt: now(), demo: false }] }));
     return id;
   },
@@ -562,8 +561,8 @@ export const actions = {
   },
 
   /**
-   * Adds another inbox to the same Tote profile. Real providers go through their own
-   * OAuth consent; Tote never asks for an email password. Gmail and Outlook aren't
+   * Adds another inbox to the same Penny profile. Real providers go through their own
+   * OAuth consent; Penny never asks for an email password. Gmail and Outlook aren't
    * available yet, so only clearly labeled sample inboxes can be added in the prototype.
    */
   async addConnection(input: { provider: ConnectorId; label: string; address: string }): Promise<{ ok: true; id: string } | { ok: false; reason: string }> {
@@ -671,42 +670,18 @@ export const actions = {
     setData((d) => ({ ...d, publicProfile: { displayName: DEMO_PROFILE.firstName, bio: null, ...d.publicProfile, ...patch } }));
   },
 
-  // ── Circle ───────────────────────────────────────────────────────────
-  toggleLike(postId: string) {
-    setData((d) => ({ ...d, posts: (d.posts ?? []).map((p) => (p.id === postId ? { ...p, liked: !p.liked, likes: p.likes + (p.liked ? -1 : 1) } : p)) }));
-  },
-
-  toggleSavePost(postId: string): boolean {
+  // ── Discover and lists ───────────────────────────────────────────────
+  /** Keep someone else's list in your Lists, or let it go. */
+  toggleSaveList(id: string): boolean {
     let saved = false;
-    setData((d) => ({ ...d, posts: (d.posts ?? []).map((p) => (p.id === postId ? ((saved = !p.saved), { ...p, saved }) : p)) }));
+    setData((d) => ({ ...d, collections: (d.collections ?? []).map((c) => (c.id === id ? ((saved = !c.saved), { ...c, saved }) : c)) }));
     return saved;
-  },
-
-  toggleFollow(authorId: string) {
-    setData((d) => {
-      const f = d.following ?? [];
-      return { ...d, following: f.includes(authorId) ? f.filter((x) => x !== authorId) : [...f, authorId] };
-    });
-  },
-
-  /**
-   * Publishes the customer's own post. Everything in it was chosen by hand in the
-   * Create Post flow; nothing is pulled in from orders or email automatically.
-   */
-  publishPost(input: Omit<SocialPost, "id" | "authorId" | "createdAt" | "likes" | "liked" | "saved" | "demo">): string {
-    const id = uid("post");
-    setData((d) => ({ ...d, posts: [{ ...input, id, authorId: "me", createdAt: now(), likes: 0, liked: false, saved: false, demo: false }, ...(d.posts ?? [])] }));
-    return id;
-  },
-
-  deletePost(postId: string) {
-    setData((d) => ({ ...d, posts: (d.posts ?? []).filter((p) => !(p.id === postId && p.authorId === "me")) }));
   },
 
   createCollection(title: string, visibility: Visibility = "private"): string {
     const id = uid("col");
     const palettes = ["apricot", "orchid", "rose", "sage", "sky"];
-    setData((d) => ({ ...d, collections: [{ id, title: title.trim() || "Untitled", visibility, palette: palettes[(d.collections?.length ?? 0) % palettes.length], items: [], createdAt: now() }, ...(d.collections ?? [])] }));
+    setData((d) => ({ ...d, collections: [{ id, title: title.trim() || "Untitled", visibility, palette: palettes[(d.collections?.length ?? 0) % palettes.length], items: [], createdAt: now(), ownerId: null }, ...(d.collections ?? [])] }));
     return id;
   },
 

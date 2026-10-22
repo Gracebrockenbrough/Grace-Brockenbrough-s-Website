@@ -76,7 +76,7 @@ describe("insights", () => {
   });
 });
 
-describe("Ask Tote, broader questions", () => {
+describe("Ask Penny, broader questions", () => {
   it("lists this week's returns", () => {
     const { intent, results } = ask("What returns do I have this week?", data, TODAY);
     expect(intent).toBe("agenda");

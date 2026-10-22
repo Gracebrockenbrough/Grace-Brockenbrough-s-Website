@@ -128,7 +128,6 @@ export default function HistoryPage() {
   return (
     <Shell nav={false}>
       <BackBar fallback="/settings/" title="Import history" />
-      <p className="pb-4 pt-1 text-[16px] text-muted">Every message Tote looked at, and what it did. Email text isn&apos;t kept here, only what was read from it.</p>
 
       {review.length > 0 && (
         <section className="mb-6">
@@ -181,7 +180,7 @@ export default function HistoryPage() {
       )}
 
       <Notice tone="info" className="mt-6">
-        Promotions and personal mail are recognized and skipped. They&apos;re listed so you can see Tote didn&apos;t import them.
+        Promotions and personal mail are recognized and skipped. They&apos;re listed so you can see Penny didn&apos;t import them.
       </Notice>
     </Shell>
   );

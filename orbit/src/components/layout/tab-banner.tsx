@@ -8,13 +8,13 @@ import { OrbitWordmark } from "./logo";
  * illustrated still life for each tab. Original vector drawings (objects, no people),
  * sized to sit beside the headline without competing with it.
  */
-export type TabKey = "today" | "returns" | "wallet" | "circle" | "you";
+export type TabKey = "today" | "returns" | "wallet" | "discover" | "you";
 
 const KICKER: Record<TabKey, { label: string; bar: string; text: string; wash: string }> = {
-  today: { label: "Today", bar: "bg-navy", text: "text-navy", wash: "#E9E6F0" },
+  today: { label: "Today", bar: "bg-navy", text: "text-navy", wash: "#DCEAD5" },
   returns: { label: "Returns", bar: "bg-returns", text: "text-returns", wash: "#F6E3DC" },
-  wallet: { label: "Wallet", bar: "bg-wallet", text: "text-wallet", wash: "#DDEBDD" },
-  circle: { label: "Circle", bar: "bg-circle", text: "text-circle", wash: "#F8E5CC" },
+  wallet: { label: "Wallet", bar: "bg-wallet", text: "text-wallet", wash: "#F5E6D6" },
+  discover: { label: "Discover", bar: "bg-circle", text: "text-circle", wash: "#F8E5CC" },
   you: { label: "You", bar: "bg-you", text: "text-you", wash: "#E9E0F5" },
 };
 
@@ -55,7 +55,7 @@ function TodayScene() {
       <path d="M134 108h16v18a3 3 0 0 1-3 3h-10a3 3 0 0 1-3-3z" {...F("#FFFFFF")} />
       <path d="M150 112a5 5 0 0 1 0 10" {...L} />
       <text x="137" y="121" fontSize="5" fontFamily="Georgia, serif" fill={INK}>
-        tote
+        penny
       </text>
       <path d="M139 102q2-4 0-7M144 102q2-4 0-7" {...L} strokeWidth={0.7} opacity={0.6} />
       {/* Calendar */}
@@ -66,11 +66,11 @@ function TodayScene() {
         {[0, 1, 2, 3, 4].map((c) => [0, 1, 2].map((r) => <circle key={`${c}${r}`} cx={168 + c * 7} cy={56 + r * 8} r={0.9} fill={INK} opacity={0.6} />))}
         <circle cx={182} cy={64} r={2.6} fill="#C23A2B" />
       </g>
-      {/* Tote bag */}
+      {/* Penny bag */}
       <path d="M176 128l4-30h30l4 30z" {...F("#F2EADC")} />
       <path d="M186 98v-8a9 9 0 0 1 18 0v8" {...L} strokeWidth={1.6} />
       <text x="187" y="118" fontSize="7" fontFamily="Georgia, serif" fill={INK}>
-        tote
+        penny
       </text>
       <Sprig x={212} y={98} s={0.9} />
     </>
@@ -128,7 +128,7 @@ function WalletScene() {
       <path d="M130 70h72a6 6 0 0 1 6 6v54h-84V76a6 6 0 0 1 6-6z" {...F("#2F5D46")} />
       <path d="M134 78h64" stroke="#FFFFFF" strokeOpacity={0.35} strokeWidth={0.8} />
       <text x="158" y="112" fontSize="8" fontFamily="Georgia, serif" fill="#E9D9B4">
-        tote
+        penny
       </text>
       {/* Gift card with a red bow */}
       <g transform="rotate(-14 96 70)">
@@ -225,7 +225,7 @@ function YouScene() {
   );
 }
 
-const SCENES: Record<TabKey, () => ReactNode> = { today: TodayScene, returns: ReturnsScene, wallet: WalletScene, circle: CircleScene, you: YouScene };
+const SCENES: Record<TabKey, () => ReactNode> = { today: TodayScene, returns: ReturnsScene, wallet: WalletScene, discover: CircleScene, you: YouScene };
 
 export function TabBanner({ tab, title, subtitle, right, children }: { tab: TabKey; title: ReactNode; subtitle?: ReactNode; right?: ReactNode; children?: ReactNode }) {
   const k = KICKER[tab];
@@ -240,7 +240,7 @@ export function TabBanner({ tab, title, subtitle, right, children }: { tab: TabK
         <Scene />
       </svg>
       <div className="relative flex items-center justify-between">
-        <Link href="/" aria-label="Tote home" className="-ml-1 rounded-lg px-1">
+        <Link href="/" aria-label="Penny home" className="-ml-1 rounded-lg px-1">
           <OrbitWordmark />
         </Link>
         {right && <div className="flex items-center gap-1">{right}</div>}

@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowUpRight, Camera, LayoutGrid, Lock, Plus, Trash } from "lucide-react";
+import { ArrowUpRight, Bookmark, Camera, LayoutGrid, Lock, Plus, Share2, Trash } from "lucide-react";
 import { BackBar, Shell } from "@/components/layout/shell";
 import { Photo } from "@/components/orbit/art";
 import { visibilityLabel } from "@/components/orbit/circle";
@@ -30,42 +30,85 @@ function CollectionView() {
   if (!c)
     return (
       <Shell nav={false}>
-        <BackBar fallback="/circle/" />
-        <EmptyState icon={<LayoutGrid aria-hidden />} title="Collection not found" action={<ButtonLink href="/circle/">Back to Circle</ButtonLink>} />
+        <BackBar fallback="/discover/" />
+        <EmptyState icon={<LayoutGrid aria-hidden />} title="List not found" action={<ButtonLink href="/discover/">Back to Discover</ButtonLink>} />
       </Shell>
     );
 
-  const cycle: Record<Visibility, Visibility> = { private: "friends", friends: "public", public: "private" };
+  const mine = !c.ownerId;
+  const owner = (o.data.authors ?? []).find((a) => a.id === c.ownerId) ?? null;
+  const isPublic = c.visibility !== "private";
+  const share = async () => {
+    const url = `https://penny.example/lists/${c.id}`;
+    try {
+      if (navigator.share) await navigator.share({ title: c.title, url });
+      else {
+        await navigator.clipboard.writeText(url);
+        toast("Link copied", "Anyone with the link can see this list.");
+      }
+    } catch {
+      // Share sheet dismissed.
+    }
+  };
   const validUrl = !f.url || /^https?:\/\/\S+\.\S+/.test(f.url);
 
   return (
     <Shell nav={false}>
-      <BackBar fallback="/circle/" title="Collection" />
+      <BackBar fallback={mine ? "/you/" : "/discover/"} title="List" />
       <header className="pb-4 pt-2">
         <h1 className="font-display text-[34px] leading-none">{c.title}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[14px] text-muted">
-          <span>{c.items.length} {c.items.length === 1 ? "item" : "items"}</span>·
-          <button type="button" onClick={() => actions.setCollection(c.id, { visibility: cycle[c.visibility] })} className="inline-flex min-h-9 items-center gap-1 rounded-full bg-card px-3 font-semibold text-navy shadow-[var(--shadow-card)]">
-            {c.visibility === "private" && <Lock aria-hidden className="size-3.5" />}
-            {visibilityLabel[c.visibility]} · change
-          </button>
+        <p className="mt-1.5 text-[14px] text-muted">
+          {c.items.length} {c.items.length === 1 ? "item" : "items"}
+          {owner ? ` · by ${owner.name}${owner.demo ? " (demo)" : ""}` : ""}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {mine ? (
+            <>
+              <div role="radiogroup" aria-label="Who can see this list" className="inline-flex rounded-full bg-card p-1 shadow-[var(--shadow-card)]">
+                {(["private", "public"] as Visibility[]).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    role="radio"
+                    aria-checked={(v === "public") === isPublic}
+                    onClick={() => actions.setCollection(c.id, { visibility: v })}
+                    className={cn("inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-[14px] font-semibold", (v === "public") === isPublic ? "bg-navy text-white" : "text-muted")}
+                  >
+                    {v === "private" && <Lock aria-hidden className="size-3.5" />}
+                    {visibilityLabel[v]}
+                  </button>
+                ))}
+              </div>
+              {isPublic && (
+                <Button variant="secondary" size="sm" icon={<Share2 aria-hidden className="size-4" />} onClick={share}>
+                  Share
+                </Button>
+              )}
+            </>
+          ) : (
+            <Button variant={c.saved ? "secondary" : "primary"} size="sm" icon={<Bookmark aria-hidden className={cn("size-4", c.saved && "fill-current")} />} onClick={() => actions.toggleSaveList(c.id) && toast("List saved", "It's in You, under My lists.")}>
+              {c.saved ? "Saved" : "Save List"}
+            </Button>
+          )}
         </div>
       </header>
 
       <div className="grid grid-cols-2 gap-3">
-        <button type="button" onClick={() => setAdd(true)} className="flex aspect-[4/5] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-line text-muted hover:border-navy/30">
+        {mine && <button type="button" onClick={() => setAdd(true)} className="flex aspect-[4/5] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-line text-muted hover:border-navy/30">
           <Plus aria-hidden className="size-6" />
           <span className="mt-1 text-[14px] font-semibold">Add an item</span>
-        </button>
+        </button>}
         {c.items.map((it) => {
           const kind = (it.kind ?? "other") as ItemKind;
           return (
             <figure key={it.id} className="group relative">
               <div className="relative aspect-[4/5] overflow-hidden rounded-[20px]" style={{ background: KIND_COLOR[kind].tint }}>
                 {it.image ? <Photo src={it.image} alt={it.name} className="size-full" /> : <ItemArt kind={kind} className="absolute left-[18%] top-[18%] size-[64%]" />}
-                <button type="button" aria-label={`Remove ${it.name}`} onClick={() => actions.removeCollectionItem(c.id, it.id)} className="absolute right-1.5 top-1.5 inline-flex size-9 items-center justify-center rounded-full bg-white/90 text-muted">
-                  <Trash aria-hidden className="size-4" />
-                </button>
+                {mine && (
+                  <button type="button" aria-label={`Remove ${it.name}`} onClick={() => actions.removeCollectionItem(c.id, it.id)} className="absolute right-1.5 top-1.5 inline-flex size-9 items-center justify-center rounded-full bg-white/90 text-muted">
+                    <Trash aria-hidden className="size-4" />
+                  </button>
+                )}
               </div>
               <figcaption className="mt-1.5 px-1">
                 <span className="block truncate text-[14px] font-semibold">{it.name}</span>
@@ -83,14 +126,14 @@ function CollectionView() {
         })}
       </div>
 
-      <Button variant="ghost" size="sm" className="mx-auto mt-8 flex text-muted" icon={<Trash aria-hidden className="size-4" />} onClick={() => { actions.deleteCollection(c.id); router.replace("/circle/"); }}>
-        Delete collection
-      </Button>
+      {mine && <Button variant="ghost" size="sm" className="mx-auto mt-8 flex text-muted" icon={<Trash aria-hidden className="size-4" />} onClick={() => { actions.deleteCollection(c.id); router.replace("/you/"); }}>
+        Delete list
+      </Button>}
 
       <Sheet
         open={add}
         onOpenChange={setAdd}
-        title="Add to collection"
+        title="Add to list"
         footer={
           <Button
             disabled={f.name.trim().length < 2 || !validUrl}

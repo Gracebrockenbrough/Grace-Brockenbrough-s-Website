@@ -96,7 +96,7 @@ describe("priorities", () => {
   it("surfaces proactive updates from across the app", () => {
     const kinds = buildPriorities(data, TODAY).filter((x) => x.bucket === "updates").map((x) => x.kind);
     expect(kinds).toEqual(expect.arrayContaining(["delivery_soon", "refund_arrival"]));
-    // Tote never turns sales or promotions into to-dos.
+    // Penny never turns sales or promotions into to-dos.
     expect(buildPriorities(data, TODAY).some((x) => /sale|promo/.test(x.kind))).toBe(false);
   });
 
